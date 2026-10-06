@@ -3,8 +3,6 @@ import os
 from pathlib import Path
 
 import pytest
-from PIL import Image
-from reportlab.pdfgen import canvas
 
 from docextract.fsutil import long_path
 from docextract.ingest.manifest import ManifestRow, read_manifest, write_manifest
@@ -16,6 +14,7 @@ from docextract.ingest.skeleton import (
     hints_for,
     scan_raw,
 )
+from files import make_image_pdf, make_jpeg, make_png, make_text_pdf
 
 INDONESIAN = (
     "Faktur untuk pelanggan dengan nomor barang yang dibayar tidak dari tanggal alamat "
@@ -25,61 +24,6 @@ ENGLISH = (
     "Thank you for your booking. The confirmation number and the payment for this invoice "
     "are with you. Your name and address are on the receipt, and the amount and the tax are due."
 )
-
-
-# ------------------------------------------------------------------ synthetic files
-
-
-def make_text_pdf(path: Path, text: str, pages: int = 1) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    pdf = canvas.Canvas(str(path))
-    for _ in range(pages):
-        words = text.split()
-        y = 800
-        for start in range(0, len(words), 8):
-            pdf.drawString(40, y, " ".join(words[start : start + 8]))
-            y -= 16
-        pdf.showPage()
-    pdf.save()
-    return path
-
-
-def make_image_pdf(path: Path, pages: int = 2) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    images = [Image.new("RGB", (120, 160), (240 - 20 * i,) * 3) for i in range(pages)]
-    images[0].save(path, "PDF", save_all=True, append_images=images[1:])
-    return path
-
-
-def make_jpeg(
-    path: Path,
-    *,
-    make: str | None = None,
-    model: str | None = None,
-    orientation: int | None = None,
-    gps: bool = False,
-    size: tuple[int, int] = (60, 40),
-) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    exif = Image.Exif()
-    if make:
-        exif[0x010F] = make
-    if model:
-        exif[0x0110] = model
-    if orientation:
-        exif[0x0112] = orientation
-    if gps:
-        ifd = exif.get_ifd(0x8825)
-        ifd[1] = "S"
-        ifd[2] = (6.0, 12.0, 30.0)
-    Image.new("RGB", size, "white").save(path, "JPEG", exif=exif.tobytes())
-    return path
-
-
-def make_png(path: Path) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    Image.new("RGB", (30, 20), "white").save(path, "PNG")
-    return path
 
 
 # ------------------------------------------------------------------ sniffing and probing

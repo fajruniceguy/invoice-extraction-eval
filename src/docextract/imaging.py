@@ -63,8 +63,10 @@ def storage_format(source_format: str | None) -> PageFormat:
     return "png"
 
 
-def _flatten(image: Image.Image) -> Image.Image:
-    """RGB, with any transparency composited on white (receipts are dark ink on white)."""
+def flatten(image: Image.Image) -> Image.Image:
+    """A new RGB image, with any transparency composited on WHITE (receipts are dark ink on
+    white). Plain `convert("RGB")` would drop the alpha channel and turn transparent pixels
+    black, which can make black text unreadable."""
     if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
         rgba = image.convert("RGBA")
         background = Image.new("RGB", rgba.size, (255, 255, 255))
@@ -78,7 +80,7 @@ def encode_page(
 ) -> bytes:
     """Encode deterministically with NO metadata (no EXIF, ICC, DPI or text chunks)."""
     buffer = io.BytesIO()
-    flat = _flatten(image)  # always a new object, so clearing .info never touches the caller's
+    flat = flatten(image)  # always a new object, so clearing .info never touches the caller's
     # Pillow's encoders re-emit entries of `.info` (comment text, ICC profile, DPI) even when no
     # metadata is passed to save(): clear it so NOTHING from the source survives
     flat.info = {}

@@ -113,6 +113,25 @@ class Settings(BaseSettings):
         ) / _TOKENS_PER_MTOK
 
 
+class IngestSettings(BaseSettings):
+    """How raw documents become stored pages. Separate from `Settings` so that ingestion needs no
+    LLM configuration. Variables: INGEST_DPI, INGEST_MAX_LONG_EDGE, INGEST_JPEG_QUALITY."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="INGEST_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    dpi: int = Field(default=200, ge=36, le=1200)  # PDF rasterization
+    # Ceiling for the STORED page (see docextract.imaging for the rule). 0 = no cap, except the
+    # 8000 px hard limit. What a model is sent is a separate, request-time setting.
+    max_long_edge: int = Field(default=2400, ge=0)
+    jpeg_quality: int = Field(default=92, ge=1, le=100)  # for pages that come from photos
+
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

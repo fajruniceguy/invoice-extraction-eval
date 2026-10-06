@@ -9,6 +9,7 @@ dependencies = [
     "httpx>=0.27",
     "pillow>=10.1",
     "pypdfium2>=5.14.0",
+    "pillow-heif>=1.8.0",
 ]
 
 [dependency-groups]

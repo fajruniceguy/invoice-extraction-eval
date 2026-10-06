@@ -12,8 +12,8 @@ A document extraction system for invoices/receipts plus a rigorous evaluation ha
 ```
 src/docextract/{config.py, providers/, ingest/, extract/, validate/, confidence/, api/}
 src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, compare.py, groundtruth.py}
-data/{raw, pages}
-ground_truth/
+data/{manifest.csv, redactions.yaml, pages/, private/{raw,preview}}
+ground_truth/{, drafts/}
 outputs/
 scripts/
 tests/{fakes/, fixtures/}
@@ -54,6 +54,13 @@ docs/
 ## Core logic
 - Extraction logic and the eval harness are hand-written. No LangChain / LlamaIndex for core logic.
 
+## Dataset and ingestion (`src/docextract/ingest/`)
+- **Privacy by location.** Real originals live in `data/private/raw/` and unredacted previews in `data/private/preview/`: that whole tree is gitignored and must never be committed. Only normalized, REDACTED pages (`data/pages/<doc_id>/p<N>.png|jpg`), `data/manifest.csv`, `data/redactions.yaml` and ground truth are committed. Do not read page content of real documents while building tooling: use synthetic fixtures (`tests/files.py`), and for real files only metadata, counts and sizes.
+- `data/manifest.csv` has one row per LOGICAL document (14 columns + optional `gt_from`, `variant`). `scripts/manifest_init.py` scans the raw folder and appends rows for unreferenced files only (merge-safe, neutral `doc_NNN` ids, only strong-evidence inference); the rest is filled by hand. A row is never overwritten.
+- `scripts/ingest.py` makes pages: EXIF upright -> PDFs at `INGEST_DPI` -> size cap (`INGEST_MAX_LONG_EDGE`, elongated pages by area) -> redaction -> encode (PDF/PNG sources -> PNG, JPEG/HEIC photos -> JPEG q92, ALL metadata stripped). Idempotent via a content hash recorded in `ingest.json` (which holds sizes, hashes and page mapping but never a raw file name). Never encode a page except through `imaging.encode_page`.
+- **Redaction is a hard gate:** blank `needs_redaction`, or `y` without boxes, is refused (nothing is written); `n` with boxes is refused; boxes must fit the stored page. Burn BEFORE encoding. Boxes are in stored-page pixels.
+- Windows: a long raw file name (200+ chars) makes plain `Path.is_file()` return False and the file silently vanishes: every listing and read of raw files goes through `fsutil.long_path`.
+
 ## Ground truth
 - Never edit `ground_truth/*.json` silently. Every change gets a line in `ground_truth/CHANGELOG.md`.
 
@@ -74,6 +81,8 @@ python -m uv run pytest -q -m "slow or not slow"    # everything (run this befor
 python -m uv run pytest -q tests/test_budget.py     # one file
 python -m uv run ruff check                         # lint
 python -m uv run ruff format .                      # format
+python -m uv run python scripts/manifest_init.py [--dry-run]   # scan data/private/raw, append manifest rows
+python -m uv run python scripts/ingest.py [--doc ID] [--check] [--force]   # raw -> data/pages (idempotent)
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
 python -m uv run python tests/fakes/fake_llm.py 8765 [--reject-schema]   # fake OpenAI-compatible server, no key needed
