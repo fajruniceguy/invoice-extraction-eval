@@ -348,6 +348,7 @@ def run_smoke(
     )
 
 
+@pytest.mark.slow
 def test_smoke_script_runs_end_to_end_with_fallback(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -365,6 +366,7 @@ def test_smoke_script_runs_end_to_end_with_fallback(
     assert "sk-not-real" not in done.stdout + done.stderr
 
 
+@pytest.mark.slow
 def test_smoke_script_shows_reasoning_tokens_separately_and_costs_them(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -384,6 +386,7 @@ def test_smoke_script_shows_reasoning_tokens_separately_and_costs_them(
     assert fake_llm.requests[0].body["reasoning_effort"] == "low"  # env var -> wire
 
 
+@pytest.mark.slow
 def test_smoke_script_reports_the_budget_when_a_cap_is_set(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -393,6 +396,7 @@ def test_smoke_script_reports_the_budget_when_a_cap_is_set(
     assert "budget        : $0.002200 spent of the $1.000000 cap" in done.stdout
 
 
+@pytest.mark.slow
 def test_smoke_script_exits_3_when_the_cost_cap_blocks_a_repair(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -408,6 +412,7 @@ def test_smoke_script_exits_3_when_the_cost_cap_blocks_a_repair(
     assert "Traceback" not in done.stderr
 
 
+@pytest.mark.slow
 def test_smoke_script_refuses_a_cap_without_prices(tmp_path: Path) -> None:
     # config validation, before any request: nothing listens at this address
     done = run_smoke(
@@ -423,6 +428,7 @@ def test_smoke_script_refuses_a_cap_without_prices(tmp_path: Path) -> None:
     assert "Traceback" not in done.stderr
 
 
+@pytest.mark.slow
 def test_smoke_script_reports_a_failed_call_cleanly(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -436,6 +442,7 @@ def test_smoke_script_reports_a_failed_call_cleanly(
     assert "sk-not-real" not in done.stdout + done.stderr
 
 
+@pytest.mark.slow
 def test_smoke_script_reports_unusable_model_output_cleanly(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -448,6 +455,7 @@ def test_smoke_script_reports_unusable_model_output_cleanly(
     assert "Traceback" not in done.stderr
 
 
+@pytest.mark.slow
 def test_smoke_script_writes_an_artifact_with_raw_and_parsed_and_never_the_key(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -481,6 +489,7 @@ def test_smoke_script_writes_an_artifact_with_raw_and_parsed_and_never_the_key(
     assert "line-item arithmetic: 3 row(s) checked, 0 flagged" in done.stdout
 
 
+@pytest.mark.slow
 def test_smoke_script_raw_flag_prints_the_model_text_before_the_parsed_result(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -501,6 +510,7 @@ def mismatching_answer() -> dict[str, Any]:
     return answer
 
 
+@pytest.mark.slow
 def test_smoke_script_reports_validator_findings_and_keeps_the_raw_output_intact(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -524,6 +534,7 @@ def test_smoke_script_reports_validator_findings_and_keeps_the_raw_output_intact
     assert artifact["validated"]["line_items"][1]["flagged_cells"] == []
 
 
+@pytest.mark.slow
 def test_smoke_script_shows_the_failure_a_repair_papered_over(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -541,6 +552,7 @@ def test_smoke_script_shows_the_failure_a_repair_papered_over(
     assert "not valid JSON" in artifact["repair_history"][0]["problem"]
 
 
+@pytest.mark.slow
 def test_smoke_script_artifact_records_a_failed_run_too(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -557,6 +569,7 @@ def test_smoke_script_artifact_records_a_failed_run_too(
     assert artifact["usage"]["input_tokens"] == 3000  # both calls were paid for
 
 
+@pytest.mark.slow
 def test_smoke_script_artifact_records_an_http_failure_and_a_cost_cap_stop(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -577,6 +590,7 @@ def test_smoke_script_artifact_records_an_http_failure_and_a_cost_cap_stop(
     assert artifact["spent_usd"] == "0.0022"
 
 
+@pytest.mark.slow
 def test_smoke_script_survives_an_unwritable_artifact_path(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:
@@ -588,6 +602,7 @@ def test_smoke_script_survives_an_unwritable_artifact_path(
     assert "Traceback" not in done.stderr
 
 
+@pytest.mark.slow
 def test_smoke_script_without_configuration_exits_2(tmp_path: Path) -> None:
     done = run_smoke(None, tmp_path)
 

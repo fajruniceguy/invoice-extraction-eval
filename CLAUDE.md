@@ -55,7 +55,9 @@ docs/
 `uv` is a per-user `pip install` whose Scripts directory is not on PATH, and bare `python` is the 3.10 Microsoft Store stub. So call uv as `python -m uv ...`; it runs the project's 3.11 venv for you. (Where `uv` is on PATH, plain `uv ...` is equivalent.)
 ```
 python -m uv sync                                   # create/update .venv (3.11) and install deps
-python -m uv run pytest -q                          # all tests: offline, about 15 s (the smoke tests spawn subprocesses)
+python -m uv run pytest -q                          # default suite: offline, ~3 s (tests marked slow are excluded)
+python -m uv run pytest -q -m slow                  # ONLY the slow tests (they spawn subprocesses), ~13 s
+python -m uv run pytest -q -m "slow or not slow"    # everything (run this before a milestone commit / report)
 python -m uv run pytest -q tests/test_budget.py     # one file
 python -m uv run ruff check                         # lint
 python -m uv run ruff format .                      # format

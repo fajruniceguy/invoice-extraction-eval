@@ -30,6 +30,11 @@ packages = ["src/docextract", "src/evalkit"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+# slow tests (subprocesses, seconds each) are excluded by default; see CLAUDE.md
+addopts = "-m 'not slow'"
+markers = [
+    "slow: spawns subprocesses or otherwise takes seconds; run with: pytest -q -m slow",
+]
 
 [tool.ruff]
 line-length = 100
