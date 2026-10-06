@@ -9,11 +9,12 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# data and run artifacts: keep the directories, not the contents
-data/raw/*
-!data/raw/.gitkeep
-data/pages/*
-!data/pages/.gitkeep
+# REAL ORIGINALS and unredacted previews: never committed, by location.
+# (raw documents live in data/private/raw/, unredacted preview pages in data/private/preview/)
+data/private/
+
+# run artifacts: keep the directory, not the contents
+# (data/pages/ is NOT ignored: normalized + redacted pages are part of the dataset)
 outputs/*
 !outputs/.gitkeep
 
