@@ -31,7 +31,8 @@ from pydantic import BaseModel, ConfigDict
 from docextract.config import Settings
 from docextract.extract.preprocess import DATE_FIELDS, LINE_ITEM_CELLS, MONEY_FIELDS
 from docextract.ingest.manifest import ManifestRow
-from docextract.ingest.pipeline import read_sidecar, sha256_hex
+from docextract.ingest.stored import StoredPagesError
+from docextract.ingest.stored import stored_pages as load_stored_pages
 from docextract.providers.openai_compat import (
     LLMResponse,
     Message,
@@ -97,23 +98,10 @@ def check_model_differs(extractor: Settings | None) -> None:
 
 def stored_pages(doc_id: str, pages_dir: Path) -> list[Path]:
     """The document's stored (redacted) pages, checked against ingest.json. Nothing else is read."""
-    folder = pages_dir / doc_id
-    sidecar = read_sidecar(folder)
-    if not sidecar or not sidecar.get("pages"):
-        raise PrelabelRefused(f"{doc_id}: not ingested yet (no ingest.json in {folder})")
-    paths: list[Path] = []
-    for page in sidecar["pages"]:
-        path = folder / str(page["file"])
-        try:
-            actual = sha256_hex(path.read_bytes())
-        except OSError:
-            raise PrelabelRefused(f"{doc_id}: stored page {path.name} is missing") from None
-        if actual != page["sha256"]:
-            raise PrelabelRefused(
-                f"{doc_id}: stored page {path.name} no longer matches ingest.json"
-            )
-        paths.append(path)
-    return paths
+    try:
+        return load_stored_pages(doc_id, pages_dir)
+    except StoredPagesError as exc:
+        raise PrelabelRefused(str(exc)) from None
 
 
 # ---------------------------------------------------------------- the prompt
