@@ -157,6 +157,22 @@ def load_labels(
     return labels, missing
 
 
+# ---------------------------------------------------------------- the changelog
+
+PLACEHOLDER = "(no ground-truth files yet)"
+
+
+def append_changelog(changelog: Path, lines: list[str]) -> None:
+    """Append log lines to ground_truth/CHANGELOG.md (replacing its "no files yet" placeholder).
+    Every change to a label gets a line here, in the same commit as the change."""
+    text = changelog.read_text(encoding="utf-8") if changelog.is_file() else ""
+    kept = [line for line in text.splitlines() if line.strip() != PLACEHOLDER]
+    while kept and not kept[-1].strip():
+        kept.pop()
+    changelog.parent.mkdir(parents=True, exist_ok=True)
+    changelog.write_text("\n".join([*kept, "", *lines]) + "\n", encoding="utf-8", newline="\n")
+
+
 # ---------------------------------------------------------------- integrity
 
 

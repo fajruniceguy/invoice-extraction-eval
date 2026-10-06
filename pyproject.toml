@@ -24,6 +24,9 @@ dev = [
     "reportlab>=5.0.1",
     "ruff>=0.5",
 ]
+tools = [
+    "streamlit>=1.65.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -31,8 +34,9 @@ build-backend = "hatchling.build"
 
 [tool.uv]
 link-mode = "copy"
-# `uv sync` / `uv run` install these; the label app (streamlit) is opt-in: --group tools
-default-groups = ["dev", "degrade"]
+# `uv sync` / `uv run` install all of these (degrade: numpy/OpenCV/Augraphy for synthetic
+# variants; tools: streamlit for the labeling app)
+default-groups = ["dev", "degrade", "tools"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/docextract", "src/evalkit"]

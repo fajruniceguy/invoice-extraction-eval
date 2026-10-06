@@ -39,13 +39,13 @@ from evalkit.construct import (
 )
 from evalkit.construct_io import (
     LAYOUT_ORDER,
-    PLACEHOLDER,
     ConstructError,
     build_invoices,
     construct,
     doc_ids,
 )
 from evalkit.groundtruth import SCALAR_FIELD_NAMES, GroundTruth
+from evalkit.gt_store import PLACEHOLDER
 from ingest_support import run_script
 
 TODAY = date(2026, 10, 6)

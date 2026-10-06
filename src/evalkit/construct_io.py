@@ -23,9 +23,9 @@ from evalkit.construct import (
     render_invoice,
 )
 from evalkit.groundtruth import GroundTruth
+from evalkit.gt_store import append_changelog
 
 LAYOUT_ORDER = ("classic", "modern", "compact")
-PLACEHOLDER = "(no ground-truth files yet)"
 
 
 class ConstructError(Exception):
@@ -71,15 +71,6 @@ def _gt_text(label: dict[str, Any]) -> str:
 
 def _changed_fields(old: dict[str, Any], new: dict[str, Any]) -> list[str]:
     return sorted(key for key in {*old, *new} if old.get(key) != new.get(key))
-
-
-def append_changelog(changelog: Path, lines: list[str]) -> None:
-    text = changelog.read_text(encoding="utf-8") if changelog.is_file() else ""
-    kept = [line for line in text.splitlines() if line.strip() != PLACEHOLDER]
-    while kept and not kept[-1].strip():
-        kept.pop()
-    changelog.parent.mkdir(parents=True, exist_ok=True)
-    changelog.write_text("\n".join([*kept, "", *lines]) + "\n", encoding="utf-8", newline="\n")
 
 
 def construct(
