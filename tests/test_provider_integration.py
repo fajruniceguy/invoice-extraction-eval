@@ -463,6 +463,12 @@ def test_smoke_script_writes_an_artifact_with_raw_and_parsed_and_never_the_key(
     assert artifact["usage"]["input_tokens"] == 1500
     assert artifact["usage"]["billable_output_tokens"] == 700
     assert artifact["cost_usd"] == "0.0022"
+    # what the server reported, verbatim, next to how we interpreted it
+    assert artifact["provider_usage"] == {
+        "prompt_tokens": 1500,
+        "completion_tokens": 700,
+        "total_tokens": 2200,
+    }
     assert artifact["repair_history"] == []
     # what the model said, and what the schema made of it, side by side
     assert json.loads(artifact["raw_text"])["total"]["value"] == 17.28

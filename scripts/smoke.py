@@ -196,6 +196,7 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool) -> int:
         "repairs": result.repairs,
         "latency_ms": round(result.latency_ms),
         "usage": result.usage.model_dump(mode="json"),
+        "provider_usage": result.raw.get("usage"),  # exactly what the server reported
         "cost_usd": str(result.cost_usd),
         "raw_text": result.text,
         "parsed": parsed.model_dump(mode="json"),
