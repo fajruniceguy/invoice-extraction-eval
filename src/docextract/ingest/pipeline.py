@@ -108,7 +108,7 @@ def check_redaction_decision(row: ManifestRow, boxes: Mapping[int, Sequence[Any]
         )
 
 
-def _sha256(data: bytes) -> str:
+def sha256_hex(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
@@ -133,7 +133,7 @@ def compute_inputs_hash(
             for page, found in sorted(boxes.items())
         },
     }
-    return _sha256(json.dumps(recipe, sort_keys=True, separators=(",", ":")).encode())
+    return sha256_hex(json.dumps(recipe, sort_keys=True, separators=(",", ":")).encode())
 
 
 def read_sidecar(out_dir: Path) -> dict[str, Any] | None:
@@ -158,14 +158,14 @@ def _current_pages(
         return None
     for record in records:
         try:
-            if _sha256((out_dir / record.file).read_bytes()) != record.sha256:
+            if sha256_hex((out_dir / record.file).read_bytes()) != record.sha256:
                 return None
         except OSError:
             return None
     return records
 
 
-def _write_atomic(path: Path, data: bytes) -> None:
+def write_atomic(path: Path, data: bytes) -> None:
     handle, temp_name = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
     try:
         with os.fdopen(handle, "wb") as stream:
@@ -200,14 +200,14 @@ def store_pages(
         redacted = apply_boxes(page.image, boxes.get(number, ()))  # BEFORE encoding
         data = encode_page(redacted, fmt, jpeg_quality=settings.jpeg_quality)
         name = f"p{number}.{_EXTENSION[fmt]}"
-        _write_atomic(out_dir / name, data)
+        write_atomic(out_dir / name, data)
         records.append(
             PageRecord(
                 n=number,
                 file=name,
                 format=fmt,
                 size=redacted.size,
-                sha256=_sha256(data),
+                sha256=sha256_hex(data),
                 bytes=len(data),
                 source_file=page.source_file,
                 source_page=page.source_page,
@@ -299,7 +299,7 @@ def ingest_document(
         raise IngestError(doc_id, str(exc).removeprefix(f"{doc_id}: ")) from exc
 
     files = raw_paths(row, raw_dir)
-    raw_hashes = [_sha256(long_path(path).read_bytes()) for path in files]
+    raw_hashes = [sha256_hex(long_path(path).read_bytes()) for path in files]
 
     wanted_boxes: dict[int, list[Box]] = {}
     inputs_hash = compute_inputs_hash(
@@ -365,7 +365,7 @@ def ingest_document(
         },
         "pages": [record.to_json() for record in records],
     }
-    _write_atomic(
+    write_atomic(
         out_dir / SIDECAR, (json.dumps(sidecar_data, indent=2, sort_keys=True) + "\n").encode()
     )
     return IngestResult(doc_id, "ingested", tuple(records), inputs_hash)

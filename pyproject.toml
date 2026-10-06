@@ -14,6 +14,10 @@ dependencies = [
 ]
 
 [dependency-groups]
+degrade = [
+    "augraphy>=8.2.6",
+    "opencv-python-headless>=5.0.0.93",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
@@ -27,6 +31,8 @@ build-backend = "hatchling.build"
 
 [tool.uv]
 link-mode = "copy"
+# `uv sync` / `uv run` install these; the label app (streamlit) is opt-in: --group tools
+default-groups = ["dev", "degrade"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/docextract", "src/evalkit"]

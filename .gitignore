@@ -23,3 +23,6 @@ outputs/*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Augraphy writes its generated textures here when run from the repo root
+augraphy_cache/
