@@ -626,8 +626,15 @@ class OpenAICompatClient:
                 reason = f"HTTP {response.status_code}"
 
             if retry == settings.llm_max_retries:
+                # the provider's own explanation ("model is overloaded", ...) is what you
+                # need when debugging, so keep a bounded snippet of the last response body
+                detail = (
+                    f": {_shorten(response.text.strip(), _ERROR_BODY_CHARS)}"
+                    if response is not None and response.text.strip()
+                    else ""
+                )
                 raise ProviderError(
-                    f"LLM call failed after {tally.attempts} attempt(s): {reason}",
+                    f"LLM call failed after {tally.attempts} attempt(s): {reason}{detail}",
                     status_code=response.status_code if response is not None else None,
                     **tally.error_context(),
                 )

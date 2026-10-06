@@ -400,6 +400,51 @@ async def test_5xx_exhaustion_raises_with_attempt_count() -> None:
     assert len(h.sleeps) == 2  # no sleep after the final attempt
 
 
+async def test_exhaustion_error_carries_the_providers_own_explanation() -> None:
+    body = '{"error": {"code": 503, "message": "The model is overloaded. Please try again later."}}'
+    h = Harness(failing(503, 2, body), llm_max_retries=1)
+    async with h.client as client:
+        with pytest.raises(ProviderError) as exc:
+            await client.chat(USER)
+    message = str(exc.value)
+    assert "failed after 2 attempt(s): HTTP 503" in message
+    assert "The model is overloaded" in message
+
+
+async def test_exhaustion_error_shows_the_last_body_not_the_first() -> None:
+    h = Harness(
+        [httpx.Response(503, text="first"), httpx.Response(503, text="last")], llm_max_retries=1
+    )
+    async with h.client as client:
+        with pytest.raises(ProviderError, match="last") as exc:
+            await client.chat(USER)
+    assert "first" not in str(exc.value)
+
+
+async def test_exhaustion_error_with_an_empty_body_has_no_dangling_colon() -> None:
+    h = Harness([httpx.Response(503)], llm_max_retries=0)
+    async with h.client as client:
+        with pytest.raises(ProviderError) as exc:
+            await client.chat(USER)
+    assert str(exc.value) == "LLM call failed after 1 attempt(s): HTTP 503"
+
+
+async def test_exhaustion_error_body_is_capped() -> None:
+    h = Harness(failing(500, 1, "x" * 10_000), llm_max_retries=0)
+    async with h.client as client:
+        with pytest.raises(ProviderError) as exc:
+            await client.chat(USER)
+    assert len(str(exc.value)) < 700
+
+
+async def test_exhaustion_after_transport_errors_has_no_body_to_show() -> None:
+    h = Harness([httpx.ReadTimeout("slow")], llm_max_retries=0)
+    async with h.client as client:
+        with pytest.raises(ProviderError) as exc:
+            await client.chat(USER)
+    assert str(exc.value) == "LLM call failed after 1 attempt(s): ReadTimeout: slow"
+
+
 async def test_zero_retries_means_one_attempt() -> None:
     h = Harness([httpx.Response(500)], llm_max_retries=0)
     async with h.client as client:
