@@ -5,8 +5,8 @@ Project rules for Claude Code. Read this before making changes.
 A document extraction system for invoices/receipts plus a rigorous evaluation harness.
 
 ## Stack and tooling
-- Python 3.11, `uv` for dependencies, `ruff` + `pytest`.
-- Type hints everywhere. Pydantic v2 for all schemas.
+- Python 3.11 (project venv in `.venv`, created by uv), `uv` for dependencies, `ruff` + `pytest`.
+- Type hints everywhere (ruff `ANN` enforces it in `src/` and `scripts/`). Pydantic v2 for all schemas.
 
 ## Layout
 ```
@@ -15,14 +15,28 @@ src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py,
 data/{raw, pages}
 ground_truth/
 outputs/
-tests/
+scripts/
+tests/{fakes/, fixtures/}
 docs/
 ```
 `groundtruth.py` (the ground-truth schema) is the only file in `evalkit` not in the original layout brief.
 
 ## Provider
 - The provider is OpenAI-compatible and fully configured via env: `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, plus per-token prices for cost (`LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`, USD per 1M tokens).
-- Never hardcode model names or secrets. `.env` is gitignored; `.env.example` is the only committed example.
+- Optional env: `LLM_MAX_REPAIRS` (default 1: re-asks when output is not valid JSON / does not match the schema), `LLM_REASONING_EFFORT` (passed through as `reasoning_effort` when set), `LLM_STRUCTURED_MODE`, `LLM_TIMEOUT_S`, `LLM_MAX_RETRIES`, `LLM_BACKOFF_BASE_S`, `LLM_BACKOFF_MAX_S`, and `MAX_RUN_COST_USD` (below). `.env.example` lists them all.
+- Never hardcode model names or secrets. `.env` is gitignored and holds a real key: never print it, never edit it, never commit it. `.env.example` is the only committed example.
+- Tests and fakes must never read `.env` or call the real API (`scripts/smoke.py --env-file <empty file>` plus a scrubbed environment; see `tests/test_provider_integration.py`).
+- Reasoning ("thinking") tokens: providers disagree on whether `completion_tokens` already includes them. `Usage` settles it per response from `total_tokens` (see `parse_usage`), so cost never double-counts. Always cost a call with `Usage.cost_usd(settings)`, never from `output_tokens` alone.
+
+## Cost cap (`MAX_RUN_COST_USD`)
+- The client records the cost of every completed call (repairs included) in a `RunBudget` and refuses to start a new call or repair once spend exceeds the cap, raising `BudgetExceededError`. The call that crosses the cap completes; concurrent in-flight calls can overshoot by up to concurrency x one call's cost.
+- Settings refuse a cap while both prices are 0 (it could never trigger).
+- **Batch and eval runners must** catch `BudgetExceededError` (it is deliberately not a `ProviderError`), stop dispatching, flush partial results, and exit non-zero. Do not let a per-document `except` swallow it.
+
+## Schema and validation
+- `extract/schema.py` only defines shape. Field and line-item status is `extracted | absent | abstained`: absent = the document does not state it (value null, confidence = certainty of absence); abstained = may be present but not confident (value null, reasons required).
+- Business rules live in `validate/` (first rule: line-item arithmetic). They return copies and never mutate the model's raw output, so what the model said vs what the validators concluded is always inspectable. `flagged_cells` is derived there, never asked of the model.
+- Money is `Decimal` end to end: model JSON is parsed with `parse_float=Decimal`.
 
 ## Core logic
 - Extraction logic and the eval harness are hand-written. No LangChain / LlamaIndex for core logic.
@@ -34,12 +48,25 @@ docs/
 - Small conventional commits after each working step.
 - Append a short entry to `docs/DEVLOG.md` per milestone (what you did, decisions, problems).
 - Run `pytest -q` and `ruff check` before every commit.
+- Commit with the existing global git identity; do not change git config or rewrite authorship.
+- Stage explicit paths, not `git add -A`: the working tree can hold edits that are not yours (e.g. a moved `.env.example`).
 
-## Commands
+## Commands (this machine: Windows 10, PowerShell)
+`uv` is a per-user `pip install` whose Scripts directory is not on PATH, and bare `python` is the 3.10 Microsoft Store stub. So call uv as `python -m uv ...`; it runs the project's 3.11 venv for you. (Where `uv` is on PATH, plain `uv ...` is equivalent.)
 ```
-uv sync                              # install deps
-uv run pytest -q                     # tests
-uv run ruff check                    # lint
-uv run ruff format .                 # format
-uv run python scripts/smoke.py       # one live call (needs LLM_* in .env)
+python -m uv sync                                   # create/update .venv (3.11) and install deps
+python -m uv run pytest -q                          # all tests: offline, about 7 s
+python -m uv run pytest -q tests/test_budget.py     # one file
+python -m uv run ruff check                         # lint
+python -m uv run ruff format .                      # format
+python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
+python -m uv run python scripts/smoke.py [IMAGE]    # ONE LIVE CALL using .env: costs money
+python -m uv run python tests/fakes/fake_llm.py 8765 [--reject-schema]   # fake OpenAI-compatible server, no key needed
 ```
+To exercise `smoke.py` without a key: start the fake server in one terminal, then in another set `LLM_BASE_URL=http://127.0.0.1:8765/v1`, `LLM_MODEL=fake`, `LLM_API_KEY=x` (and prices if you want a cost) and pass `--env-file` pointing at an empty file so the real `.env` is not read.
+
+Shell notes (these bit us):
+- Commit messages: `git commit -m @'...'@` with the closing `'@` at column 0. `git commit -F -` does not take a PowerShell here-string.
+- Do not put `2>&1` on native commands in Windows PowerShell 5.1: uv's normal stderr progress lines get reported as `NativeCommandError`.
+- In Claude Code's Bash tool a backslash is un-escaped once more inside heredocs, so a script containing `\n` and friends gets silently corrupted. Write such scripts with the Write tool, not `cat <<EOF`.
+- Mutation-test new logic (temporarily break it, confirm a test fails, restore): it has found vacuous tests here more than once.

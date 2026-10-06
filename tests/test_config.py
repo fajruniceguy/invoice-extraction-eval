@@ -192,7 +192,8 @@ def test_prices_without_a_cap_are_fine() -> None:
     assert make(llm_price_output_per_mtok="2.50").max_run_cost_usd is None
 
 
-def test_get_settings_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_settings_is_cached(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)  # get_settings() reads ./.env: never the repo's real one in tests
     monkeypatch.setenv("LLM_BASE_URL", "http://localhost:1/v1")
     monkeypatch.setenv("LLM_MODEL", "m")
     get_settings.cache_clear()
