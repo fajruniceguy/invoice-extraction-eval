@@ -619,7 +619,8 @@ class OpenAICompatClient:
                     f"invalid LLM_BASE_URL: {exc}", **tally.error_context()
                 ) from exc
             except httpx.TransportError as exc:
-                reason = f"{type(exc).__name__}: {exc}"
+                # httpx timeouts often have an empty message: avoid a dangling "ReadTimeout: "
+                reason = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
             else:
                 if not _is_retryable(response.status_code):
                     return response

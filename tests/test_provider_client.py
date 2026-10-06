@@ -437,6 +437,14 @@ async def test_exhaustion_error_body_is_capped() -> None:
     assert len(str(exc.value)) < 700
 
 
+async def test_a_transport_error_with_an_empty_message_has_no_dangling_colon() -> None:
+    h = Harness([httpx.ReadTimeout("")], llm_max_retries=0)
+    async with h.client as client:
+        with pytest.raises(ProviderError) as exc:
+            await client.chat(USER)
+    assert str(exc.value) == "LLM call failed after 1 attempt(s): ReadTimeout"
+
+
 async def test_exhaustion_after_transport_errors_has_no_body_to_show() -> None:
     h = Harness([httpx.ReadTimeout("slow")], llm_max_retries=0)
     async with h.client as client:
