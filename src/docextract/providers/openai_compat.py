@@ -15,7 +15,7 @@ import logging
 import random
 import time
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Generic, Literal, Self, TypeVar, overload
@@ -124,6 +124,14 @@ class Usage(BaseModel):
         )
 
 
+@dataclass(frozen=True)
+class RepairRecord:
+    """A model output that was unusable and got re-asked: the failure a repair papered over."""
+
+    problem: str  # what was wrong with it (invalid JSON, or which schema fields failed)
+    raw_text: str  # the unusable output itself
+
+
 class ProviderError(Exception):
     """A call failed. Carries what we know about the failed call, including its cost."""
 
@@ -146,10 +154,19 @@ class ProviderError(Exception):
 class ResponseParseError(ProviderError):
     """The HTTP call succeeded but the model output was not usable JSON for the schema."""
 
-    def __init__(self, message: str, *, raw_text: str, repairs: int = 0, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        raw_text: str,
+        repairs: int = 0,
+        history: tuple[RepairRecord, ...] = (),
+        **kwargs: Any,
+    ) -> None:
         super().__init__(message, **kwargs)
         self.raw_text = raw_text  # the last model output we saw
         self.repairs = repairs  # repair re-asks made before giving up
+        self.history = history  # the earlier failures that were re-asked, oldest first
 
 
 @dataclass(frozen=True)
@@ -168,6 +185,7 @@ class LLMResponse(Generic[M]):
     model: str
     raw: dict[str, Any]
     repairs: int = 0  # times the model was re-asked to fix unusable output
+    repair_history: tuple[RepairRecord, ...] = ()  # what those unusable outputs were
 
 
 @dataclass
@@ -178,6 +196,7 @@ class _Tally:
     attempts: int = 0
     repairs: int = 0
     usage: Usage | None = None  # None until some call has returned (nothing spent yet)
+    history: list[RepairRecord] = field(default_factory=list)  # failures that were re-asked
 
     @property
     def latency_ms(self) -> float:
@@ -185,6 +204,9 @@ class _Tally:
 
     def add_usage(self, usage: Usage) -> None:
         self.usage = usage if self.usage is None else self.usage + usage
+
+    def parse_error_context(self) -> dict[str, Any]:
+        return {"repairs": self.repairs, "history": tuple(self.history), **self.error_context()}
 
     def error_context(self) -> dict[str, Any]:
         return {"attempts": self.attempts, "latency_ms": self.latency_ms, "usage": self.usage}
@@ -452,6 +474,7 @@ class OpenAICompatClient:
                 if tally.repairs >= max_repairs or completion.finish_reason == "length":
                     raise
                 last_error = error
+                tally.history.append(RepairRecord(problem=str(error), raw_text=completion.text))
                 tally.repairs += 1
                 problem = _shorten(str(error), _REPAIR_ERROR_CHARS)
                 logger.warning("unusable model output; repair %d/%d", tally.repairs, max_repairs)
@@ -504,8 +527,7 @@ class OpenAICompatClient:
             raise ResponseParseError(
                 "LLM endpoint returned a non-JSON body",
                 raw_text=response.text,
-                repairs=tally.repairs,
-                **tally.error_context(),
+                **tally.parse_error_context(),
             ) from exc
 
         # usage is read before the message so a malformed response is still costed
@@ -520,8 +542,7 @@ class OpenAICompatClient:
             raise ResponseParseError(
                 f"unusable response from LLM endpoint: {exc}",
                 raw_text=response.text,
-                repairs=tally.repairs,
-                **tally.error_context(),
+                **tally.parse_error_context(),
             ) from exc
         return _Completion(text=text, finish_reason=finish_reason, tier=tier, payload=payload)
 
@@ -541,6 +562,7 @@ class OpenAICompatClient:
             model=self._settings.llm_model,
             raw=completion.payload,
             repairs=tally.repairs,
+            repair_history=tuple(tally.history),
         )
 
     # -- helpers
@@ -638,8 +660,7 @@ class OpenAICompatClient:
             raise ResponseParseError(
                 f"model output is not valid JSON{hint}: {exc}",
                 raw_text=text,
-                repairs=tally.repairs,
-                **tally.error_context(),
+                **tally.parse_error_context(),
             ) from exc
         try:
             return response_model.model_validate(data)
@@ -651,6 +672,5 @@ class OpenAICompatClient:
             raise ResponseParseError(
                 f"model output does not match {response_model.__name__}: {problems}",
                 raw_text=text,
-                repairs=tally.repairs,
-                **tally.error_context(),
+                **tally.parse_error_context(),
             ) from exc

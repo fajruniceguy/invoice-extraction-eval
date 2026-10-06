@@ -907,6 +907,68 @@ async def test_repair_in_json_object_mode_keeps_the_schema_instruction() -> None
     assert repair_messages[-1]["role"] == "user"
 
 
+async def test_the_failure_a_repair_papered_over_is_recorded() -> None:
+    h = Harness([ok(completion(BAD_SCHEMA)), ok(completion(GOOD))], llm_max_repairs=1)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.repairs == 1
+    (record,) = result.repair_history
+    assert record.raw_text == BAD_SCHEMA
+    assert "does not match Receipt" in record.problem
+    assert "total" in record.problem  # which field failed
+
+
+async def test_there_is_no_history_when_nothing_was_repaired() -> None:
+    h = Harness([ok(completion(GOOD))], llm_max_repairs=1)
+    async with h.client as client:
+        assert (await client.chat(USER, Receipt)).repair_history == ()
+    h = Harness([ok(completion(BAD_JSON))], llm_max_repairs=1)
+    async with h.client as client:
+        assert (await client.chat(USER)).repair_history == ()  # plain chat is never repaired
+
+
+async def test_history_lists_every_repaired_failure_oldest_first() -> None:
+    h = Harness(
+        [ok(completion(BAD_JSON)), ok(completion(BAD_SCHEMA)), ok(completion(GOOD))],
+        llm_max_repairs=2,
+    )
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert [record.raw_text for record in result.repair_history] == [BAD_JSON, BAD_SCHEMA]
+    assert "not valid JSON" in result.repair_history[0].problem
+    assert "does not match Receipt" in result.repair_history[1].problem
+
+
+async def test_exhausted_repairs_attach_the_earlier_failures_to_the_error() -> None:
+    h = Harness([ok(completion(BAD_JSON)), ok(completion(BAD_SCHEMA))], llm_max_repairs=1)
+    async with h.client as client:
+        with pytest.raises(ResponseParseError) as exc:
+            await client.chat(USER, Receipt)
+    assert exc.value.raw_text == BAD_SCHEMA  # the final failure is the exception itself...
+    assert [r.raw_text for r in exc.value.history] == [BAD_JSON]  # ...earlier ones are history
+    assert "not valid JSON" in exc.value.history[0].problem
+
+
+async def test_a_parse_error_with_no_repairs_has_an_empty_history() -> None:
+    h = Harness([ok(completion(BAD_JSON))], llm_max_repairs=0)
+    async with h.client as client:
+        with pytest.raises(ResponseParseError) as exc:
+            await client.chat(USER, Receipt)
+    assert exc.value.history == ()
+
+
+async def test_history_is_kept_when_a_repair_reply_is_an_unusable_body() -> None:
+    h = Harness(
+        [ok(completion(BAD_JSON)), httpx.Response(200, text="<html>gateway</html>")],
+        llm_max_repairs=1,
+    )
+    async with h.client as client:
+        with pytest.raises(ResponseParseError, match="non-JSON") as exc:
+            await client.chat(USER, Receipt)
+    assert exc.value.repairs == 1
+    assert [r.raw_text for r in exc.value.history] == [BAD_JSON]
+
+
 async def test_callers_message_list_is_not_mutated_by_repairs() -> None:
     h = Harness([ok(completion(BAD_JSON)), ok(completion(GOOD))], llm_max_repairs=1)
     messages = [dict(m) for m in USER]
