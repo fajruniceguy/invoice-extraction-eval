@@ -1,0 +1,24 @@
+# secrets
+.env
+
+# python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# data and run artifacts: keep the directories, not the contents
+data/raw/*
+!data/raw/.gitkeep
+data/pages/*
+!data/pages/.gitkeep
+outputs/*
+!outputs/.gitkeep
+
+# editor / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
