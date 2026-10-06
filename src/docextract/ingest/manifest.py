@@ -310,6 +310,14 @@ def check_manifest(rows: Sequence[ManifestRow]) -> list[str]:
                 f"{row.doc_id}: gt_from {row.gt_from!r} itself takes its GT from "
                 f"{target.gt_from!r} (point at the doc that owns the labels)"
             )
+        elif (
+            row.content_group and target.content_group and row.content_group != target.content_group
+        ):
+            problems.append(
+                f"{row.doc_id}: shares the ground truth of {row.gt_from!r} but not its "
+                f"content_group ({row.content_group!r} vs {target.content_group!r}): the same "
+                "content could land on both sides of the split"
+            )
     problems.extend(content_group_split_conflicts(rows))
     return problems
 

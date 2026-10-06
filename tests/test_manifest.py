@@ -375,6 +375,30 @@ class TestCrossRowChecks:
         assert len(problems) == 1
         assert "c: gt_from 'b' itself takes its GT from 'a'" in problems[0]
 
+    def test_borrowing_labels_means_sharing_the_content_group(self) -> None:
+        rows = [
+            row(doc_id="a", content_group="g1"),
+            row(doc_id="b", raw_files="b.pdf", gt_from="a", content_group="g2"),
+        ]
+        problems = check_manifest(rows)
+        assert len(problems) == 1
+        assert (
+            "b: shares the ground truth of 'a' but not its content_group ('g2' vs 'g1')"
+            in problems[0]
+        )
+
+    @pytest.mark.parametrize(
+        ("borrower", "owner"), [(None, "g1"), ("g1", None), (None, None), ("g1", "g1")]
+    )
+    def test_a_blank_group_is_not_a_mismatch_and_equal_groups_are_fine(
+        self, borrower: str | None, owner: str | None
+    ) -> None:
+        rows = [
+            row(doc_id="a", content_group=owner),
+            row(doc_id="b", raw_files="b.pdf", gt_from="a", content_group=borrower),
+        ]
+        assert check_manifest(rows) == []
+
     def test_a_valid_borrow_has_no_problems(self) -> None:
         assert (
             check_manifest([row(doc_id="a"), row(doc_id="b", raw_files="b.pdf", gt_from="a")]) == []
