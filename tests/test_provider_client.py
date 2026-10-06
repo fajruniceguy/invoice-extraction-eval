@@ -9,6 +9,7 @@ import pytest
 from pydantic import BaseModel
 
 from docextract.config import Settings
+from docextract.extract.schema import Field as ExtractedField
 from docextract.providers.openai_compat import (
     OpenAICompatClient,
     ProviderError,
@@ -495,6 +496,56 @@ async def test_fenced_json_is_accepted() -> None:
     async with h.client as client:
         result = await client.chat(USER, Receipt)
     assert result.parsed == Receipt(vendor="ACME", total=Decimal("9.72"))
+
+
+class Totals(BaseModel):
+    subtotal: Decimal
+    tax: Decimal
+    total: Decimal
+    confidence: float
+    page: int
+
+
+class MoneyField(BaseModel):
+    total: ExtractedField[Decimal]
+
+
+async def test_money_reaches_the_model_exactly_and_non_money_fields_still_validate() -> None:
+    content = '{"subtotal": 0.1, "tax": 0.2, "total": 1250000.10, "confidence": 0.95, "page": 1}'
+    h = Harness([ok(completion(content))])
+    async with h.client as client:
+        result = await client.chat(USER, Totals)
+
+    parsed = result.parsed
+    assert parsed is not None
+    assert parsed.subtotal + parsed.tax == Decimal("0.3")
+    assert parsed.total == Decimal("1250000.10")
+    assert parsed.total.as_tuple().exponent == -2  # scale preserved: not 1250000.1
+    assert parsed.confidence == 0.95
+    assert type(parsed.confidence) is float
+    assert parsed.page == 1
+    assert type(parsed.page) is int
+
+
+async def test_decimal_survives_inside_a_field_wrapper() -> None:
+    content = (
+        '{"total": {"value": 12345678901234567.89, "confidence": 0.9,'
+        ' "status": "extracted", "page": 1}}'
+    )
+    h = Harness([ok(completion(content))])
+    async with h.client as client:
+        result = await client.chat(USER, MoneyField)
+    assert result.parsed is not None
+    assert result.parsed.total.value == Decimal("12345678901234567.89")  # beyond float precision
+    assert result.parsed.total.confidence == 0.9
+
+
+async def test_non_integral_page_is_still_rejected_after_decimal_parsing() -> None:
+    content = '{"subtotal": 1, "tax": 1, "total": 2, "confidence": 0.5, "page": 1.5}'
+    h = Harness([ok(completion(content))])
+    async with h.client as client:
+        with pytest.raises(ResponseParseError, match="page"):
+            await client.chat(USER, Totals)
 
 
 async def test_response_without_choices_is_a_parse_error_with_usage() -> None:

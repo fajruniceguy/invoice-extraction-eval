@@ -130,11 +130,15 @@ def _with_schema_instruction(messages: Sequence[Message], schema: dict[str, Any]
 
 
 def parse_json_payload(text: str) -> dict[str, Any]:
-    """Pull the first JSON object out of model text (tolerates code fences and prose)."""
+    """Pull the first JSON object out of model text (tolerates code fences and prose).
+
+    Non-integer numbers are parsed straight to Decimal, so money never passes through a float
+    (which would drop trailing zeros and anything past ~17 significant digits).
+    """
     stripped = text.strip()
     if not stripped:
         raise ValueError("empty response")
-    decoder = json.JSONDecoder()
+    decoder = json.JSONDecoder(parse_float=Decimal)
     position = -1
     for _ in range(_MAX_JSON_CANDIDATES):
         position = stripped.find("{", position + 1)

@@ -1,4 +1,5 @@
 import base64
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -41,6 +42,43 @@ class TestParseJsonPayload:
 
     def test_unicode(self) -> None:
         assert parse_json_payload('{"name": "Café Müller ¥"}') == {"name": "Café Müller ¥"}
+
+    def test_non_integers_are_decimal_not_float(self) -> None:
+        data = parse_json_payload('{"a": 0.1, "b": 0.2, "c": [1.5, {"d": -2.25}]}')
+        assert all(isinstance(v, Decimal) for v in (data["a"], data["b"], data["c"][0]))
+        assert isinstance(data["c"][1]["d"], Decimal)
+
+    def test_point_one_plus_point_two_is_exactly_point_three(self) -> None:
+        data = parse_json_payload('{"a": 0.1, "b": 0.2}')
+        assert data["a"] + data["b"] == Decimal("0.3")
+        assert 0.1 + 0.2 != 0.3  # the float answer this avoids: 0.30000000000000004
+
+    def test_trailing_zero_keeps_its_scale(self) -> None:
+        value = parse_json_payload('{"t": 1250000.10}')["t"]
+        assert value == Decimal("1250000.10")
+        assert str(value) == "1250000.10"
+        assert value.as_tuple().exponent == -2  # a float would have given 1250000.1 (exponent -1)
+
+    def test_more_digits_than_a_float_can_hold_are_kept(self) -> None:
+        value = parse_json_payload('{"t": 12345678901234567.89}')["t"]
+        assert value == Decimal("12345678901234567.89")
+        assert float(value) != value  # as a float this would have been 12345678901234568.0
+
+    def test_float_noise_in_the_text_is_not_rounded_away(self) -> None:
+        value = parse_json_payload('{"t": 0.30000000000000004}')["t"]
+        assert value == Decimal("0.30000000000000004")
+
+    def test_exponent_notation(self) -> None:
+        assert parse_json_payload('{"t": 1.25e6}')["t"] == Decimal(1250000)
+
+    def test_integers_stay_integers(self) -> None:
+        data = parse_json_payload('{"qty": 3, "page": 1, "big": 123456789012345678901234567890}')
+        assert data["qty"] == 3
+        assert type(data["qty"]) is int
+        assert data["big"] == 123456789012345678901234567890
+
+    def test_numbers_inside_strings_are_untouched(self) -> None:
+        assert parse_json_payload('{"s": "1250000.10"}') == {"s": "1250000.10"}
 
     @pytest.mark.parametrize(
         "text",
