@@ -39,12 +39,25 @@ _SCHEMA_INSTRUCTION = (
     "Respond with a single JSON object that conforms to the following JSON Schema. "
     "Output JSON only: no prose and no code fences.\n"
 )
+_REPAIR_ERROR_CHARS = 1000
+_REPAIR_PROMPT = (
+    "Your previous reply could not be used: {problem}\n"
+    "Reply again with the corrected JSON object only: no prose, no code fences. "
+    "Keep every value that was already correct."
+)
 
 
 class Usage(BaseModel):
     input_tokens: int = 0
     output_tokens: int = 0
     reported: bool = False  # False when the server returned no usage block
+
+    def __add__(self, other: "Usage") -> "Usage":
+        return Usage(
+            input_tokens=self.input_tokens + other.input_tokens,
+            output_tokens=self.output_tokens + other.output_tokens,
+            reported=self.reported or other.reported,
+        )
 
 
 class ProviderError(Exception):
@@ -69,23 +82,58 @@ class ProviderError(Exception):
 class ResponseParseError(ProviderError):
     """The HTTP call succeeded but the model output was not usable JSON for the schema."""
 
-    def __init__(self, message: str, *, raw_text: str, **kwargs: Any) -> None:
+    def __init__(self, message: str, *, raw_text: str, repairs: int = 0, **kwargs: Any) -> None:
         super().__init__(message, **kwargs)
-        self.raw_text = raw_text
+        self.raw_text = raw_text  # the last model output we saw
+        self.repairs = repairs  # repair re-asks made before giving up
 
 
 @dataclass(frozen=True)
 class LLMResponse(Generic[M]):
+    """Result of one `chat()`. When repairs happened, usage/cost/attempts/latency are the
+    totals over the original call and every repair; text/raw/finish_reason are the last's."""
+
     text: str
     parsed: M | None
     usage: Usage
     latency_ms: float  # wall time of the whole call, including retries and backoff sleeps
-    attempts: int  # HTTP requests made (retries and structured-output fallbacks included)
+    attempts: int  # HTTP requests made (retries, fallbacks and repairs included)
     finish_reason: str | None
     structured_mode_used: Tier
     cost_usd: Decimal
     model: str
     raw: dict[str, Any]
+    repairs: int = 0  # times the model was re-asked to fix unusable output
+
+
+@dataclass
+class _Tally:
+    """Running totals for one `chat()` call, so late errors still report earlier spend."""
+
+    started: float
+    attempts: int = 0
+    repairs: int = 0
+    usage: Usage | None = None  # None until some call has returned (nothing spent yet)
+
+    @property
+    def latency_ms(self) -> float:
+        return _elapsed_ms(self.started)
+
+    def add_usage(self, usage: Usage) -> None:
+        self.usage = usage if self.usage is None else self.usage + usage
+
+    def error_context(self) -> dict[str, Any]:
+        return {"attempts": self.attempts, "latency_ms": self.latency_ms, "usage": self.usage}
+
+
+@dataclass(frozen=True)
+class _Completion:
+    """One successful HTTP exchange, before the model output is parsed."""
+
+    text: str
+    finish_reason: str | None
+    tier: Tier
+    payload: dict[str, Any]
 
 
 # ---------------------------------------------------------------- messages
@@ -199,6 +247,10 @@ def _parse_retry_after(value: str | None) -> float | None:
     return seconds if seconds >= 0 else None
 
 
+def _shorten(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
 def _elapsed_ms(started: float) -> float:
     return (time.perf_counter() - started) * 1000
 
@@ -268,32 +320,64 @@ class OpenAICompatClient:
         temperature: float = 0.0,
         max_tokens: int | None = None,
     ) -> LLMResponse[Any]:
-        started = time.perf_counter()
-        attempts = 0
+        tally = _Tally(started=time.perf_counter())
+        max_repairs = self._settings.llm_max_repairs
+        conversation = list(messages)
+        while True:
+            completion = await self._complete(
+                conversation, response_model, temperature, max_tokens, tally
+            )
+            if response_model is None:
+                return self._response(completion, None, tally)
+            try:
+                parsed = self._parse_model(completion, response_model, tally)
+            except ResponseParseError as error:
+                # truncated output would just truncate again, so it is not worth a repair
+                if tally.repairs >= max_repairs or completion.finish_reason == "length":
+                    raise
+                tally.repairs += 1
+                problem = _shorten(str(error), _REPAIR_ERROR_CHARS)
+                logger.warning("unusable model output; repair %d/%d", tally.repairs, max_repairs)
+                # always re-ask from the original messages plus the LAST bad output, so the
+                # conversation does not grow with every repair
+                conversation = [
+                    *messages,
+                    {"role": "assistant", "content": completion.text},
+                    {"role": "user", "content": _REPAIR_PROMPT.format(problem=problem)},
+                ]
+                continue
+            return self._response(completion, parsed, tally)
+
+    async def _complete(
+        self,
+        messages: Sequence[Message],
+        response_model: type[BaseModel] | None,
+        temperature: float,
+        max_tokens: int | None,
+        tally: _Tally,
+    ) -> _Completion:
+        """One logical call: structured-output tiers (with fallback), retries, body parsing."""
         tiers = self._tiers(response_model)
         fell_back = False
 
         for index, tier in enumerate(tiers):
             body = self._build_body(messages, response_model, tier, temperature, max_tokens)
-            response, attempts = await self._post(body, attempts=attempts, started=started)
+            response = await self._post(body, tally)
             if response.is_success:
                 break
-            error = ProviderError(
-                f"HTTP {response.status_code} from LLM endpoint: "
-                f"{response.text[:_ERROR_BODY_CHARS]}",
-                status_code=response.status_code,
-                attempts=attempts,
-                latency_ms=_elapsed_ms(started),
-            )
             if response.status_code in _FALLBACK_STATUSES and index < len(tiers) - 1:
                 logger.warning("%s rejected (HTTP %s); falling back", tier, response.status_code)
                 fell_back = True
                 continue
-            raise error
+            raise ProviderError(
+                f"HTTP {response.status_code} from LLM endpoint: "
+                f"{response.text[:_ERROR_BODY_CHARS]}",
+                status_code=response.status_code,
+                **tally.error_context(),
+            )
         else:  # pragma: no cover - tiers is never empty
             raise AssertionError("no structured-output tier was attempted")
 
-        latency_ms = _elapsed_ms(started)
         if fell_back and self._settings.llm_structured_mode == "auto":
             self._json_schema_unsupported = True
 
@@ -303,45 +387,39 @@ class OpenAICompatClient:
             raise ResponseParseError(
                 "LLM endpoint returned a non-JSON body",
                 raw_text=response.text,
-                attempts=attempts,
-                latency_ms=latency_ms,
+                repairs=tally.repairs,
+                **tally.error_context(),
             ) from exc
 
         # usage is read before the message so a malformed response is still costed
-        usage = parse_usage(payload.get("usage") if isinstance(payload, dict) else None)
+        tally.add_usage(parse_usage(payload.get("usage") if isinstance(payload, dict) else None))
         try:
             text, finish_reason = _extract_message(payload)
         except ValueError as exc:
             raise ResponseParseError(
                 f"unusable response from LLM endpoint: {exc}",
                 raw_text=response.text,
-                attempts=attempts,
-                latency_ms=latency_ms,
-                usage=usage,
+                repairs=tally.repairs,
+                **tally.error_context(),
             ) from exc
+        return _Completion(text=text, finish_reason=finish_reason, tier=tier, payload=payload)
 
-        parsed = None
-        if response_model is not None:
-            parsed = self._parse_model(
-                text,
-                response_model,
-                finish_reason,
-                attempts=attempts,
-                latency_ms=latency_ms,
-                usage=usage,
-            )
-
+    def _response(
+        self, completion: _Completion, parsed: BaseModel | None, tally: _Tally
+    ) -> LLMResponse[Any]:
+        usage = tally.usage or Usage()
         return LLMResponse(
-            text=text,
+            text=completion.text,
             parsed=parsed,
             usage=usage,
-            latency_ms=latency_ms,
-            attempts=attempts,
-            finish_reason=finish_reason,
-            structured_mode_used=tier,
+            latency_ms=tally.latency_ms,
+            attempts=tally.attempts,
+            finish_reason=completion.finish_reason,
+            structured_mode_used=completion.tier,
             cost_usd=self._settings.cost_usd(usage.input_tokens, usage.output_tokens),
             model=self._settings.llm_model,
-            raw=payload,
+            raw=completion.payload,
+            repairs=tally.repairs,
         )
 
     # -- helpers
@@ -383,35 +461,30 @@ class OpenAICompatClient:
                 body["messages"] = _with_schema_instruction(messages, schema)
         return body
 
-    async def _post(
-        self, body: dict[str, Any], *, attempts: int, started: float
-    ) -> tuple[httpx.Response, int]:
+    async def _post(self, body: dict[str, Any], tally: _Tally) -> httpx.Response:
         """POST with retry on 429/5xx/transport errors. Returns any non-retryable response."""
         settings = self._settings
         for retry in range(settings.llm_max_retries + 1):
-            attempts += 1
+            tally.attempts += 1
             response: httpx.Response | None = None
             try:
                 response = await self._http.post(_CHAT_PATH, json=body)
             except httpx.UnsupportedProtocol as exc:
                 raise ProviderError(
-                    f"invalid LLM_BASE_URL: {exc}",
-                    attempts=attempts,
-                    latency_ms=_elapsed_ms(started),
+                    f"invalid LLM_BASE_URL: {exc}", **tally.error_context()
                 ) from exc
             except httpx.TransportError as exc:
                 reason = f"{type(exc).__name__}: {exc}"
             else:
                 if not _is_retryable(response.status_code):
-                    return response, attempts
+                    return response
                 reason = f"HTTP {response.status_code}"
 
             if retry == settings.llm_max_retries:
                 raise ProviderError(
-                    f"LLM call failed after {attempts} attempt(s): {reason}",
+                    f"LLM call failed after {tally.attempts} attempt(s): {reason}",
                     status_code=response.status_code if response is not None else None,
-                    attempts=attempts,
-                    latency_ms=_elapsed_ms(started),
+                    **tally.error_context(),
                 )
             delay = self._backoff_delay(retry, response)
             logger.warning("LLM call failed (%s); retry %d in %.2fs", reason, retry + 1, delay)
@@ -431,16 +504,8 @@ class OpenAICompatClient:
         return ceiling * (0.5 + self._rng() / 2)  # jitter: 50-100% of the ceiling
 
     @staticmethod
-    def _parse_model(
-        text: str,
-        response_model: type[M],
-        finish_reason: str | None,
-        *,
-        attempts: int,
-        latency_ms: float,
-        usage: Usage,
-    ) -> M:
-        context: dict[str, Any] = {"attempts": attempts, "latency_ms": latency_ms, "usage": usage}
+    def _parse_model(completion: _Completion, response_model: type[M], tally: _Tally) -> M:
+        text, finish_reason = completion.text, completion.finish_reason
         try:
             data = parse_json_payload(text)
         except ValueError as exc:
@@ -448,7 +513,10 @@ class OpenAICompatClient:
                 " (output was truncated: finish_reason=length)" if finish_reason == "length" else ""
             )
             raise ResponseParseError(
-                f"model output is not valid JSON{hint}: {exc}", raw_text=text, **context
+                f"model output is not valid JSON{hint}: {exc}",
+                raw_text=text,
+                repairs=tally.repairs,
+                **tally.error_context(),
             ) from exc
         try:
             return response_model.model_validate(data)
@@ -460,5 +528,6 @@ class OpenAICompatClient:
             raise ResponseParseError(
                 f"model output does not match {response_model.__name__}: {problems}",
                 raw_text=text,
-                **context,
+                repairs=tally.repairs,
+                **tally.error_context(),
             ) from exc

@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     llm_backoff_base_s: float = Field(default=1.0, ge=0)
     llm_backoff_max_s: float = Field(default=30.0, ge=0)
 
+    # Re-asks when the model's output is not valid JSON / does not match the schema (0 = never).
+    llm_max_repairs: int = Field(default=1, ge=0)
+
     # auto: try json_schema, fall back to json_object. The others pin a single tier.
     llm_structured_mode: StructuredMode = "auto"
 

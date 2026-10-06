@@ -16,6 +16,7 @@ LLM_ENV_VARS = [
     "LLM_MAX_RETRIES",
     "LLM_BACKOFF_BASE_S",
     "LLM_BACKOFF_MAX_S",
+    "LLM_MAX_REPAIRS",
     "LLM_STRUCTURED_MODE",
 ]
 
@@ -99,6 +100,19 @@ def test_cost_is_zero_when_prices_unset() -> None:
 def test_rejects_negative_price() -> None:
     with pytest.raises(ValidationError):
         make(llm_price_input_per_mtok="-1")
+
+
+def test_max_repairs_defaults_to_one_and_can_be_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert make().llm_max_repairs == 1
+    monkeypatch.setenv("LLM_MAX_REPAIRS", "0")
+    assert make().llm_max_repairs == 0
+    monkeypatch.setenv("LLM_MAX_REPAIRS", "3")
+    assert make().llm_max_repairs == 3
+
+
+def test_rejects_negative_max_repairs() -> None:
+    with pytest.raises(ValidationError):
+        make(llm_max_repairs=-1)
 
 
 def test_get_settings_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:

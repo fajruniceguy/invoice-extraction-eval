@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 
 from docextract.config import Settings
 from docextract.extract.schema import Field as ExtractedField
@@ -37,6 +37,7 @@ def make_settings(**overrides: Any) -> Settings:
         "llm_backoff_base_s": 1.0,
         "llm_backoff_max_s": 30.0,
         "llm_max_retries": 3,
+        "llm_max_repairs": 0,  # most tests script exactly one reply; repair tests opt in
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)
@@ -569,6 +570,197 @@ async def test_non_json_http_body_is_a_parse_error() -> None:
         with pytest.raises(ResponseParseError, match="non-JSON") as exc:
             await client.chat(USER)
     assert exc.value.raw_text == "<html>gateway</html>"
+
+
+# ---------------------------------------------------------------- repair
+
+GOOD = '{"vendor": "ACME", "total": "9.72"}'
+BAD_JSON = "Sure! The receipt total is 9.72 from ACME."
+BAD_SCHEMA = '{"vendor": "ACME", "total": "lots"}'
+
+
+async def test_malformed_json_is_repaired_with_one_more_call() -> None:
+    h = Harness([ok(completion(BAD_JSON)), ok(completion(GOOD))], llm_max_repairs=1)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+
+    assert result.parsed == Receipt(vendor="ACME", total=Decimal("9.72"))
+    assert result.repairs == 1
+    assert result.attempts == 2
+    assert result.text == GOOD  # the text of the call that finally worked
+    # the repair re-asks with: original messages, the bad output, then the problem
+    sent = h.body(1)["messages"]
+    assert sent[0] == USER[0]
+    assert sent[1] == {"role": "assistant", "content": BAD_JSON}
+    assert sent[2]["role"] == "user"
+    assert "not valid JSON" in sent[2]["content"]
+    assert "corrected JSON" in sent[2]["content"]
+    assert len(sent) == 3
+
+
+async def test_schema_mismatch_is_repaired_and_the_prompt_names_the_field() -> None:
+    h = Harness([ok(completion(BAD_SCHEMA)), ok(completion(GOOD))], llm_max_repairs=1)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.parsed is not None
+    assert result.repairs == 1
+    prompt = h.body(1)["messages"][-1]["content"]
+    assert "does not match Receipt" in prompt
+    assert "total" in prompt
+
+
+async def test_repair_totals_usage_cost_and_attempts_across_calls() -> None:
+    h = Harness(
+        [
+            ok(completion(BAD_JSON)),
+            ok(completion(GOOD, usage={"prompt_tokens": 300, "completion_tokens": 50})),
+        ],
+        llm_max_repairs=1,
+        llm_price_input_per_mtok="1000000",  # $1 per token keeps the arithmetic obvious
+        llm_price_output_per_mtok="2000000",
+    )
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.usage == Usage(input_tokens=400, output_tokens=70, reported=True)
+    assert result.cost_usd == Decimal(400 * 1 + 70 * 2)
+
+
+async def test_repair_exhausted_raises_with_aggregated_totals_and_last_text() -> None:
+    h = Harness([ok(completion(BAD_JSON)), ok(completion(BAD_SCHEMA))], llm_max_repairs=1)
+    async with h.client as client:
+        with pytest.raises(ResponseParseError) as exc:
+            await client.chat(USER, Receipt)
+    assert len(h.requests) == 2  # one original + exactly one repair
+    assert exc.value.raw_text == BAD_SCHEMA  # the LAST output
+    assert exc.value.repairs == 1
+    assert exc.value.attempts == 2
+    assert exc.value.usage == Usage(input_tokens=200, output_tokens=40, reported=True)
+
+
+async def test_max_repairs_zero_never_re_asks() -> None:
+    h = Harness([ok(completion(BAD_JSON))], llm_max_repairs=0)
+    async with h.client as client:
+        with pytest.raises(ResponseParseError) as exc:
+            await client.chat(USER, Receipt)
+    assert len(h.requests) == 1
+    assert exc.value.repairs == 0
+
+
+async def test_conversation_does_not_grow_across_several_repairs() -> None:
+    h = Harness(
+        [ok(completion(BAD_JSON)), ok(completion(BAD_SCHEMA)), ok(completion(GOOD))],
+        llm_max_repairs=2,
+    )
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.repairs == 2
+    assert len(h.requests) == 3
+    third = h.body(2)["messages"]
+    assert len(third) == 3  # original + last bad output + problem, not the whole history
+    assert third[1]["content"] == BAD_SCHEMA  # the most recent bad output, not the first
+
+
+async def test_truncated_output_is_not_repaired() -> None:
+    h = Harness([ok(completion('{"vendor": "AC', finish_reason="length"))], llm_max_repairs=3)
+    async with h.client as client:
+        with pytest.raises(ResponseParseError, match="truncated"):
+            await client.chat(USER, Receipt)
+    assert len(h.requests) == 1
+
+
+async def test_plain_chat_is_never_repaired() -> None:
+    h = Harness([ok(completion(BAD_JSON))], llm_max_repairs=3)
+    async with h.client as client:
+        result = await client.chat(USER)
+    assert result.text == BAD_JSON
+    assert result.repairs == 0
+    assert len(h.requests) == 1
+
+
+async def test_a_clean_first_reply_makes_no_repair_call() -> None:
+    h = Harness([ok(completion(GOOD))], llm_max_repairs=3)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.repairs == 0
+    assert len(h.requests) == 1
+
+
+async def test_http_failure_during_a_repair_still_reports_the_first_calls_spend() -> None:
+    h = Harness(
+        [ok(completion(BAD_JSON)), *failing(503, 3)],
+        llm_max_repairs=1,
+        llm_max_retries=2,
+    )
+    async with h.client as client:
+        with pytest.raises(ProviderError) as exc:
+            await client.chat(USER, Receipt)
+    assert not isinstance(exc.value, ResponseParseError)
+    assert exc.value.status_code == 503
+    assert exc.value.attempts == 4  # 1 original + 3 tries at the repair
+    assert exc.value.usage == Usage(input_tokens=100, output_tokens=20, reported=True)
+
+
+async def test_http_failure_with_nothing_spent_has_no_usage() -> None:
+    h = Harness(failing(503, 1), llm_max_retries=0)
+    async with h.client as client:
+        with pytest.raises(ProviderError) as exc:
+            await client.chat(USER, Receipt)
+    assert exc.value.usage is None
+
+
+async def test_repair_goes_straight_to_the_tier_that_worked() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        if body["response_format"]["type"] == "json_schema":
+            return httpx.Response(400, text="unsupported")
+        return ok(completion(BAD_JSON if len(h.requests) <= 2 else GOOD))
+
+    h = Harness(handler=handler, llm_max_repairs=1)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert [h.body(i)["response_format"]["type"] for i in range(3)] == [
+        "json_schema",  # rejected
+        "json_object",  # fallback, bad output
+        "json_object",  # repair does not retry json_schema
+    ]
+    assert result.repairs == 1
+    assert result.structured_mode_used == "json_object"
+    assert result.attempts == 3
+
+
+async def test_repair_in_json_object_mode_keeps_the_schema_instruction() -> None:
+    h = Harness(
+        [ok(completion(BAD_JSON)), ok(completion(GOOD))],
+        llm_structured_mode="json_object",
+        llm_max_repairs=1,
+    )
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+    repair_messages = h.body(1)["messages"]
+    assert repair_messages[0]["role"] == "system"
+    assert '"vendor"' in repair_messages[0]["content"]
+    assert repair_messages[-1]["role"] == "user"
+
+
+async def test_callers_message_list_is_not_mutated_by_repairs() -> None:
+    h = Harness([ok(completion(BAD_JSON)), ok(completion(GOOD))], llm_max_repairs=1)
+    messages = [dict(m) for m in USER]
+    async with h.client as client:
+        await client.chat(messages, Receipt)
+    assert messages == USER
+
+
+async def test_very_long_error_text_is_capped_in_the_repair_prompt() -> None:
+    # the error text names each failing field; give the schema huge field names so the
+    # message really is enormous (garbage model output alone gives a short error)
+    huge = create_model("Huge", **{f"{letter}" * 2_000: (int, ...) for letter in "abcde"})
+    h = Harness([ok(completion("{}")), ok(completion("{}"))], llm_max_repairs=1)
+    async with h.client as client:
+        with pytest.raises(ResponseParseError) as exc:
+            await client.chat(USER, huge)
+    assert len(str(exc.value)) > 5_000  # the premise: the uncapped message is huge
+    prompt = h.body(1)["messages"][-1]["content"]
+    assert len(prompt) < 1_500  # but what goes back to the model is capped
 
 
 # ---------------------------------------------------------------- secrets
