@@ -17,6 +17,7 @@ LLM_ENV_VARS = [
     "LLM_BACKOFF_BASE_S",
     "LLM_BACKOFF_MAX_S",
     "LLM_MAX_REPAIRS",
+    "LLM_REASONING_EFFORT",
     "LLM_STRUCTURED_MODE",
 ]
 
@@ -113,6 +114,25 @@ def test_max_repairs_defaults_to_one_and_can_be_set(monkeypatch: pytest.MonkeyPa
 def test_rejects_negative_max_repairs() -> None:
     with pytest.raises(ValidationError):
         make(llm_max_repairs=-1)
+
+
+def test_reasoning_effort_is_unset_by_default() -> None:
+    assert make().llm_reasoning_effort is None
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"), [("low", "low"), ("  high ", "high"), ("", None), ("   ", None)]
+)
+def test_reasoning_effort_from_env_is_trimmed_and_blank_means_unset(
+    monkeypatch: pytest.MonkeyPatch, raw: str, expected: str | None
+) -> None:
+    monkeypatch.setenv("LLM_REASONING_EFFORT", raw)
+    assert make().llm_reasoning_effort == expected
+
+
+def test_reasoning_effort_is_not_restricted_to_a_known_list() -> None:
+    # accepted values differ per provider (none/minimal/low/medium/high/...), so pass through
+    assert make(llm_reasoning_effort="xhigh").llm_reasoning_effort == "xhigh"
 
 
 def test_get_settings_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:

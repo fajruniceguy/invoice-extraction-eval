@@ -572,6 +572,167 @@ async def test_non_json_http_body_is_a_parse_error() -> None:
     assert exc.value.raw_text == "<html>gateway</html>"
 
 
+# ---------------------------------------------------------------- reasoning tokens
+
+# $1 per input token and $2 per output token keeps the arithmetic obvious
+DOLLAR_PRICES: dict[str, Any] = {
+    "llm_price_input_per_mtok": "1000000",
+    "llm_price_output_per_mtok": "2000000",
+}
+
+
+def usage_reply(prompt: int, completion: int, total: int | None, reasoning: int | None) -> Any:
+    block: dict[str, Any] = {"prompt_tokens": prompt, "completion_tokens": completion}
+    if total is not None:
+        block["total_tokens"] = total
+    if reasoning is not None:
+        block["completion_tokens_details"] = {"reasoning_tokens": reasoning}
+    return ok(completion_payload(block))
+
+
+def completion_payload(
+    usage: dict[str, Any], content: str = '{"vendor": "ACME", "total": "9.72"}'
+) -> dict[str, Any]:
+    payload = completion(content)
+    payload["usage"] = usage
+    return payload
+
+
+async def test_openai_style_cost_does_not_count_reasoning_twice() -> None:
+    # 100 in, 300 out of which 200 are reasoning (already inside completion_tokens)
+    h = Harness([usage_reply(100, 300, total=400, reasoning=200)], **DOLLAR_PRICES)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.usage.reasoning_tokens == 200
+    assert result.usage.billable_output_tokens == 300
+    assert result.cost_usd == Decimal(100 * 1 + 300 * 2)  # not 100 + 500 * 2
+
+
+async def test_google_style_cost_adds_the_reasoning_the_provider_left_out() -> None:
+    # completion_tokens (100) excludes the 200 reasoning tokens; total_tokens includes them
+    h = Harness([usage_reply(100, 100, total=400, reasoning=200)], **DOLLAR_PRICES)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.usage.output_tokens == 100
+    assert result.usage.reasoning_tokens == 200
+    assert result.usage.billable_output_tokens == 300
+    assert result.cost_usd == Decimal(100 * 1 + 300 * 2)
+
+
+async def test_unreported_reasoning_is_inferred_and_costed() -> None:
+    h = Harness([usage_reply(100, 100, total=500, reasoning=None)], **DOLLAR_PRICES)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.usage.reasoning_tokens == 300
+    assert result.usage.reasoning_inferred is True
+    assert result.cost_usd == Decimal(100 * 1 + 400 * 2)
+
+
+async def test_without_total_tokens_cost_uses_completion_tokens_as_reported() -> None:
+    h = Harness([usage_reply(100, 300, total=None, reasoning=200)], **DOLLAR_PRICES)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.usage.output_includes_reasoning is None  # unverified
+    assert result.cost_usd == Decimal(100 * 1 + 300 * 2)
+
+
+async def test_reasoning_is_totalled_across_a_repair_and_each_call_is_judged_alone() -> None:
+    h = Harness(
+        [
+            ok(
+                completion_payload(
+                    {"prompt_tokens": 100, "completion_tokens": 100, "total_tokens": 400}, BAD_JSON
+                )
+            ),
+            ok(
+                completion_payload(
+                    {
+                        "prompt_tokens": 10,
+                        "completion_tokens": 30,
+                        "total_tokens": 40,
+                        "completion_tokens_details": {"reasoning_tokens": 20},
+                    },
+                    GOOD,
+                )
+            ),
+        ],
+        llm_max_repairs=1,
+        **DOLLAR_PRICES,
+    )
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.usage.input_tokens == 110
+    assert result.usage.reasoning_tokens == 220  # 200 inferred + 20 reported
+    assert result.usage.billable_output_tokens == 130 + 200
+    assert result.cost_usd == Decimal(110 * 1 + 330 * 2)
+
+
+async def test_reasoning_spend_survives_in_errors_too() -> None:
+    h = Harness(
+        [
+            ok(
+                completion_payload(
+                    {"prompt_tokens": 100, "completion_tokens": 100, "total_tokens": 400}, BAD_JSON
+                )
+            )
+        ],
+        llm_max_repairs=0,
+        **DOLLAR_PRICES,
+    )
+    async with h.client as client:
+        with pytest.raises(ResponseParseError) as exc:
+            await client.chat(USER, Receipt)
+    assert exc.value.usage is not None
+    assert exc.value.usage.reasoning_outside_output == 200
+    assert exc.value.usage.cost_usd(make_settings(**DOLLAR_PRICES)) == Decimal(100 * 1 + 300 * 2)
+
+
+# ---------------------------------------------------------------- reasoning effort
+
+
+async def test_reasoning_effort_is_not_sent_by_default() -> None:
+    h = Harness([ok()])
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+    assert "reasoning_effort" not in h.body()
+
+
+@pytest.mark.parametrize("effort", ["none", "minimal", "low", "medium", "high"])
+async def test_reasoning_effort_is_passed_through_when_set(effort: str) -> None:
+    h = Harness([ok()], llm_reasoning_effort=effort)
+    async with h.client as client:
+        await client.chat(USER)
+    assert h.body()["reasoning_effort"] == effort
+
+
+async def test_blank_reasoning_effort_counts_as_unset() -> None:
+    h = Harness([ok()], llm_reasoning_effort="   ")
+    async with h.client as client:
+        await client.chat(USER)
+    assert "reasoning_effort" not in h.body()
+
+
+async def test_reasoning_effort_is_sent_on_fallback_and_repair_requests_too() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        if body["response_format"]["type"] == "json_schema":
+            return httpx.Response(400, text="unsupported")
+        return ok(completion(BAD_JSON if len(h.requests) <= 2 else GOOD))
+
+    h = Harness(handler=handler, llm_reasoning_effort="low", llm_max_repairs=1)
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+    assert len(h.requests) == 3  # json_schema (rejected), json_object, repair
+    assert [h.body(i)["reasoning_effort"] for i in range(3)] == ["low", "low", "low"]
+
+
+async def test_reasoning_effort_is_resent_on_retries() -> None:
+    h = Harness([httpx.Response(503), ok()], llm_reasoning_effort="high")
+    async with h.client as client:
+        await client.chat(USER)
+    assert [h.body(i)["reasoning_effort"] for i in range(2)] == ["high", "high"]
+
+
 # ---------------------------------------------------------------- repair
 
 GOOD = '{"vendor": "ACME", "total": "9.72"}'

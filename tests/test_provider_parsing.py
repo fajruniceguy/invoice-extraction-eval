@@ -92,7 +92,7 @@ class TestParseJsonPayload:
 class TestParseUsage:
     def test_openai_names(self) -> None:
         usage = parse_usage({"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15})
-        assert usage == Usage(input_tokens=10, output_tokens=5, reported=True)
+        assert usage == Usage(input_tokens=10, output_tokens=5, total_tokens=15, reported=True)
 
     def test_input_output_names(self) -> None:
         usage = parse_usage({"input_tokens": 7, "output_tokens": 3})
@@ -110,6 +110,196 @@ class TestParseUsage:
     def test_non_integer_counts_are_ignored(self) -> None:
         usage = parse_usage({"prompt_tokens": "10", "completion_tokens": True})
         assert usage.reported is False
+
+
+def usage_block(
+    prompt: int, completion: int, total: int | None = None, reasoning: object = None
+) -> dict[str, object]:
+    block: dict[str, object] = {"prompt_tokens": prompt, "completion_tokens": completion}
+    if total is not None:
+        block["total_tokens"] = total
+    if reasoning is not None:
+        block["completion_tokens_details"] = {"reasoning_tokens": reasoning}
+    return block
+
+
+class TestReasoningTokens:
+    def test_openai_style_reasoning_is_inside_completion_and_not_added_again(self) -> None:
+        usage = parse_usage(usage_block(100, 300, total=400, reasoning=200))
+        assert usage.output_tokens == 300
+        assert usage.reasoning_tokens == 200
+        assert usage.reasoning_outside_output == 0
+        assert usage.billable_output_tokens == 300  # not 500: that would double count
+        assert usage.output_includes_reasoning is True
+        assert usage.reasoning_inferred is False
+        assert usage.total_tokens == 400
+
+    def test_google_style_reasoning_left_out_of_completion_is_billed_on_top(self) -> None:
+        usage = parse_usage(usage_block(100, 100, total=400, reasoning=200))
+        assert usage.output_tokens == 100
+        assert usage.reasoning_tokens == 200
+        assert usage.reasoning_outside_output == 200
+        assert usage.billable_output_tokens == 300
+        assert usage.output_includes_reasoning is False
+        assert usage.reasoning_inferred is False
+
+    def test_reasoning_not_reported_is_inferred_from_the_total(self) -> None:
+        usage = parse_usage(usage_block(100, 100, total=500))
+        assert usage.reasoning_tokens == 300
+        assert usage.reasoning_inferred is True
+        assert usage.reasoning_outside_output == 300
+        assert usage.billable_output_tokens == 400
+        assert usage.output_includes_reasoning is False
+
+    def test_no_hidden_tokens_when_the_total_matches(self) -> None:
+        usage = parse_usage(usage_block(100, 50, total=150))
+        assert usage.reasoning_tokens == 0
+        assert usage.reasoning_outside_output == 0
+        assert usage.billable_output_tokens == 50
+        assert usage.output_includes_reasoning is None  # nothing to say either way
+        assert usage.reasoning_inferred is False
+
+    def test_reported_zero_reasoning_with_a_matching_total(self) -> None:
+        usage = parse_usage(usage_block(100, 50, total=150, reasoning=0))
+        assert usage.reasoning_tokens == 0
+        assert usage.output_includes_reasoning is None
+        assert usage.billable_output_tokens == 50
+
+    def test_without_a_total_the_openai_convention_is_assumed_and_flagged_unverified(self) -> None:
+        usage = parse_usage(usage_block(100, 300, reasoning=200))
+        assert usage.reasoning_tokens == 200
+        assert usage.reasoning_outside_output == 0
+        assert usage.billable_output_tokens == 300
+        assert usage.output_includes_reasoning is None  # could not be verified
+        assert usage.total_tokens is None
+
+    def test_without_a_total_or_details(self) -> None:
+        usage = parse_usage(usage_block(100, 300))
+        assert (usage.reasoning_tokens, usage.billable_output_tokens) == (0, 300)
+        assert usage.output_includes_reasoning is None
+
+    def test_a_total_smaller_than_prompt_plus_completion_is_ignored(self) -> None:
+        usage = parse_usage(usage_block(100, 100, total=50))
+        assert usage.reasoning_outside_output == 0
+        assert usage.billable_output_tokens == 100
+
+    def test_when_reported_reasoning_disagrees_with_the_gap_everything_hidden_is_billed(
+        self,
+    ) -> None:
+        usage = parse_usage(usage_block(100, 100, total=700, reasoning=300))
+        assert usage.reasoning_tokens == 300  # what the provider said
+        assert usage.reasoning_outside_output == 500  # what the total says is hidden
+        assert usage.billable_output_tokens == 600
+        assert usage.reasoning_inferred is False
+
+    @pytest.mark.parametrize("details", ["many", 7, ["x"], {"reasoning_tokens": "5"}, {"x": 1}])
+    def test_malformed_details_are_ignored(self, details: object) -> None:
+        raw: dict[str, object] = {
+            **usage_block(100, 100, total=400),
+            "completion_tokens_details": details,
+        }
+        usage = parse_usage(raw)
+        assert usage.reasoning_inferred is True  # fell back to the gap
+        assert usage.reasoning_tokens == 200
+
+    def test_boolean_reasoning_count_is_ignored(self) -> None:
+        usage = parse_usage(usage_block(100, 100, total=400, reasoning=True))
+        assert usage.reasoning_inferred is True
+
+    def test_input_output_spelling_works_with_reasoning_too(self) -> None:
+        usage = parse_usage({"input_tokens": 100, "output_tokens": 100, "total_tokens": 400})
+        assert usage.reasoning_outside_output == 200
+
+    def test_missing_usage_has_no_reasoning(self) -> None:
+        usage = parse_usage(None)
+        assert (usage.reasoning_tokens, usage.billable_output_tokens, usage.reported) == (
+            0,
+            0,
+            False,
+        )
+
+    def test_billable_output_is_part_of_the_serialized_stats(self) -> None:
+        usage = parse_usage(usage_block(100, 100, total=400, reasoning=200))
+        dumped = usage.model_dump()
+        assert dumped["billable_output_tokens"] == 300
+        assert dumped["reasoning_tokens"] == 200
+        assert dumped["output_tokens"] == 100
+
+
+class TestUsageAggregation:
+    def test_sums_every_counter(self) -> None:
+        a = parse_usage(usage_block(100, 100, total=400, reasoning=200))  # google style
+        b = parse_usage(usage_block(10, 30, total=40, reasoning=20))  # openai style
+        total = a + b
+        assert total.input_tokens == 110
+        assert total.output_tokens == 130
+        assert total.reasoning_tokens == 220
+        assert total.reasoning_outside_output == 200
+        assert total.total_tokens == 440
+        assert total.billable_output_tokens == 330  # 300 + 30, each judged on its own call
+
+    def test_reasoning_left_out_of_completion_is_summed_when_both_calls_have_it(self) -> None:
+        first = parse_usage(usage_block(100, 100, total=400, reasoning=200))  # 200 outside
+        second = parse_usage(usage_block(10, 10, total=130))  # 110 outside, inferred
+        total = first + second
+        assert total.reasoning_outside_output == 310
+        assert total.reasoning_tokens == 310
+        assert total.billable_output_tokens == 110 + 310
+        assert (second + first).billable_output_tokens == total.billable_output_tokens
+
+    def test_total_is_unknown_if_either_side_is_unknown(self) -> None:
+        a = parse_usage(usage_block(100, 100, total=200))
+        b = parse_usage(usage_block(10, 10))
+        assert (a + b).total_tokens is None
+        assert (b + a).total_tokens is None
+
+    def test_includes_flag_is_kept_only_when_both_calls_agree(self) -> None:
+        inside = parse_usage(usage_block(100, 300, total=400, reasoning=200))
+        outside = parse_usage(usage_block(100, 100, total=400, reasoning=200))
+        unknown = parse_usage(usage_block(100, 100))
+        assert (inside + inside).output_includes_reasoning is True
+        assert (outside + outside).output_includes_reasoning is False
+        assert (inside + outside).output_includes_reasoning is None
+        assert (inside + unknown).output_includes_reasoning is None
+
+    def test_inferred_is_sticky(self) -> None:
+        inferred = parse_usage(usage_block(100, 100, total=500))
+        reported = parse_usage(usage_block(100, 100, total=400, reasoning=200))
+        assert (reported + inferred).reasoning_inferred is True
+
+    def test_reported_if_either_was(self) -> None:
+        assert (Usage() + parse_usage(usage_block(1, 1))).reported is True
+        assert (Usage() + Usage()).reported is False
+
+
+class TestReasoningNote:
+    def test_not_reported(self) -> None:
+        assert "no usage" in Usage().reasoning_note
+
+    def test_inside_completion(self) -> None:
+        note = parse_usage(usage_block(100, 300, total=400, reasoning=200)).reasoning_note
+        assert "200 tokens" in note
+        assert "already inside completion_tokens" in note
+        assert "not added again" in note
+
+    def test_outside_completion_reported(self) -> None:
+        note = parse_usage(usage_block(100, 100, total=400, reasoning=200)).reasoning_note
+        assert "reported by the provider" in note
+        assert "NOT inside completion_tokens" in note
+        assert "200 added to billable output" in note
+
+    def test_outside_completion_inferred(self) -> None:
+        note = parse_usage(usage_block(100, 100, total=500)).reasoning_note
+        assert "inferred from total_tokens" in note
+        assert "300 added to billable output" in note
+
+    def test_unverified_without_a_total(self) -> None:
+        note = parse_usage(usage_block(100, 300, reasoning=200)).reasoning_note
+        assert "unverified" in note
+
+    def test_none(self) -> None:
+        note = parse_usage(usage_block(100, 50, total=150)).reasoning_note
+        assert note == "none: total_tokens equals prompt + completion"
 
 
 class TestBuildImageMessage:

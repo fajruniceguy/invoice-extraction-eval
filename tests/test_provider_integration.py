@@ -24,7 +24,7 @@ from docextract.providers.openai_compat import (
     build_image_message,
 )
 from docextract.validate.arithmetic import validate_line_items
-from fakes.fake_llm import FakeLLMServer, Reply, chat_reply
+from fakes.fake_llm import FakeLLMServer, Reply, canned_answer, chat_reply
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "sample_receipt.png"
@@ -122,7 +122,9 @@ async def test_malformed_json_is_repaired_over_a_real_connection(fake_llm: FakeL
     assert result.attempts == 2
     assert result.parsed is not None
     assert result.parsed.total.value == Decimal("17.28")
-    assert result.usage == Usage(input_tokens=3000, output_tokens=1400, reported=True)
+    assert result.usage == Usage(
+        input_tokens=3000, output_tokens=1400, total_tokens=4400, reported=True
+    )
 
     repair = fake_llm.requests[1].body["messages"]
     assert repair[-2] == {"role": "assistant", "content": BAD_TEXT}
@@ -155,7 +157,9 @@ async def test_repair_exhausted_raises_with_everything_that_was_spent(
     assert exc.value.repairs == 1
     assert exc.value.raw_text == BAD_TEXT + " (again)"
     assert exc.value.attempts == 2
-    assert exc.value.usage == Usage(input_tokens=3000, output_tokens=1400, reported=True)
+    assert exc.value.usage == Usage(
+        input_tokens=3000, output_tokens=1400, total_tokens=4400, reported=True
+    )
     assert len(fake_llm.requests) == 2
 
 
@@ -222,6 +226,45 @@ async def test_a_persistently_dropped_connection_is_a_provider_error(
     assert len(sleeps.delays) == 1
 
 
+# ---------------------------------------------------------------- reasoning tokens
+
+
+async def test_google_style_usage_over_the_wire_is_reconciled_and_costed(
+    fake_llm: FakeLLMServer,
+) -> None:
+    # completion_tokens (700) leaves out 300 reasoning tokens that total_tokens still counts
+    fake_llm.enqueue(
+        chat_reply(
+            canned_answer(),
+            usage={"prompt_tokens": 1500, "completion_tokens": 700, "total_tokens": 2500},
+        )
+    )
+    async with make_client(
+        fake_llm,
+        Sleeps(),
+        llm_price_input_per_mtok="0.30",
+        llm_price_output_per_mtok="2.50",
+    ) as client:
+        result = await client.chat(MESSAGES, DocumentExtraction)
+
+    assert result.usage.reasoning_tokens == 300
+    assert result.usage.reasoning_inferred is True
+    assert result.usage.billable_output_tokens == 1000
+    assert result.cost_usd == Decimal("0.00295")  # 1500 x 0.30/M + 1000 x 2.50/M
+
+
+async def test_reasoning_effort_reaches_the_wire(fake_llm: FakeLLMServer) -> None:
+    async with make_client(fake_llm, Sleeps(), llm_reasoning_effort="low") as client:
+        await client.chat(MESSAGES, DocumentExtraction)
+    assert fake_llm.requests[0].body["reasoning_effort"] == "low"
+
+
+async def test_reasoning_effort_is_absent_from_the_wire_when_unset(fake_llm: FakeLLMServer) -> None:
+    async with make_client(fake_llm, Sleeps()) as client:
+        await client.chat(MESSAGES, DocumentExtraction)
+    assert "reasoning_effort" not in fake_llm.requests[0].body
+
+
 # ---------------------------------------------------------------- smoke script end to end
 
 
@@ -278,6 +321,25 @@ def test_smoke_script_runs_end_to_end_with_fallback(
     assert "2 attempt(s)" in done.stdout
     assert "structured    : json_object" in done.stdout
     assert "sk-not-real" not in done.stdout + done.stderr
+
+
+def test_smoke_script_shows_reasoning_tokens_separately_and_costs_them(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    fake_llm.enqueue(
+        chat_reply(
+            canned_answer(),
+            usage={"prompt_tokens": 1500, "completion_tokens": 700, "total_tokens": 2500},
+        )
+    )
+    done = run_smoke(fake_llm.base_url, tmp_path, LLM_REASONING_EFFORT="low")
+
+    assert done.returncode == 0, done.stderr
+    assert "tokens in/out : 1500 / 1000" in done.stdout  # 700 completion + 300 reasoning
+    assert "output = 700 completion + 300 reasoning" in done.stdout
+    assert "300 tokens, inferred from total_tokens" in done.stdout
+    assert "cost          : $0.002950" in done.stdout
+    assert fake_llm.requests[0].body["reasoning_effort"] == "low"  # env var -> wire
 
 
 def test_smoke_script_reports_a_failed_call_cleanly(

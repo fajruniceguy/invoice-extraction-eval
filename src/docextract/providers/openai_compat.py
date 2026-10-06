@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Generic, Literal, Self, TypeVar, overload
 
 import httpx
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, computed_field
 
 from docextract.config import Settings
 from docextract.providers.schema_utils import simplify_schema
@@ -48,14 +48,76 @@ _REPAIR_PROMPT = (
 
 
 class Usage(BaseModel):
+    """Token counts for one call (or the totals over a call and its repairs).
+
+    `output_tokens` is `completion_tokens` exactly as the provider reported it. Providers
+    disagree on whether that already contains reasoning ("thinking") tokens: OpenAI counts
+    them inside it, while Google's OpenAI-compatible layer can leave them out and only count
+    them in `total_tokens`. `parse_usage` settles it per response from `total_tokens` and
+    records in `reasoning_outside_output` the reasoning tokens that must be billed on top, so
+    cost neither double-counts them nor misses them.
+    """
+
     input_tokens: int = 0
-    output_tokens: int = 0
+    output_tokens: int = 0  # completion_tokens as reported
+    reasoning_tokens: int = 0  # reported by the provider, else inferred from total_tokens
+    reasoning_outside_output: int = 0  # reasoning tokens NOT inside output_tokens (billed on top)
+    total_tokens: int | None = None
+    reasoning_inferred: bool = False  # reasoning_tokens came from the total_tokens gap
+    output_includes_reasoning: bool | None = None  # None: could not be verified
     reported: bool = False  # False when the server returned no usage block
 
+    @computed_field
+    @property
+    def billable_output_tokens(self) -> int:
+        return self.output_tokens + self.reasoning_outside_output
+
+    @property
+    def reasoning_note(self) -> str:
+        """One line saying what we know about reasoning tokens and how they were costed."""
+        if not self.reported:
+            return "no usage reported by the server"
+        if self.reasoning_outside_output > 0:
+            how = (
+                "inferred from total_tokens - prompt - completion"
+                if self.reasoning_inferred
+                else "reported by the provider"
+            )
+            return (
+                f"{self.reasoning_tokens} tokens, {how}; NOT inside completion_tokens, "
+                f"so {self.reasoning_outside_output} added to billable output"
+            )
+        if self.output_includes_reasoning:
+            return (
+                f"{self.reasoning_tokens} tokens, reported by the provider and already "
+                "inside completion_tokens (not added again)"
+            )
+        if self.total_tokens is None:
+            return (
+                f"{self.reasoning_tokens} tokens reported; no total_tokens to cross-check, "
+                "assumed already inside completion_tokens (unverified)"
+            )
+        return "none: total_tokens equals prompt + completion"
+
+    def cost_usd(self, settings: Settings) -> Decimal:
+        return settings.cost_usd(self.input_tokens, self.billable_output_tokens)
+
     def __add__(self, other: "Usage") -> "Usage":
+        both_totals = self.total_tokens is not None and other.total_tokens is not None
         return Usage(
             input_tokens=self.input_tokens + other.input_tokens,
             output_tokens=self.output_tokens + other.output_tokens,
+            reasoning_tokens=self.reasoning_tokens + other.reasoning_tokens,
+            reasoning_outside_output=self.reasoning_outside_output + other.reasoning_outside_output,
+            total_tokens=(
+                (self.total_tokens or 0) + (other.total_tokens or 0) if both_totals else None
+            ),
+            reasoning_inferred=self.reasoning_inferred or other.reasoning_inferred,
+            output_includes_reasoning=(
+                self.output_includes_reasoning
+                if self.output_includes_reasoning == other.output_includes_reasoning
+                else None
+            ),
             reported=self.reported or other.reported,
         )
 
@@ -202,14 +264,57 @@ def parse_json_payload(text: str) -> dict[str, Any]:
 
 
 def parse_usage(raw: object) -> Usage:
-    """Accepts OpenAI (prompt/completion_tokens) and input/output_tokens spellings."""
+    """Read a usage block (OpenAI or input/output_tokens spellings) and settle reasoning.
+
+    Reasoning tokens come from `completion_tokens_details.reasoning_tokens` when present.
+    Whether they are already inside `completion_tokens` is decided from `total_tokens`:
+
+      total - prompt - completion > 0  -> the provider left reasoning out of completion_tokens,
+                                          so the gap is billed on top (inferred when the
+                                          provider did not report reasoning_tokens at all)
+      gap == 0                         -> nothing is hidden; any reported reasoning is already
+                                          inside completion_tokens, so it is NOT added again
+      no total_tokens                  -> cannot cross-check; assume the OpenAI convention
+                                          (reasoning inside completion_tokens), unverified
+    """
     if not isinstance(raw, dict):
         return Usage()
-    input_tokens = _first_int(raw, "prompt_tokens", "input_tokens")
-    output_tokens = _first_int(raw, "completion_tokens", "output_tokens")
-    if input_tokens is None and output_tokens is None:
+    prompt = _first_int(raw, "prompt_tokens", "input_tokens")
+    completion = _first_int(raw, "completion_tokens", "output_tokens")
+    if prompt is None and completion is None:
         return Usage()
-    return Usage(input_tokens=input_tokens or 0, output_tokens=output_tokens or 0, reported=True)
+    prompt, completion = prompt or 0, completion or 0
+    total = _first_int(raw, "total_tokens")
+    details = raw.get("completion_tokens_details")
+    reported = _first_int(details, "reasoning_tokens") if isinstance(details, dict) else None
+
+    if total is None:
+        return Usage(
+            input_tokens=prompt,
+            output_tokens=completion,
+            reasoning_tokens=reported or 0,
+            reported=True,
+        )
+    gap = total - prompt - completion  # <= 0 means nothing is hidden
+    if gap > 0:
+        return Usage(
+            input_tokens=prompt,
+            output_tokens=completion,
+            reasoning_tokens=gap if reported is None else reported,
+            reasoning_outside_output=gap,
+            total_tokens=total,
+            reasoning_inferred=reported is None,
+            output_includes_reasoning=False,
+            reported=True,
+        )
+    return Usage(
+        input_tokens=prompt,
+        output_tokens=completion,
+        reasoning_tokens=reported or 0,
+        total_tokens=total,
+        output_includes_reasoning=True if reported else None,
+        reported=True,
+    )
 
 
 def _first_int(source: dict[str, Any], *keys: str) -> int | None:
@@ -416,7 +521,7 @@ class OpenAICompatClient:
             attempts=tally.attempts,
             finish_reason=completion.finish_reason,
             structured_mode_used=completion.tier,
-            cost_usd=self._settings.cost_usd(usage.input_tokens, usage.output_tokens),
+            cost_usd=usage.cost_usd(self._settings),
             model=self._settings.llm_model,
             raw=completion.payload,
             repairs=tally.repairs,
@@ -449,6 +554,8 @@ class OpenAICompatClient:
         }
         if max_tokens is not None:
             body["max_tokens"] = max_tokens
+        if self._settings.llm_reasoning_effort:
+            body["reasoning_effort"] = self._settings.llm_reasoning_effort
         if response_model is not None and tier != "none":
             schema = simplify_schema(response_model.model_json_schema())
             if tier == "json_schema":

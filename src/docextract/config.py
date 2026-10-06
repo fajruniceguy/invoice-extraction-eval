@@ -44,6 +44,17 @@ class Settings(BaseSettings):
     # auto: try json_schema, fall back to json_object. The others pin a single tier.
     llm_structured_mode: StructuredMode = "auto"
 
+    # Passed through as `reasoning_effort` when set (e.g. none/minimal/low/medium/high; accepted
+    # values differ per provider, so it is not validated here). Blank means unset.
+    llm_reasoning_effort: str | None = None
+
+    @field_validator("llm_reasoning_effort", mode="before")
+    @classmethod
+    def _blank_reasoning_effort_is_unset(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip() or None
+        return value
+
     @field_validator("llm_base_url")
     @classmethod
     def _check_base_url(cls, value: str) -> str:

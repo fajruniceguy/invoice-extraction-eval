@@ -100,7 +100,7 @@ async def run(image: Path, env_file: Path) -> int:
         except ResponseParseError as exc:
             print(f"\nModel output was not usable: {exc}", file=sys.stderr)
             print(f"--- raw output (first 2000 chars) ---\n{exc.raw_text[:2000]}", file=sys.stderr)
-            _print_stats(settings, exc.usage, exc.latency_ms, exc.attempts, None, None)
+            _print_stats(settings, exc.usage, exc.latency_ms, exc.attempts, exc.repairs, None, None)
             return 1
         except ProviderError as exc:
             print(f"\nLLM call failed: {exc}", file=sys.stderr)
@@ -114,6 +114,7 @@ async def run(image: Path, env_file: Path) -> int:
         result.usage,
         result.latency_ms,
         result.attempts,
+        result.repairs,
         result.structured_mode_used,
         result.finish_reason,
     )
@@ -125,16 +126,22 @@ def _print_stats(
     usage: Usage | None,
     latency_ms: float,
     attempts: int,
+    repairs: int,
     mode: str | None,
     finish_reason: str | None,
 ) -> None:
     tokens = usage or Usage()
-    cost = settings.cost_usd(tokens.input_tokens, tokens.output_tokens)
     reported = "" if tokens.reported else " (server reported no usage)"
     print("\n--- stats ---")
-    print(f"tokens in/out : {tokens.input_tokens} / {tokens.output_tokens}{reported}")
-    print(f"latency       : {latency_ms:.0f} ms over {attempts} attempt(s)")
-    print(f"cost          : ${cost:.6f}")
+    print(f"tokens in/out : {tokens.input_tokens} / {tokens.billable_output_tokens}{reported}")
+    if tokens.reasoning_outside_output:
+        print(
+            f"                (output = {tokens.output_tokens} completion"
+            f" + {tokens.reasoning_outside_output} reasoning the provider left out of it)"
+        )
+    print(f"reasoning     : {tokens.reasoning_note}")
+    print(f"latency       : {latency_ms:.0f} ms over {attempts} attempt(s), {repairs} repair(s)")
+    print(f"cost          : ${tokens.cost_usd(settings):.6f}")
     if mode is not None:
         print(f"structured    : {mode}   finish_reason={finish_reason}")
 
