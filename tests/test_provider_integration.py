@@ -5,6 +5,7 @@ they also cover connection handling, headers on the wire and the smoke script en
 Sleep is injected so backoff is recorded rather than waited out.
 """
 
+import json
 import os
 import subprocess
 import sys
@@ -298,11 +299,19 @@ async def test_a_batch_loop_aborts_cleanly_when_the_cap_is_hit(fake_llm: FakeLLM
 # ---------------------------------------------------------------- smoke script end to end
 
 
+ARTIFACT_NAME = "artifact.json"
+
+
+def read_artifact(tmp_path: Path) -> dict[str, Any]:
+    return json.loads((tmp_path / ARTIFACT_NAME).read_text(encoding="utf-8"))
+
+
 def run_smoke(
-    server_url: str | None, tmp_path: Path, **env_extra: str
+    server_url: str | None, tmp_path: Path, *flags: str, **env_extra: str
 ) -> subprocess.CompletedProcess[str]:
     """Run scripts/smoke.py in a subprocess. Always with an EMPTY env file and a scrubbed
-    environment, so it can never pick up the real .env (and with it the real API key)."""
+    environment, so it can never pick up the real .env (and with it the real API key), and
+    always writing its artifact under tmp_path, never into the repo's outputs/."""
     empty_env = tmp_path / "empty.env"
     empty_env.write_text("")
     env = {
@@ -326,6 +335,9 @@ def run_smoke(
             str(FIXTURE),
             "--env-file",
             str(empty_env),
+            "--output",
+            str(tmp_path / ARTIFACT_NAME),
+            *flags,
         ],
         capture_output=True,
         text=True,
@@ -433,6 +445,140 @@ def test_smoke_script_reports_unusable_model_output_cleanly(
     assert done.returncode == 1
     assert "Model output was not usable" in done.stderr
     assert BAD_TEXT in done.stderr  # the raw output is shown
+    assert "Traceback" not in done.stderr
+
+
+def test_smoke_script_writes_an_artifact_with_raw_and_parsed_and_never_the_key(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    done = run_smoke(fake_llm.base_url, tmp_path)
+
+    assert done.returncode == 0, done.stderr
+    artifact = read_artifact(tmp_path)
+    assert artifact["ok"] is True
+    assert artifact["model"] == "fake-model"
+    assert artifact["structured_mode_used"] == "json_schema"
+    assert artifact["attempts"] == 1
+    assert artifact["repairs"] == 0
+    assert artifact["usage"]["input_tokens"] == 1500
+    assert artifact["usage"]["billable_output_tokens"] == 700
+    assert artifact["cost_usd"] == "0.0022"
+    assert artifact["repair_history"] == []
+    # what the model said, and what the schema made of it, side by side
+    assert json.loads(artifact["raw_text"])["total"]["value"] == 17.28
+    assert artifact["parsed"]["total"]["value"] == "17.28"
+    assert artifact["parsed"]["document_date"]["value"] == "2024-03-05"
+    assert "artifact" in done.stdout
+    assert "sk-not-real" not in (tmp_path / ARTIFACT_NAME).read_text(encoding="utf-8")
+    # by default the raw text is not echoed, and consistent rows are reported as such
+    assert "--- raw model output ---" not in done.stdout
+    assert "line-item arithmetic: 3 row(s) checked, 0 flagged" in done.stdout
+
+
+def test_smoke_script_raw_flag_prints_the_model_text_before_the_parsed_result(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    done = run_smoke(fake_llm.base_url, tmp_path, "--raw")
+
+    assert done.returncode == 0, done.stderr
+    raw_at = done.stdout.index("--- raw model output ---")
+    parsed_at = done.stdout.index("--- parsed (what the schema made of it) ---")
+    assert raw_at < parsed_at
+    raw_section = done.stdout[raw_at:parsed_at]
+    assert '"vendor_name"' in raw_section
+    assert "17.28" in raw_section
+
+
+def mismatching_answer() -> dict[str, Any]:
+    answer = canned_answer()
+    answer["line_items"][0] |= {"quantity": 2, "unit_price": 45.0, "amount": 9.0}  # 2 x 45 != 9
+    return answer
+
+
+def test_smoke_script_reports_validator_findings_and_keeps_the_raw_output_intact(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    fake_llm.enqueue(chat_reply(mismatching_answer()))
+    done = run_smoke(fake_llm.base_url, tmp_path)
+
+    assert done.returncode == 0, done.stderr
+    assert "line-item arithmetic: 3 row(s) checked, 1 flagged" in done.stdout
+    assert "row 1 'Latte': qty_x_price_ne_amount" in done.stdout
+    assert "confidence 0.95 -> 0.5" in done.stdout
+    # raw vs validated: the parsed output is untouched, the validated copy carries the verdict
+    artifact = read_artifact(tmp_path)
+    raw_row = artifact["parsed"]["line_items"][0]
+    checked_row = artifact["validated"]["line_items"][0]
+    assert raw_row["flagged_cells"] == []
+    assert raw_row["confidence"] == 0.95
+    assert raw_row["reasons"] == []
+    assert checked_row["flagged_cells"] == ["quantity", "unit_price", "amount"]
+    assert checked_row["confidence"] == 0.5
+    assert checked_row["reasons"] == ["qty_x_price_ne_amount"]
+    assert artifact["validated"]["line_items"][1]["flagged_cells"] == []
+
+
+def test_smoke_script_shows_the_failure_a_repair_papered_over(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    fake_llm.enqueue(chat_reply(BAD_TEXT))  # the repair request then gets the canned answer
+    done = run_smoke(fake_llm.base_url, tmp_path)
+
+    assert done.returncode == 0, done.stderr
+    assert "repaired failures (1)" in done.stdout
+    assert "attempt 1: model output is not valid JSON" in done.stdout
+    assert BAD_TEXT in done.stdout  # the unusable output itself
+    assert "1 repair(s)" in done.stdout
+    artifact = read_artifact(tmp_path)
+    assert artifact["repairs"] == 1
+    assert [record["raw_text"] for record in artifact["repair_history"]] == [BAD_TEXT]
+    assert "not valid JSON" in artifact["repair_history"][0]["problem"]
+
+
+def test_smoke_script_artifact_records_a_failed_run_too(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    fake_llm.enqueue(chat_reply(BAD_TEXT), chat_reply(BAD_TEXT + " (again)"))
+    done = run_smoke(fake_llm.base_url, tmp_path)
+
+    assert done.returncode == 1
+    assert "repaired failures (1)" in done.stderr  # the earlier failure is shown too
+    artifact = read_artifact(tmp_path)
+    assert artifact["ok"] is False
+    assert artifact["raw_text"] == BAD_TEXT + " (again)"
+    assert [record["raw_text"] for record in artifact["repair_history"]] == [BAD_TEXT]
+    assert artifact["repairs"] == 1
+    assert artifact["usage"]["input_tokens"] == 3000  # both calls were paid for
+
+
+def test_smoke_script_artifact_records_an_http_failure_and_a_cost_cap_stop(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    fake_llm.enqueue(Reply(401, {"error": {"message": "invalid key"}}))
+    done = run_smoke(fake_llm.base_url, tmp_path)
+    assert done.returncode == 1
+    artifact = read_artifact(tmp_path)
+    assert artifact["ok"] is False
+    assert artifact["status_code"] == 401
+    assert "sk-not-real" not in (tmp_path / ARTIFACT_NAME).read_text(encoding="utf-8")
+
+    fake_llm.enqueue(chat_reply(BAD_TEXT))
+    done = run_smoke(fake_llm.base_url, tmp_path, MAX_RUN_COST_USD="0.001")
+    assert done.returncode == 3
+    artifact = read_artifact(tmp_path)
+    assert artifact["stopped"] == "cost_cap"
+    assert artifact["raw_text"] == BAD_TEXT
+    assert artifact["spent_usd"] == "0.0022"
+
+
+def test_smoke_script_survives_an_unwritable_artifact_path(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    # --output pointing at a directory cannot be written: warn, but the run itself succeeds
+    done = run_smoke(fake_llm.base_url, tmp_path, "--output", str(tmp_path))
+
+    assert done.returncode == 0, done.stderr
+    assert "could not write" in done.stderr
     assert "Traceback" not in done.stderr
 
 

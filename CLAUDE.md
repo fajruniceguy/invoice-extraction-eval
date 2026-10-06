@@ -55,12 +55,12 @@ docs/
 `uv` is a per-user `pip install` whose Scripts directory is not on PATH, and bare `python` is the 3.10 Microsoft Store stub. So call uv as `python -m uv ...`; it runs the project's 3.11 venv for you. (Where `uv` is on PATH, plain `uv ...` is equivalent.)
 ```
 python -m uv sync                                   # create/update .venv (3.11) and install deps
-python -m uv run pytest -q                          # all tests: offline, about 7 s
+python -m uv run pytest -q                          # all tests: offline, about 15 s (the smoke tests spawn subprocesses)
 python -m uv run pytest -q tests/test_budget.py     # one file
 python -m uv run ruff check                         # lint
 python -m uv run ruff format .                      # format
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
-python -m uv run python scripts/smoke.py [IMAGE]    # ONE LIVE CALL using .env: costs money
+python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
 python -m uv run python tests/fakes/fake_llm.py 8765 [--reject-schema]   # fake OpenAI-compatible server, no key needed
 ```
 To exercise `smoke.py` without a key: start the fake server in one terminal, then in another set `LLM_BASE_URL=http://127.0.0.1:8765/v1`, `LLM_MODEL=fake`, `LLM_API_KEY=x` (and prices if you want a cost) and pass `--env-file` pointing at an empty file so the real `.env` is not read.

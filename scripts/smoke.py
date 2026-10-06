@@ -1,10 +1,14 @@
 """Send one image to the configured LLM and print the parsed extraction, tokens and latency.
 
-Usage: python -m uv run python scripts/smoke.py [IMAGE] [--env-file PATH]
+Usage: python -m uv run python scripts/smoke.py [IMAGE] [--raw] [--env-file PATH] [--output PATH]
 
 IMAGE defaults to the first image in data/raw, then to tests/fixtures/sample_receipt.png.
 Configuration (LLM_BASE_URL, LLM_MODEL, LLM_API_KEY, ...) comes from the environment, then
 from the env file (default: .env at the repo root).
+
+With --raw the model's raw text is printed before the parsed result. Whatever the outcome, a
+JSON artifact (raw text, parsed result, validator output, repaired failures, usage) is written
+to --output (default outputs/smoke-last.json, which is gitignored). It never contains the key.
 
 Exit codes: 0 success, 1 the call or the model output failed, 2 configuration/input problem,
 3 the run cost cap (MAX_RUN_COST_USD) was exceeded.
@@ -12,8 +16,11 @@ Exit codes: 0 success, 1 the call or the model output failed, 2 configuration/in
 
 import argparse
 import asyncio
+import json
 import sys
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any, TextIO
 
 from pydantic import ValidationError
 
@@ -23,14 +30,18 @@ from docextract.providers.budget import BudgetExceededError, RunBudget
 from docextract.providers.openai_compat import (
     OpenAICompatClient,
     ProviderError,
+    RepairRecord,
     ResponseParseError,
     Usage,
     build_image_message,
 )
+from docextract.validate.arithmetic import validate_line_items
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "sample_receipt.png"
+DEFAULT_OUTPUT = ROOT / "outputs" / "smoke-last.json"
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
+RAW_EXCERPT_CHARS = 600
 
 SYSTEM_PROMPT = """\
 You extract structured data from an invoice or receipt image.
@@ -73,10 +84,10 @@ def describe_config_error(exc: ValidationError) -> str:
     return "Configuration problem (see .env.example):\n" + "\n".join(lines)
 
 
-async def run(image: Path, env_file: Path) -> int:
+async def run(image: Path, env_file: Path, output: Path, show_raw: bool) -> int:
     if not image.is_file():
         hint = (
-            "  generate it with: uv run python scripts/make_sample_receipt.py"
+            "  generate it with: python -m uv run python scripts/make_sample_receipt.py"
             if image == FIXTURE
             else ""
         )
@@ -96,41 +107,77 @@ async def run(image: Path, env_file: Path) -> int:
 
     print(f"model={settings.llm_model} endpoint={settings.llm_base_url} image={image.name}")
     messages = [{"role": "system", "content": SYSTEM_PROMPT}, message]
+    # Only fields that are safe to share ever go in the artifact: never the key.
+    artifact: dict[str, Any] = {
+        "model": settings.llm_model,
+        "endpoint": settings.llm_base_url,
+        "image": image.name,
+    }
     async with OpenAICompatClient(settings) as client:
         try:
             result = await client.chat(messages, DocumentExtraction, temperature=0.0)
         except ResponseParseError as exc:
             print(f"\nModel output was not usable: {exc}", file=sys.stderr)
             print(f"--- raw output (first 2000 chars) ---\n{exc.raw_text[:2000]}", file=sys.stderr)
-            _print_stats(
-                settings,
-                exc.usage,
-                exc.latency_ms,
-                exc.attempts,
-                exc.repairs,
-                None,
-                None,
-                client.budget,
-            )
+            _print_repaired(exc.history, file=sys.stderr)
+            _print_stats(settings, exc.usage, exc.latency_ms, exc.attempts, exc.repairs, None, None)
+            _print_budget(client.budget)
+            artifact |= {
+                "ok": False,
+                "error": str(exc),
+                "raw_text": exc.raw_text,
+                "repair_history": _history_json(exc.history),
+                "attempts": exc.attempts,
+                "repairs": exc.repairs,
+                "latency_ms": round(exc.latency_ms),
+                "usage": (exc.usage or Usage()).model_dump(mode="json"),
+            }
+            _save(output, artifact)
             return 1
         except BudgetExceededError as exc:
             print(f"\nStopped: {exc}", file=sys.stderr)
-            if isinstance(exc.__cause__, ResponseParseError):
+            cause = exc.__cause__
+            if isinstance(cause, ResponseParseError):
                 # a refused repair: show the output we were not allowed to fix
-                print(f"The last model output was not usable: {exc.__cause__}", file=sys.stderr)
+                print(f"The last model output was not usable: {cause}", file=sys.stderr)
                 print(
-                    f"--- raw output (first 2000 chars) ---\n{exc.__cause__.raw_text[:2000]}",
+                    f"--- raw output (first 2000 chars) ---\n{cause.raw_text[:2000]}",
                     file=sys.stderr,
                 )
+                _print_repaired(cause.history, file=sys.stderr)
             _print_budget(client.budget)
+            artifact |= {
+                "ok": False,
+                "error": str(exc),
+                "stopped": "cost_cap",
+                "raw_text": cause.raw_text if isinstance(cause, ResponseParseError) else None,
+                "spent_usd": str(client.budget.spent),
+            }
+            _save(output, artifact)
             return 3
         except ProviderError as exc:
             print(f"\nLLM call failed: {exc}", file=sys.stderr)
             print(f"attempts={exc.attempts} latency_ms={exc.latency_ms:.0f}", file=sys.stderr)
+            artifact |= {
+                "ok": False,
+                "error": str(exc),
+                "status_code": exc.status_code,
+                "attempts": exc.attempts,
+                "latency_ms": round(exc.latency_ms),
+            }
+            _save(output, artifact)
             return 1
 
-    assert result.parsed is not None
-    print(result.parsed.model_dump_json(indent=2))
+    parsed = result.parsed
+    assert parsed is not None
+    if show_raw:
+        print("\n--- raw model output ---")
+        print(result.text)
+        print("--- parsed (what the schema made of it) ---")
+    print(parsed.model_dump_json(indent=2))
+    validated = validate_line_items(parsed)
+    _print_repaired(result.repair_history, file=sys.stdout)
+    _print_validators(parsed, validated)
     _print_stats(
         settings,
         result.usage,
@@ -139,9 +186,70 @@ async def run(image: Path, env_file: Path) -> int:
         result.repairs,
         result.structured_mode_used,
         result.finish_reason,
-        client.budget,
     )
+    _print_budget(client.budget)
+    artifact |= {
+        "ok": True,
+        "structured_mode_used": result.structured_mode_used,
+        "finish_reason": result.finish_reason,
+        "attempts": result.attempts,
+        "repairs": result.repairs,
+        "latency_ms": round(result.latency_ms),
+        "usage": result.usage.model_dump(mode="json"),
+        "cost_usd": str(result.cost_usd),
+        "raw_text": result.text,
+        "parsed": parsed.model_dump(mode="json"),
+        "validated": validated.model_dump(mode="json"),
+        "repair_history": _history_json(result.repair_history),
+    }
+    _save(output, artifact)
     return 0
+
+
+def _history_json(history: Sequence[RepairRecord]) -> list[dict[str, str]]:
+    return [{"problem": record.problem, "raw_text": record.raw_text} for record in history]
+
+
+def _save(path: Path, artifact: dict[str, Any]) -> None:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(artifact, indent=2, ensure_ascii=False), encoding="utf-8")
+    except OSError as exc:
+        print(f"(could not write {path}: {exc})", file=sys.stderr)
+        return
+    print(f"artifact      : {path}")
+
+
+def _print_repaired(history: Sequence[RepairRecord], *, file: TextIO) -> None:
+    if not history:
+        return
+    print(
+        f"\n--- repaired failures ({len(history)}): the model's first output was unusable ---",
+        file=file,
+    )
+    for number, record in enumerate(history, start=1):
+        print(f"attempt {number}: {record.problem}", file=file)
+        excerpt = record.raw_text[:RAW_EXCERPT_CHARS]
+        more = " ..." if len(record.raw_text) > RAW_EXCERPT_CHARS else ""
+        print(f"  raw output: {excerpt}{more}", file=file)
+
+
+def _print_validators(raw: DocumentExtraction, validated: DocumentExtraction) -> None:
+    flagged = [
+        (number, before, after)
+        for number, (before, after) in enumerate(
+            zip(raw.line_items, validated.line_items, strict=True), start=1
+        )
+        if after.flagged_cells
+    ]
+    print("\n--- validators ---")
+    print(f"line-item arithmetic: {len(raw.line_items)} row(s) checked, {len(flagged)} flagged")
+    for number, before, after in flagged:
+        label = repr(before.description) if before.description else "(no description)"
+        print(
+            f"  row {number} {label}: {', '.join(after.reasons)} -> flagged {after.flagged_cells};"
+            f" confidence {before.confidence} -> {after.confidence}"
+        )
 
 
 def _print_stats(
@@ -152,7 +260,6 @@ def _print_stats(
     repairs: int,
     mode: str | None,
     finish_reason: str | None,
-    budget: RunBudget | None = None,
 ) -> None:
     tokens = usage or Usage()
     reported = "" if tokens.reported else " (server reported no usage)"
@@ -168,8 +275,6 @@ def _print_stats(
     print(f"cost          : ${tokens.cost_usd(settings):.6f}")
     if mode is not None:
         print(f"structured    : {mode}   finish_reason={finish_reason}")
-    if budget is not None:
-        _print_budget(budget)
 
 
 def _print_budget(budget: RunBudget) -> None:
@@ -193,8 +298,15 @@ def main() -> int:
     parser.add_argument(
         "--env-file", type=Path, default=ROOT / ".env", help="env file (default: repo .env)"
     )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT,
+        help="JSON artifact: raw text, parsed result, usage (default: outputs/smoke-last.json)",
+    )
+    parser.add_argument("--raw", action="store_true", help="print the model's raw text first")
     args = parser.parse_args()
-    return asyncio.run(run(pick_image(args.image), args.env_file))
+    return asyncio.run(run(pick_image(args.image), args.env_file, args.output, args.raw))
 
 
 if __name__ == "__main__":
