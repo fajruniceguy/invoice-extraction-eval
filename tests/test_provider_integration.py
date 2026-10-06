@@ -535,6 +535,30 @@ def test_smoke_script_reports_validator_findings_and_keeps_the_raw_output_intact
 
 
 @pytest.mark.slow
+def test_smoke_script_normalizes_printed_formats_without_spending_a_repair(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    answer = canned_answer()
+    answer["currency"]["value"] = "IDR"
+    answer["total"]["value"] = "17,28"  # Indonesian decimal comma, as printed
+    answer["document_date"]["value"] = "5 Maret 2024"
+    fake_llm.enqueue(chat_reply(answer))
+    done = run_smoke(fake_llm.base_url, tmp_path)
+
+    assert done.returncode == 0, done.stderr
+    assert len(fake_llm.requests) == 1  # normalization fixed it: no repair call
+    assert "normalized before validation (2)" in done.stdout
+    assert "total.value: '17,28' -> '17.28'" in done.stdout
+    assert "document_date.value: '5 Maret 2024' -> '2024-03-05'" in done.stdout
+    artifact = read_artifact(tmp_path)
+    assert artifact["repairs"] == 0
+    assert artifact["parsed"]["total"]["value"] == "17.28"
+    assert len(artifact["normalizations"]) == 2
+    # the raw text still shows what the model actually said
+    assert json.loads(artifact["raw_text"])["total"]["value"] == "17,28"
+
+
+@pytest.mark.slow
 def test_smoke_script_shows_the_failure_a_repair_papered_over(
     fake_llm: FakeLLMServer, tmp_path: Path
 ) -> None:

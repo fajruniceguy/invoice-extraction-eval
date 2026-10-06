@@ -28,6 +28,7 @@ from typing import Any, TextIO
 from pydantic import ValidationError
 
 from docextract.config import Settings
+from docextract.extract.preprocess import normalize_extraction_payload
 from docextract.extract.schema import DocumentExtraction
 from docextract.providers.budget import BudgetExceededError, RunBudget
 from docextract.providers.openai_compat import (
@@ -123,7 +124,12 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool, use_cac
     }
     async with OpenAICompatClient(settings) as client:
         try:
-            result = await client.chat(messages, DocumentExtraction, temperature=0.0)
+            result = await client.chat(
+                messages,
+                DocumentExtraction,
+                temperature=0.0,
+                preprocess=normalize_extraction_payload,
+            )
         except ResponseParseError as exc:
             print(f"\nModel output was not usable: {exc}", file=sys.stderr)
             print(f"--- raw output (first 2000 chars) ---\n{exc.raw_text[:2000]}", file=sys.stderr)
@@ -195,6 +201,7 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool, use_cac
     validated = validate_line_items(parsed)
     _print_repaired(result.repair_history, file=sys.stdout)
     _print_validators(parsed, validated)
+    _print_normalizations(result.normalizations)
     _print_stats(
         result.usage,
         result.cost_usd,
@@ -223,6 +230,7 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool, use_cac
         "parsed": parsed.model_dump(mode="json"),
         "validated": validated.model_dump(mode="json"),
         "repair_history": _history_json(result.repair_history),
+        "normalizations": list(result.normalizations),
     }
     _save(output, artifact)
     return 0
@@ -254,6 +262,14 @@ def _print_repaired(history: Sequence[RepairRecord], *, file: TextIO) -> None:
         excerpt = record.raw_text[:RAW_EXCERPT_CHARS]
         more = " ..." if len(record.raw_text) > RAW_EXCERPT_CHARS else ""
         print(f"  raw output: {excerpt}{more}", file=file)
+
+
+def _print_normalizations(changes: Sequence[str]) -> None:
+    if not changes:
+        return
+    print(f"\n--- normalized before validation ({len(changes)}) ---")
+    for change in changes:
+        print(f"  {change}")
 
 
 def _print_validators(raw: DocumentExtraction, validated: DocumentExtraction) -> None:

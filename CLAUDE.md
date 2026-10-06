@@ -48,6 +48,8 @@ docs/
 - `extract/schema.py` only defines shape. Field and line-item status is `extracted | absent | abstained`: absent = the document does not state it (value null, confidence = certainty of absence); abstained = may be present but not confident (value null, reasons required).
 - Business rules live in `validate/` (first rule: line-item arithmetic). They return copies and never mutate the model's raw output, so what the model said vs what the validators concluded is always inspectable. `flagged_cells` is derived there, never asked of the model.
 - Money is `Decimal` end to end: model JSON is parsed with `parse_float=Decimal`.
+- **Normalization (`docextract/normalize.py`) never guesses.** `parse_number` / `parse_date` return `ok | ambiguous | invalid`; `1.250` is thousands in an IDR context, a decimal in a USD context, and **ambiguous** (with both candidates) with no context; `05/03/2024` is ambiguous unless a day is above 12 or `day_first` is known (IDR documents are read day-first). A currency marker in the text beats the caller's currency. Shared by the extraction pipeline, `prelabel` and the label app.
+- **Order in the pipeline: parse JSON -> normalize -> validate -> repair only if that still fails** (`chat(preprocess=normalize_extraction_payload)`). A value the normalizer declined to resolve is an error even if pydantic could parse it (`Decimal("1.250")` parses fine, and accepting it would make the guess the normalizer refused to make). Every rewrite is reported in `LLMResponse.normalizations`.
 
 ## Core logic
 - Extraction logic and the eval harness are hand-written. No LangChain / LlamaIndex for core logic.

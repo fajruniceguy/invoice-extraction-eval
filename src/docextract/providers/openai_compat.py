@@ -134,6 +134,20 @@ class Usage(BaseModel):
 
 
 @dataclass(frozen=True)
+class PreprocessResult:
+    """What a `preprocess` hook returns: the cleaned data, plus what it did and could not do."""
+
+    data: dict[str, Any]
+    problems: tuple[
+        str, ...
+    ] = ()  # values it could not resolve without guessing (left as they were)
+    changes: tuple[str, ...] = ()  # values it rewrote, e.g. "total.value: '1.250,00' -> '1250.00'"
+
+
+Preprocess = Callable[[dict[str, Any]], PreprocessResult]
+
+
+@dataclass(frozen=True)
 class RepairRecord:
     """A model output that was unusable and got re-asked: the failure a repair papered over."""
 
@@ -206,6 +220,8 @@ class LLMResponse(Generic[M]):
     cached_calls: int = 0
     avoided_cost_usd: Decimal = Decimal(0)
     cached_latency_ms: float = 0.0  # how long the cached calls originally took
+    # values the preprocess hook rewrote in the output that finally validated (empty if no hook)
+    normalizations: tuple[str, ...] = ()
 
 
 @dataclass
@@ -483,6 +499,7 @@ class OpenAICompatClient:
         temperature: float = ...,
         max_tokens: int | None = ...,
         cache: CacheMode | None = ...,
+        preprocess: Preprocess | None = ...,
     ) -> LLMResponse[M]: ...
 
     @overload
@@ -494,6 +511,7 @@ class OpenAICompatClient:
         temperature: float = ...,
         max_tokens: int | None = ...,
         cache: CacheMode | None = ...,
+        preprocess: Preprocess | None = ...,
     ) -> LLMResponse[BaseModel]: ...
 
     async def chat(
@@ -504,8 +522,12 @@ class OpenAICompatClient:
         temperature: float = 0.0,
         max_tokens: int | None = None,
         cache: CacheMode | None = None,
+        preprocess: Preprocess | None = None,
     ) -> LLMResponse[Any]:
-        """`cache` overrides the LLM_CACHE setting for this call: on, off or refresh."""
+        """`cache` overrides the LLM_CACHE setting for this call: on, off or refresh.
+
+        `preprocess` runs on the parsed JSON BEFORE validation (see extract/preprocess.py): a
+        repair call is spent only if validation still fails after it."""
         cache_mode = cache or self._settings.llm_cache
         tally = _Tally(started=time.perf_counter())
         max_repairs = self._settings.llm_max_repairs
@@ -522,7 +544,9 @@ class OpenAICompatClient:
             if response_model is None:
                 return self._response(completion, None, tally)
             try:
-                parsed = self._parse_model(completion, response_model, tally)
+                parsed, normalizations = self._parse_model(
+                    completion, response_model, tally, preprocess
+                )
             except ResponseParseError as error:
                 # truncated output would just truncate again, so it is not worth a repair
                 if tally.repairs >= max_repairs or completion.finish_reason == "length":
@@ -540,7 +564,7 @@ class OpenAICompatClient:
                     {"role": "user", "content": _REPAIR_PROMPT.format(problem=problem)},
                 ]
                 continue
-            return self._response(completion, parsed, tally)
+            return self._response(completion, parsed, tally, normalizations)
 
     async def _complete(
         self,
@@ -662,7 +686,11 @@ class OpenAICompatClient:
         )
 
     def _response(
-        self, completion: _Completion, parsed: BaseModel | None, tally: _Tally
+        self,
+        completion: _Completion,
+        parsed: BaseModel | None,
+        tally: _Tally,
+        normalizations: tuple[str, ...] = (),
     ) -> LLMResponse[Any]:
         usage = tally.usage or Usage()
         return LLMResponse(
@@ -682,6 +710,7 @@ class OpenAICompatClient:
             cached_calls=tally.cached_calls,
             avoided_cost_usd=tally.avoided,
             cached_latency_ms=tally.cached_latency_ms,
+            normalizations=normalizations,
         )
 
     # -- helpers
@@ -776,7 +805,12 @@ class OpenAICompatClient:
         return ceiling * (0.5 + self._rng() / 2)  # jitter: 50-100% of the ceiling
 
     @staticmethod
-    def _parse_model(completion: _Completion, response_model: type[M], tally: _Tally) -> M:
+    def _parse_model(
+        completion: _Completion,
+        response_model: type[M],
+        tally: _Tally,
+        preprocess: Preprocess | None,
+    ) -> tuple[M, tuple[str, ...]]:
         text, finish_reason = completion.text, completion.finish_reason
         try:
             data = parse_json_payload(text)
@@ -789,15 +823,30 @@ class OpenAICompatClient:
                 raw_text=text,
                 **tally.parse_error_context(),
             ) from exc
+        problems: tuple[str, ...] = ()
+        changes: tuple[str, ...] = ()
+        if preprocess is not None:  # deterministic clean-up first: it can save a repair call
+            cleaned = preprocess(data)
+            data, problems, changes = cleaned.data, cleaned.problems, cleaned.changes
+        reasons: list[str] = []
+        cause: ValidationError | None = None
         try:
-            return response_model.model_validate(data)
+            parsed = response_model.model_validate(data)
         except ValidationError as exc:
-            problems = "; ".join(
+            cause = exc
+            reasons.extend(
                 f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}"
                 for error in exc.errors()[:5]
             )
-            raise ResponseParseError(
-                f"model output does not match {response_model.__name__}: {problems}",
-                raw_text=text,
-                **tally.parse_error_context(),
-            ) from exc
+        else:
+            if not problems:
+                return parsed, changes
+        # A value the normalizer declined to resolve (an ambiguous "1.250" with no currency) is an
+        # error EVEN IF validation passed: Decimal("1.250") parses fine, and accepting it would
+        # silently make the very guess the normalizer refused to make.
+        reasons.extend(f"could not normalize: {problem}" for problem in problems)
+        raise ResponseParseError(
+            f"model output does not match {response_model.__name__}: {'; '.join(reasons)}",
+            raw_text=text,
+            **tally.parse_error_context(),
+        ) from cause
