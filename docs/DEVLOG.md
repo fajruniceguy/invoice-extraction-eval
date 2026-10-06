@@ -186,3 +186,18 @@ the (uncommitted) manifest: review them before committing it.
 `license_note`, duplicates (`gt_from`) and bundle splitting for the 31 real documents; then
 `ingest`, `assign_split`, `degrade_docs`, `prelabel` and labeling, in that order. The prelabel path
 has been tested against a fake server only: no live call was made.
+
+## Baseline - ROADMAP vs. repo (2026-10-07)
+**State.** `pytest -q`: 1773 passed, 1 skipped (+128 slow); ruff clean. Roadmap vs. tree:
+- M1 done: `config.py`, `providers/openai_compat.py`, `extract/schema.py`; live smoke in `outputs/smoke-run*.json`.
+- M2 tooling done, deliverable not: ingest, redact, split, degrade, construct, prelabel and the label app are
+  built and tested, but the manifest has 34 rows (target 40), 31 real ones with no doc_type, none with a
+  split, `data/pages/` is empty, only `ground_truth/cons_00{1,2,3}.json` exist, no GT hash is recorded.
+- M3 partial: repair in the client, `Field` evidence/page/reasons, `extract/preprocess.py`; no prompt/extractor/runner.
+- M4 partial: `validate/arithmetic.py` only; `confidence/` empty (no date/currency/tax-ID, grounding, abstention).
+- M5, M6 untouched: `evalkit/{comparators,matching,metrics,taxonomy,scorecard,compare}.py` are 1-line stubs.
+- M7 partial: per-call tokens/cost/latency + `RunBudget` exist; `api/` empty, no FastAPI, no batch runner.
+- M8-M10 untouched: no sweep, Dockerfile, compose, README or CI. Beyond the roadmap: N3 cache (`providers/cache.py`).
+**Deviations.** ROADMAP.md is at the repo root and untracked (CLAUDE.md says `docs/ROADMAP.md`); `docs/milestones/` is absent.
+**Next: M3** (extractor + dev-set runner), buildable offline on the fake server and the 3 constructed invoices.
+Its DoD run on "all dev docs" is gated by M2's human steps (classify, redact, split, blind-label), not by code.
