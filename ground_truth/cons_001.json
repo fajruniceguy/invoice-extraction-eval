@@ -1,0 +1,289 @@
+{
+  "doc_id": "cons_001",
+  "notes": "constructed (classic layout): 45 line items over 2 pages; subtotal, discount, tax and total are printed on the last page only",
+  "vendor_name": "CV Karya Mandiri Jaya",
+  "vendor_address": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+  "vendor_tax_id": "32.723.399.8-880.000",
+  "buyer_name": "Koperasi Karyawan Harapan",
+  "document_number": "INV/2024/2360",
+  "document_date": "2024-03-23",
+  "due_date": "2024-04-22",
+  "currency": "IDR",
+  "payment_method": "Transfer Bank BCA",
+  "line_items": [
+    {
+      "description": "Baterai AA Alkaline (4)",
+      "quantity": "32",
+      "unit_price": "1205500.00",
+      "amount": "38576000.00"
+    },
+    {
+      "description": "Air Mineral 600ml (dus)",
+      "quantity": "25",
+      "unit_price": "25000.00",
+      "amount": "625000.00"
+    },
+    {
+      "description": "Refill Staples 10",
+      "quantity": "18",
+      "unit_price": "1664000.00",
+      "amount": "29952000.00"
+    },
+    {
+      "description": "Termos Air 2L",
+      "quantity": "39",
+      "unit_price": "1586500.00",
+      "amount": "61873500.00"
+    },
+    {
+      "description": "Toner Hitam 12A",
+      "quantity": "12",
+      "unit_price": "349500.00",
+      "amount": "4194000.00"
+    },
+    {
+      "description": "Lakban Coklat 48mm",
+      "quantity": "24",
+      "unit_price": "1466000.00",
+      "amount": "35184000.00"
+    },
+    {
+      "description": "Teh Celup Isi 25",
+      "quantity": "20",
+      "unit_price": "43500.00",
+      "amount": "870000.00"
+    },
+    {
+      "description": "Map Snelhecter Folio",
+      "quantity": "34",
+      "unit_price": "1306000.00",
+      "amount": "44404000.00"
+    },
+    {
+      "description": "Pulpen Gel Hitam 0.5",
+      "quantity": "14",
+      "unit_price": "1005500.00",
+      "amount": "14077000.00"
+    },
+    {
+      "description": "Rice Cooker 1.8L",
+      "quantity": "40",
+      "unit_price": "926000.00",
+      "amount": "37040000.00"
+    },
+    {
+      "description": "Tas Ransel 20L",
+      "quantity": "21",
+      "unit_price": "1962000.00",
+      "amount": "41202000.00"
+    },
+    {
+      "description": "Klip Kertas Warna",
+      "quantity": "37",
+      "unit_price": "1931500.00",
+      "amount": "71465500.00"
+    },
+    {
+      "description": "Tinta Printer Warna 003",
+      "quantity": "32",
+      "unit_price": "92000.00",
+      "amount": "2944000.00"
+    },
+    {
+      "description": "Keyboard Standar USB",
+      "quantity": "12",
+      "unit_price": "903000.00",
+      "amount": "10836000.00"
+    },
+    {
+      "description": "Minyak Goreng 2L",
+      "quantity": "16",
+      "unit_price": "710500.00",
+      "amount": "11368000.00"
+    },
+    {
+      "description": "Buku Folio 100 lembar",
+      "quantity": "40",
+      "unit_price": "661500.00",
+      "amount": "26460000.00"
+    },
+    {
+      "description": "Meja Lipat 120cm",
+      "quantity": "25",
+      "unit_price": "1561000.00",
+      "amount": "39025000.00"
+    },
+    {
+      "description": "Beras Premium 5kg",
+      "quantity": "2",
+      "unit_price": "1436500.00",
+      "amount": "2873000.00"
+    },
+    {
+      "description": "Amplop Putih Panjang",
+      "quantity": "40",
+      "unit_price": "1301500.00",
+      "amount": "52060000.00"
+    },
+    {
+      "description": "Mouse Wireless",
+      "quantity": "4",
+      "unit_price": "1661500.00",
+      "amount": "6646000.00"
+    },
+    {
+      "description": "Binder Clip 155",
+      "quantity": "2",
+      "unit_price": "1300000.00",
+      "amount": "2600000.00"
+    },
+    {
+      "description": "Hand Sanitizer 500ml",
+      "quantity": "25",
+      "unit_price": "692500.00",
+      "amount": "17312500.00"
+    },
+    {
+      "description": "Rompi Proyek Oranye",
+      "quantity": "28",
+      "unit_price": "2500.00",
+      "amount": "70000.00"
+    },
+    {
+      "description": "Spidol Permanent Merah",
+      "quantity": "19",
+      "unit_price": "1791000.00",
+      "amount": "34029000.00"
+    },
+    {
+      "description": "Amplop Coklat A4",
+      "quantity": "38",
+      "unit_price": "1513000.00",
+      "amount": "57494000.00"
+    },
+    {
+      "description": "Papan Tulis 60x90",
+      "quantity": "39",
+      "unit_price": "254500.00",
+      "amount": "9925500.00"
+    },
+    {
+      "description": "Susu Kental Manis 370gr",
+      "quantity": "24",
+      "unit_price": "1751500.00",
+      "amount": "42036000.00"
+    },
+    {
+      "description": "Rak Arsip 4 Susun",
+      "quantity": "35",
+      "unit_price": "1612500.00",
+      "amount": "56437500.00"
+    },
+    {
+      "description": "Flashdisk 32GB",
+      "quantity": "12",
+      "unit_price": "19000.00",
+      "amount": "228000.00"
+    },
+    {
+      "description": "Staples No.10",
+      "quantity": "22",
+      "unit_price": "719500.00",
+      "amount": "15829000.00"
+    },
+    {
+      "description": "Pel Lantai Ember Set",
+      "quantity": "14",
+      "unit_price": "1676000.00",
+      "amount": "23464000.00"
+    },
+    {
+      "description": "Sapu Ijuk",
+      "quantity": "31",
+      "unit_price": "1527000.00",
+      "amount": "47337000.00"
+    },
+    {
+      "description": "Masker Medis (box)",
+      "quantity": "11",
+      "unit_price": "297500.00",
+      "amount": "3272500.00"
+    },
+    {
+      "description": "Kabel HDMI 2m",
+      "quantity": "37",
+      "unit_price": "477500.00",
+      "amount": "17667500.00"
+    },
+    {
+      "description": "Penggaris Besi 30cm",
+      "quantity": "4",
+      "unit_price": "1587000.00",
+      "amount": "6348000.00"
+    },
+    {
+      "description": "Gula Pasir 1kg",
+      "quantity": "13",
+      "unit_price": "25000.00",
+      "amount": "325000.00"
+    },
+    {
+      "description": "Lemari Besi 2 Pintu",
+      "quantity": "35",
+      "unit_price": "275500.00",
+      "amount": "9642500.00"
+    },
+    {
+      "description": "Tisu Gulung (isi 6)",
+      "quantity": "3",
+      "unit_price": "876500.00",
+      "amount": "2629500.00"
+    },
+    {
+      "description": "Stop Kontak 4 Lubang",
+      "quantity": "7",
+      "unit_price": "688500.00",
+      "amount": "4819500.00"
+    },
+    {
+      "description": "Mie Instan Goreng (dus)",
+      "quantity": "39",
+      "unit_price": "156500.00",
+      "amount": "6103500.00"
+    },
+    {
+      "description": "Jas Hujan Ponco",
+      "quantity": "4",
+      "unit_price": "17000.00",
+      "amount": "68000.00"
+    },
+    {
+      "description": "Baterai AAA Alkaline (4)",
+      "quantity": "38",
+      "unit_price": "1487500.00",
+      "amount": "56525000.00"
+    },
+    {
+      "description": "Kursi Lipat Besi",
+      "quantity": "4",
+      "unit_price": "1623500.00",
+      "amount": "6494000.00"
+    },
+    {
+      "description": "Cutter Kecil",
+      "quantity": "24",
+      "unit_price": "213000.00",
+      "amount": "5112000.00"
+    },
+    {
+      "description": "Penghapus Putih",
+      "quantity": "22",
+      "unit_price": "1456000.00",
+      "amount": "32032000.00"
+    }
+  ],
+  "subtotal": "989476500.00",
+  "tax": "103400294.00",
+  "discount": "49473825.00",
+  "total": "1043402969.00"
+}

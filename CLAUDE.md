@@ -11,7 +11,7 @@ A document extraction system for invoices/receipts plus a rigorous evaluation ha
 ## Layout
 ```
 src/docextract/{config.py, providers/, ingest/, extract/, validate/, confidence/, api/}
-src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, compare.py, groundtruth.py}
+src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, compare.py, groundtruth.py, construct.py, construct_io.py}
 data/{manifest.csv, redactions.yaml, pages/, private/{raw,preview}}
 ground_truth/{, drafts/}
 outputs/
@@ -19,7 +19,7 @@ scripts/
 tests/{fakes/, fixtures/}
 docs/
 ```
-`groundtruth.py` (the ground-truth schema) is the only file in `evalkit` not in the original layout brief.
+`groundtruth.py` (the ground-truth schema) and `construct*.py` (constructed invoices) are the files in `evalkit` not in the original layout brief.
 
 ## Provider
 - The provider is OpenAI-compatible and fully configured via env: `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, plus per-token prices for cost (`LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`, USD per 1M tokens).
@@ -63,6 +63,7 @@ docs/
 - `scripts/ingest.py --preview [--doc ID]` writes the UNREDACTED normalized pages to `data/private/preview/` (same pixel space as the stored pages, no `ingest.json`) so you can measure boxes before any exists. It refuses a directory that is, contains or sits inside `--pages-dir`, never reads `redactions.yaml`, and its output must never be committed or shared.
 - **Splits (`ingest/splits.py`, `scripts/assign_split.py`):** the unit is the `content_group` (a group never straddles dev/test; a `gt_from` row must share its target's group), stratified by (real|constructed, doc_type), ~35% dev. Groups are ranked by a hash of (seed, stratum, group) so adding a document never reshuffles the others; assignments already in the manifest are NEVER moved (`--force` starts over, and refuses documents that already have ground truth). A doc_type with one group goes to test. Then 8-10 REAL test documents become `label_mode=blind`, round-robin over doc types, whole groups; other hand-labeled documents default to `prelabel`. A label_mode already in the manifest is a decision and is kept: a document that may carry a model-influenced label never turns blind.
 - **Degraded variants (`ingest/degrade.py`, `scripts/degrade_docs.py`):** light/medium/heavy variants of `born_digital` documents, made from the source's STORED (already redacted) pages, never from raw files. Pixel transforms only: page count and size are preserved, the whole page stays inside the canvas (a skewed page is scaled down, not clipped), nothing is added or erased. Deterministic per (seed, source, level, page); the seed is in [1, 2**31-1] because Augraphy passes it to `cv2.setRNGSeed` and treats 0 as "unset". The manifest row (`<src>-deg-<level>`, capture=synthetic_degraded, `gt_from` the label owner, same content_group/split) is added right after the source. Augraphy is used when it imports, else OpenCV; the backend and its version are recorded in `degrade.json` and part of the content hash. `BadPhotoCopy` is deliberately not used (not reproducible inside a full pipeline). numpy/OpenCV/Augraphy live in the `degrade` dependency group (default groups: dev + degrade), imported lazily; Augraphy takes ~20 s to import and writes its textures to `outputs/cache/augraphy` (we chdir there), so its tests are `slow`.
+- **Constructed invoices (`evalkit/construct.py`, `scripts/construct_invoices.py`):** three reportlab invoices (cons_001..003: classic, modern, compact layouts), 30-60 rupiah line items over 2-3 pages, subtotal/discount/PPN/total on the LAST page only, one layout with a repeated "(lanjutan)" header. The label is derived from the same `Invoice` value that is printed and records what the page PRINTS (Indonesian money like "1.250.000,00" -> decimal string "1250000.00" at the printed scale; a field a layout does not print is explicit `null`). Seeded and byte-reproducible; PDFs go to `data/private/raw/constructed/` (gitignored, regenerated). A label that already exists is never overwritten silently: identical = untouched, different = refused unless `--force`, and every created/replaced label gets a `ground_truth/CHANGELOG.md` line. Constructed docs have no label_mode (nobody labels them) and are their own `constructed` stratum in the split.
 - Windows: a long raw file name (200+ chars) makes plain `Path.is_file()` return False and the file silently vanishes: every listing and read of raw files goes through `fsutil.long_path`.
 
 ## Ground truth
@@ -90,6 +91,7 @@ python -m uv run python scripts/ingest.py [--doc ID] [--check] [--force]   # raw
 python -m uv run python scripts/ingest.py --preview --doc ID   # UNREDACTED pages -> data/private/preview, to measure boxes
 python -m uv run python scripts/assign_split.py [--dry-run] [--force]   # dev/test split + blind picks -> manifest
 python -m uv run python scripts/degrade_docs.py (--doc ID | --all) [--levels light,heavy] [--check]   # degraded variants + manifest rows
+python -m uv run python scripts/construct_invoices.py [--check] [--force]   # 3 constructed multi-page invoices + labels
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
 python -m uv run python tests/fakes/fake_llm.py 8765 [--reject-schema]   # fake OpenAI-compatible server, no key needed
