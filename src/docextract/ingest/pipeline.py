@@ -27,7 +27,7 @@ from docextract.config import IngestSettings
 from docextract.fsutil import long_path
 from docextract.imaging import encode_page, storage_format
 from docextract.ingest.manifest import ManifestRow
-from docextract.ingest.pages import PageLoadError, load_pages
+from docextract.ingest.pages import PageLoadError, RenderedPage, load_pages
 from docextract.ingest.redact import Box, RedactionError, apply_boxes, validate_boxes
 
 INGEST_VERSION = 1  # bump when the pipeline's output would change for the same inputs
@@ -176,6 +176,103 @@ def _write_atomic(path: Path, data: bytes) -> None:
         raise
 
 
+def raw_paths(row: ManifestRow, raw_dir: Path) -> list[Path]:
+    """The row's raw files, which must all exist (checked through `long_path`: see fsutil)."""
+    files = [raw_dir / name for name in row.raw_files]
+    for name, path in zip(row.raw_files, files, strict=True):
+        if not long_path(path).is_file():
+            raise IngestError(row.doc_id, f"raw file not found: {name}")
+    return files
+
+
+def store_pages(
+    out_dir: Path,
+    rendered: Sequence[RenderedPage],
+    boxes: Mapping[int, Sequence[Box]],
+    settings: IngestSettings,
+) -> list[PageRecord]:
+    """Burn the boxes into each page, encode it and write it; drop pages that no longer exist.
+    The caller has already validated `boxes` against the rendered pages."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    records: list[PageRecord] = []
+    for number, page in enumerate(rendered, start=1):
+        fmt = storage_format(page.source_format)
+        redacted = apply_boxes(page.image, boxes.get(number, ()))  # BEFORE encoding
+        data = encode_page(redacted, fmt, jpeg_quality=settings.jpeg_quality)
+        name = f"p{number}.{_EXTENSION[fmt]}"
+        _write_atomic(out_dir / name, data)
+        records.append(
+            PageRecord(
+                n=number,
+                file=name,
+                format=fmt,
+                size=redacted.size,
+                sha256=_sha256(data),
+                bytes=len(data),
+                source_file=page.source_file,
+                source_page=page.source_page,
+            )
+        )
+    keep = {record.file for record in records}
+    for stale in out_dir.iterdir():
+        if _PAGE_FILE.fullmatch(stale.name) and stale.name not in keep:
+            stale.unlink()  # a shorter document, or a page that changed format
+    return records
+
+
+def check_pinned_sizes(
+    doc_id: str,
+    sizes: Mapping[int, tuple[int, int]],
+    pinned: Mapping[int, tuple[int, int]],
+) -> None:
+    """The size a redactions.yaml entry says its boxes were measured on must be the page's size."""
+    for page, expected in sorted(pinned.items()):
+        actual = sizes.get(page)
+        if actual is not None and actual != expected:
+            raise IngestError(
+                doc_id,
+                f"page {page} is {actual[0]}x{actual[1]} but redactions.yaml says its boxes "
+                f"were measured on {expected[0]}x{expected[1]}: re-measure them on the current "
+                "page (ingest.py --preview) or restore the DPI / size cap they were drawn at",
+            )
+
+
+def check_resize(
+    doc_id: str,
+    sizes: Mapping[int, tuple[int, int]],
+    boxes: Mapping[int, Sequence[Box]],
+    pinned: Mapping[int, tuple[int, int]],
+    sidecar: Mapping[str, Any] | None,
+) -> None:
+    """Refuse boxes that were left untouched while their page changed size (a new DPI or cap).
+
+    The boxes are pixel coordinates, so on a page of another size they would still be accepted
+    when they fit, but they would cover the wrong place. Pages whose boxes were edited, or whose
+    yaml pins the size, are fine."""
+    if not sidecar:
+        return
+    try:
+        old_sizes = {
+            record.n: record.size for record in (PageRecord.from_json(p) for p in sidecar["pages"])
+        }
+        old_boxes = sidecar.get("redactions") or {}
+    except (KeyError, TypeError, ValueError, IndexError):
+        return
+    for page, found in sorted(boxes.items()):
+        if not found or page in pinned:
+            continue
+        before = old_boxes.get(str(page))
+        same_boxes = before == [list(box) for box in found]
+        if same_boxes and page in old_sizes and old_sizes[page] != sizes[page]:
+            was, now = old_sizes[page], sizes[page]
+            raise IngestError(
+                doc_id,
+                f"page {page} was {was[0]}x{was[1]} when its boxes were recorded and is now "
+                f"{now[0]}x{now[1]} (DPI or size cap changed): they may cover the wrong pixels. "
+                "Re-measure them with --preview, or pass --accept-resize if they are still right",
+            )
+
+
 def ingest_document(
     row: ManifestRow,
     *,
@@ -183,11 +280,15 @@ def ingest_document(
     out_dir: Path,
     settings: IngestSettings,
     boxes: Mapping[int, Sequence[Sequence[Any]]] | None = None,
+    pinned_sizes: Mapping[int, tuple[int, int]] | None = None,
+    accept_resize: bool = False,
     force: bool = False,
     dry_run: bool = False,
 ) -> IngestResult:
-    """Ingest one document. `boxes` maps a 1-based stored page number to redaction boxes."""
+    """Ingest one document. `boxes` maps a 1-based stored page number to redaction boxes;
+    `pinned_sizes` the page size those boxes were measured on, where redactions.yaml says."""
     doc_id = row.doc_id
+    pinned = dict(pinned_sizes or {})
     if row.is_derived:
         raise IngestError(
             doc_id, "a degraded variant is generated from its source's pages, not ingested"
@@ -197,14 +298,7 @@ def ingest_document(
     except RedactionError as exc:
         raise IngestError(doc_id, str(exc).removeprefix(f"{doc_id}: ")) from exc
 
-    files = [raw_dir / name for name in row.raw_files]
-    missing = [
-        name
-        for name, path in zip(row.raw_files, files, strict=True)
-        if not long_path(path).is_file()
-    ]
-    if missing:
-        raise IngestError(doc_id, f"raw file not found: {missing[0]}")
+    files = raw_paths(row, raw_dir)
     raw_hashes = [_sha256(long_path(path).read_bytes()) for path in files]
 
     wanted_boxes: dict[int, list[Box]] = {}
@@ -218,6 +312,7 @@ def ingest_document(
     if not force:
         recorded = _current_pages(out_dir, sidecar, inputs_hash)
         if recorded is not None:
+            check_pinned_sizes(doc_id, {r.n: r.size for r in recorded}, pinned)
             return IngestResult(doc_id, "unchanged", recorded, inputs_hash)
     if dry_run:
         return IngestResult(doc_id, "would_ingest", (), inputs_hash)
@@ -249,31 +344,12 @@ def ingest_document(
         except RedactionError as exc:
             raise IngestError(doc_id, str(exc)) from exc
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    records: list[PageRecord] = []
-    for number, page in enumerate(rendered, start=1):
-        fmt = storage_format(page.source_format)
-        redacted = apply_boxes(page.image, wanted_boxes[number])  # BEFORE encoding
-        data = encode_page(redacted, fmt, jpeg_quality=settings.jpeg_quality)
-        name = f"p{number}.{_EXTENSION[fmt]}"
-        _write_atomic(out_dir / name, data)
-        records.append(
-            PageRecord(
-                n=number,
-                file=name,
-                format=fmt,
-                size=redacted.size,
-                sha256=_sha256(data),
-                bytes=len(data),
-                source_file=page.source_file,
-                source_page=page.source_page,
-            )
-        )
+    sizes = {number: page.image.size for number, page in enumerate(rendered, start=1)}
+    check_pinned_sizes(doc_id, sizes, pinned)
+    if not accept_resize:
+        check_resize(doc_id, sizes, wanted_boxes, pinned, sidecar)
 
-    keep = {record.file for record in records}
-    for stale in out_dir.iterdir():
-        if _PAGE_FILE.fullmatch(stale.name) and stale.name not in keep:
-            stale.unlink()  # a shorter document, or a page that changed format
+    records = store_pages(out_dir, rendered, wanted_boxes, settings)
     sidecar_data = {
         "ingest_version": INGEST_VERSION,
         "inputs_hash": inputs_hash,

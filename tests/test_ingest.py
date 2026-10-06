@@ -1,6 +1,5 @@
 import io
 import json
-import os
 import shutil
 from pathlib import Path
 from typing import Any
@@ -8,14 +7,12 @@ from typing import Any
 import pytest
 from PIL import Image
 
-from docextract.config import IngestSettings
 from docextract.imaging import ELONGATED_AREA_AT_REFERENCE
 from docextract.ingest.manifest import COLUMNS, ManifestRow
 from docextract.ingest.pipeline import (
     INGEST_VERSION,
     SIDECAR,
     IngestError,
-    IngestResult,
     ingest_document,
 )
 from docextract.ingest.redact import RedactionError, apply_boxes, validate_boxes
@@ -30,52 +27,7 @@ from files import (
     make_sized_pdf,
     write_long_named,
 )
-
-
-def settings(**overrides: Any) -> IngestSettings:
-    return IngestSettings(_env_file=None, **overrides)
-
-
-def doc(*raw_files: str, **overrides: Any) -> ManifestRow:
-    values: dict[str, Any] = {
-        "doc_id": "doc_001",
-        "raw_files": ";".join(raw_files),
-        "needs_redaction": False,
-    }
-    values.update(overrides)
-    return ManifestRow.model_validate(values)
-
-
-class Env:
-    """A raw folder and an output folder under tmp_path, and a one-call ingest."""
-
-    def __init__(self, tmp_path: Path) -> None:
-        self.raw = tmp_path / "raw"
-        self.raw.mkdir()
-        self.pages = tmp_path / "pages"
-
-    def out(self, row: ManifestRow) -> Path:
-        return self.pages / row.doc_id
-
-    def ingest(self, row: ManifestRow, **kwargs: Any) -> IngestResult:
-        config = kwargs.pop("settings", settings())
-        return ingest_document(
-            row, raw_dir=self.raw, out_dir=self.out(row), settings=config, **kwargs
-        )
-
-    def page(self, row: ManifestRow, name: str) -> Image.Image:
-        image = Image.open(self.out(row) / name)
-        image.load()
-        return image
-
-    def sidecar(self, row: ManifestRow) -> dict[str, Any]:
-        return json.loads((self.out(row) / SIDECAR).read_text(encoding="utf-8"))
-
-
-@pytest.fixture
-def env(tmp_path: Path) -> Env:
-    return Env(tmp_path)
-
+from ingest_support import Env, doc, gray_png, pixels, run_script, settings
 
 # ------------------------------------------------------------------ settings
 
@@ -521,16 +473,6 @@ class TestIdempotency:
 # ------------------------------------------------------------------ redaction
 
 
-def pixels(image: Image.Image) -> list[Any]:
-    """Every pixel of `image` (Pillow is deprecating getdata in favour of get_flattened_data)."""
-    getter = getattr(image, "get_flattened_data", None) or image.getdata
-    return list(getter())
-
-
-def gray_png(env: Env, name: str = "g.png", size: tuple[int, int] = (80, 60)) -> None:
-    Image.new("RGB", size, (128, 128, 128)).save(env.raw / name, "PNG")
-
-
 class TestRedactionDecision:
     def test_a_blank_decision_is_refused(self, env: Env) -> None:
         gray_png(env)
@@ -707,20 +649,7 @@ class TestRedactUnit:
 @pytest.mark.slow
 class TestCommandLine:
     def run(self, *args: str) -> tuple[int, str, str]:
-        import subprocess
-        import sys
-
-        root = Path(__file__).resolve().parents[1]
-        env_vars = {k: v for k, v in os.environ.items() if not k.startswith("INGEST_")}
-        done = subprocess.run(
-            [sys.executable, str(root / "scripts" / "ingest.py"), *args],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            timeout=120,
-            env=env_vars,
-        )
-        return done.returncode, done.stdout, done.stderr
+        return run_script("ingest.py", *args)
 
     def setup_dataset(self, tmp_path: Path, rows: list[str]) -> tuple[Path, Path, Path]:
         raw = tmp_path / "raw"

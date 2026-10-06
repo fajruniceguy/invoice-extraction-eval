@@ -59,6 +59,8 @@ docs/
 - `data/manifest.csv` has one row per LOGICAL document (14 columns + optional `gt_from`, `variant`). `scripts/manifest_init.py` scans the raw folder and appends rows for unreferenced files only (merge-safe, neutral `doc_NNN` ids, only strong-evidence inference); the rest is filled by hand. A row is never overwritten.
 - `scripts/ingest.py` makes pages: EXIF upright -> PDFs at `INGEST_DPI` -> size cap (`INGEST_MAX_LONG_EDGE`, elongated pages by area) -> redaction -> encode (PDF/PNG sources -> PNG, JPEG/HEIC photos -> JPEG q92, ALL metadata stripped). Idempotent via a content hash recorded in `ingest.json` (which holds sizes, hashes and page mapping but never a raw file name). Never encode a page except through `imaging.encode_page`.
 - **Redaction is a hard gate:** blank `needs_redaction`, or `y` without boxes, is refused (nothing is written); `n` with boxes is refused; boxes must fit the stored page. Burn BEFORE encoding. Boxes are in stored-page pixels.
+- `data/redactions.yaml` (`ingest/redactions.py`): `doc_id -> page -> [[x, y, w, h], ...]`, optionally `size: [w, h]` per page (the page size the boxes were measured on; ingestion refuses a different one). The parser is strict on purpose: a repeated key (PyYAML would silently keep the last), an empty entry, a bad page number or box, an unknown doc_id, or boxes on a degraded variant all stop the run with exit 2 BEFORE any page is written, because anything accepted quietly is a page stored unredacted. Changing the DPI or size cap under boxes you did not touch is refused (`--accept-resize` if they are still right).
+- `scripts/ingest.py --preview [--doc ID]` writes the UNREDACTED normalized pages to `data/private/preview/` (same pixel space as the stored pages, no `ingest.json`) so you can measure boxes before any exists. It refuses a directory that is, contains or sits inside `--pages-dir`, never reads `redactions.yaml`, and its output must never be committed or shared.
 - Windows: a long raw file name (200+ chars) makes plain `Path.is_file()` return False and the file silently vanishes: every listing and read of raw files goes through `fsutil.long_path`.
 
 ## Ground truth
@@ -83,6 +85,7 @@ python -m uv run ruff check                         # lint
 python -m uv run ruff format .                      # format
 python -m uv run python scripts/manifest_init.py [--dry-run]   # scan data/private/raw, append manifest rows
 python -m uv run python scripts/ingest.py [--doc ID] [--check] [--force]   # raw -> data/pages (idempotent)
+python -m uv run python scripts/ingest.py --preview --doc ID   # UNREDACTED pages -> data/private/preview, to measure boxes
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
 python -m uv run python tests/fakes/fake_llm.py 8765 [--reject-schema]   # fake OpenAI-compatible server, no key needed

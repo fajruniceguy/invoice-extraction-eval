@@ -1,0 +1,27 @@
+# Redaction boxes: parts of a page that are burned in solid black when the document is ingested
+# (scripts/ingest.py). Only the redacted page is ever stored in data/pages.
+#
+# Format: doc_id -> page number -> boxes. A box is [x, y, w, h] in pixels of the STORED page: after
+# EXIF rotation, PDF rasterization and the size cap, i.e. the pixels you see in the preview.
+#
+#   doc_007:
+#     1:                          # page 1 of the stored document (after page_range)
+#       - [120, 340, 400, 60]     # x, y, w, h
+#       - [120, 410, 220, 40]
+#     2:
+#       size: [1654, 2339]        # optional: the page size these coordinates were measured on;
+#       boxes:                    # ingestion refuses the box if the page has another size
+#         - [10, 10, 50, 50]
+#
+# Rules (each one is enforced, ingestion fails loudly instead of guessing):
+#   * every document with needs_redaction=y in data/manifest.csv needs boxes here, and a document
+#     with needs_redaction=n must have none;
+#   * a doc_id must exist in the manifest, and a repeated key (same doc or page twice) is an error;
+#   * boxes must fit inside the page; they are never clipped;
+#   * degraded variants take their pages from their source document: put the boxes on the source.
+#
+# To find coordinates before a document has boxes (a document marked y with no boxes cannot be
+# ingested), write unredacted pages to data/private/preview/ with
+#   python -m uv run python scripts/ingest.py --preview --doc doc_007
+# and measure on those: they have exactly the pixels the stored page will have. That folder is
+# gitignored; never copy anything out of it.

@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from fakes.fake_llm import FakeLLMServer
+from ingest_support import Env
 
 
 @pytest.fixture(autouse=True)
@@ -20,3 +21,9 @@ def fake_llm() -> Iterator[FakeLLMServer]:
     """A fake OpenAI-compatible server on an ephemeral local port (real sockets)."""
     with FakeLLMServer() as server:
         yield server
+
+
+@pytest.fixture
+def env(tmp_path: Path) -> Env:
+    """A raw folder and an output folder for ingestion tests."""
+    return Env(tmp_path)

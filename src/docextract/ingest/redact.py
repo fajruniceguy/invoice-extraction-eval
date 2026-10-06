@@ -23,12 +23,25 @@ class RedactionError(ValueError):
     """The redaction boxes are inconsistent with the manifest or with the page."""
 
 
-def _as_int(value: Any, label: str) -> int:
+def as_pixel(value: Any, label: str) -> int:
+    """A whole number of pixels: ints, and floats like 10.0; never bools, strings or 10.5."""
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise RedactionError(f"{label}: {value!r} is not a number")
     if isinstance(value, float) and not value.is_integer():
         raise RedactionError(f"{label}: {value!r} must be a whole number of pixels")
     return int(value)
+
+
+def parse_box(raw: Any, label: str) -> Box:
+    """`[x, y, w, h]` as integers, checked for shape and sign (not yet for the page size)."""
+    if isinstance(raw, str) or not isinstance(raw, Sequence) or len(raw) != 4:
+        raise RedactionError(f"{label}: expected [x, y, w, h], got {raw!r}")
+    x, y, w, h = (as_pixel(v, label) for v in raw)
+    if w < 1 or h < 1:
+        raise RedactionError(f"{label}: width and height must be positive, got [{w}, {h}]")
+    if x < 0 or y < 0:
+        raise RedactionError(f"{label}: x and y cannot be negative, got [{x}, {y}]")
+    return (x, y, w, h)
 
 
 def validate_boxes(
@@ -39,12 +52,8 @@ def validate_boxes(
     checked: list[Box] = []
     for index, raw in enumerate(boxes, start=1):
         label = f"{where} box {index}"
-        if len(raw) != 4:
-            raise RedactionError(f"{label}: expected [x, y, w, h], got {list(raw)!r}")
-        x, y, w, h = (_as_int(v, label) for v in raw)
-        if w < 1 or h < 1:
-            raise RedactionError(f"{label}: width and height must be positive, got [{w}, {h}]")
-        if x < 0 or y < 0 or x + w > width or y + h > height:
+        x, y, w, h = parse_box(raw, label)
+        if x + w > width or y + h > height:
             raise RedactionError(
                 f"{label}: [{x}, {y}, {w}, {h}] does not fit the {width}x{height} page "
                 "(coordinates taken at another resolution?)"
