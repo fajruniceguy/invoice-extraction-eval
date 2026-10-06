@@ -16,6 +16,7 @@ model: it only proves wiring.
 import json
 import sys
 import threading
+import time
 from collections import deque
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -36,6 +37,7 @@ class RecordedRequest:
     path: str
     headers: dict[str, str]
     body: dict[str, Any]
+    received_at: float = field(default_factory=time.monotonic)  # when it arrived
 
     @property
     def response_format(self) -> str | None:

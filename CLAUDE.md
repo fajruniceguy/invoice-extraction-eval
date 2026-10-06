@@ -11,7 +11,7 @@ A document extraction system for invoices/receipts plus a rigorous evaluation ha
 ## Layout
 ```
 src/docextract/{config.py, providers/, ingest/, extract/, validate/, confidence/, api/}
-src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, compare.py, groundtruth.py, gt_store.py, construct.py, construct_io.py}
+src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, compare.py, groundtruth.py, gt_store.py, construct.py, construct_io.py, prelabel.py}
 data/{manifest.csv, redactions.yaml, pages/, private/{raw,preview}}
 ground_truth/{, drafts/}
 outputs/
@@ -19,10 +19,11 @@ scripts/
 tests/{fakes/, fixtures/}
 docs/
 ```
-`groundtruth.py` (the ground-truth schema), `gt_store.py` (label files) and `construct*.py` (constructed invoices) are the files in `evalkit` not in the original layout brief.
+`groundtruth.py` (the ground-truth schema), `gt_store.py` (label files), `construct*.py` (constructed invoices) and `prelabel.py` (model drafts) are the files in `evalkit` not in the original layout brief.
 
 ## Provider
 - The provider is OpenAI-compatible and fully configured via env: `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, plus per-token prices for cost (`LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`, USD per 1M tokens).
+- Pre-labeling has its own `PRELABEL_*` variables (below); `.env.example` lists them.
 - Optional env: `LLM_MAX_REPAIRS` (default 1: re-asks when output is not valid JSON / does not match the schema), `LLM_REASONING_EFFORT` (passed through as `reasoning_effort` when set), `LLM_STRUCTURED_MODE`, `LLM_TIMEOUT_S`, `LLM_MAX_RETRIES`, `LLM_BACKOFF_BASE_S`, `LLM_BACKOFF_MAX_S`, and `MAX_RUN_COST_USD` (below). `.env.example` lists them all.
 - Never hardcode model names or secrets. `.env` is gitignored and holds a real key: never print it, never edit it, never commit it. `.env.example` is the only committed example.
 - Tests and fakes must never read `.env` or call the real API (`scripts/smoke.py --env-file <empty file>` plus a scrubbed environment; see `tests/test_provider_integration.py`).
@@ -50,6 +51,11 @@ docs/
 - Money is `Decimal` end to end: model JSON is parsed with `parse_float=Decimal`.
 - **Normalization (`docextract/normalize.py`) never guesses.** `parse_number` / `parse_date` return `ok | ambiguous | invalid`; `1.250` is thousands in an IDR context, a decimal in a USD context, and **ambiguous** (with both candidates) with no context; `05/03/2024` is ambiguous unless a day is above 12 or `day_first` is known (IDR documents are read day-first). A currency marker in the text beats the caller's currency. Shared by the extraction pipeline, `prelabel` and the label app.
 - **Order in the pipeline: parse JSON -> normalize -> validate -> repair only if that still fails** (`chat(preprocess=normalize_extraction_payload)`). A value the normalizer declined to resolve is an error even if pydantic could parse it (`Decimal("1.250")` parses fine, and accepting it would make the guess the normalizer refused to make). Every rewrite is reported in `LLMResponse.normalizations`.
+
+## Pre-labeling (`evalkit/prelabel.py`, `scripts/prelabel.py`)
+- A model drafts ground truth into `ground_truth/drafts/<doc_id>.json` (a label file with `label_mode: prelabel` and no `labeled_at`); a human verifies every field. It is configured by `PRELABEL_BASE_URL/API_KEY/MODEL` (+ prices, `PRELABEL_MAX_RUN_COST_USD`) and runs through the same `OpenAICompatClient` via `Settings.prelabel_settings()`: json_object pinned (the schema is in the prompt: Anthropic's OpenAI-compatible endpoint ignores `response_format`), page images downscaled in memory to 1568 px and under 4.5 MB, the extractor's reasoning effort and cost cap not inherited.
+- **Hard rules, enforced in code and tested to make zero requests:** a BLIND document is never drafted (`BlindDocumentError`; `save_draft` re-checks, `check_labels` flags a blind draft); only hand-labeled `label_mode=prelabel` documents qualify (not borrowers, constructed, or blank label_mode); the model must differ from the extractor's (same endpoint + model is refused, `--allow-same-model` is the escape hatch); only the STORED, REDACTED pages are sent (verified against `ingest.json`, raw files never read); a finished label is never drafted over.
+- The model transcribes what is PRINTED as strings; `docextract.normalize` turns them into values. Anything it cannot resolve without guessing (ambiguous `1.250` with no currency, `05/03/2024`) becomes `"__unlabeled__"` with a field note. Null = not printed, a missing key = not answered (unlabeled).
 
 ## Core logic
 - Extraction logic and the eval harness are hand-written. No LangChain / LlamaIndex for core logic.
@@ -94,6 +100,7 @@ python -m uv run python scripts/assign_split.py [--dry-run] [--force]   # dev/te
 python -m uv run python scripts/degrade_docs.py (--doc ID | --all) [--levels light,heavy] [--check]   # degraded variants + manifest rows
 python -m uv run python scripts/construct_invoices.py [--check] [--force]   # 3 constructed multi-page invoices + labels
 python -m uv run python scripts/check_ground_truth.py   # label files vs manifest, blind-draft rule, coverage per split
+python -m uv run python scripts/prelabel.py (--doc ID | --all) [--dry-run] [--force]   # COSTS MONEY: model drafts -> ground_truth/drafts
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
 python -m uv run python tests/fakes/fake_llm.py 8765 [--reject-schema]   # fake OpenAI-compatible server, no key needed

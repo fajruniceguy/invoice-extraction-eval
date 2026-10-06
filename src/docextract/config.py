@@ -62,8 +62,32 @@ class Settings(BaseSettings):
     # Unset = send the stored page as is. Same shape rule as ingestion (docextract.imaging).
     llm_image_max_long_edge: int | None = Field(default=None, ge=1)
 
+    # Pre-labeling (scripts/prelabel.py): a DIFFERENT model drafts labels that a human verifies.
+    # It talks to its own OpenAI-compatible endpoint through the same client class; see
+    # `prelabel_settings()`. Unset base URL / model = pre-labeling is not configured.
+    prelabel_base_url: str | None = None
+    prelabel_api_key: SecretStr = SecretStr("")
+    prelabel_model: str | None = None
+    prelabel_price_input_per_mtok: Decimal = Field(default=Decimal(0), ge=0)
+    prelabel_price_output_per_mtok: Decimal = Field(default=Decimal(0), ge=0)
+    # json_object by default: some endpoints (Anthropic's OpenAI-compatible one) silently ignore
+    # `response_format`, so a json_schema request would send the model no schema at all. The
+    # schema is spelled out in the prompt instead.
+    prelabel_structured_mode: StructuredMode = "json_object"
+    # Anthropic downscales above ~1568 px anyway and refuses images over ~5 MB.
+    prelabel_image_max_long_edge: int = Field(default=1568, ge=1)
+    prelabel_max_pages: int = Field(default=15, ge=1)  # longer bundles must be split first
+    prelabel_max_tokens: int = Field(default=8000, ge=256)
+    prelabel_max_run_cost_usd: Decimal | None = Field(default=None, gt=0)
+
     @field_validator(
-        "llm_reasoning_effort", "max_run_cost_usd", "llm_image_max_long_edge", mode="before"
+        "llm_reasoning_effort",
+        "max_run_cost_usd",
+        "llm_image_max_long_edge",
+        "prelabel_base_url",
+        "prelabel_model",
+        "prelabel_max_run_cost_usd",
+        mode="before",
     )
     @classmethod
     def _blank_is_unset(cls, value: object) -> object:
@@ -89,6 +113,19 @@ class Settings(BaseSettings):
             )
         return self
 
+    @model_validator(mode="after")
+    def _prelabel_cap_needs_prices(self) -> Self:
+        if (
+            self.prelabel_max_run_cost_usd is not None
+            and self.prelabel_price_input_per_mtok == 0
+            and self.prelabel_price_output_per_mtok == 0
+        ):
+            raise ValueError(
+                "PRELABEL_MAX_RUN_COST_USD is set but PRELABEL_PRICE_INPUT_PER_MTOK and "
+                "PRELABEL_PRICE_OUTPUT_PER_MTOK are both 0, so the cap could never trigger."
+            )
+        return self
+
     @field_validator("llm_base_url")
     @classmethod
     def _check_base_url(cls, value: str) -> str:
@@ -97,6 +134,13 @@ class Settings(BaseSettings):
             raise ValueError("LLM_BASE_URL must start with http:// or https://")
         return value
 
+    @field_validator("prelabel_base_url")
+    @classmethod
+    def _check_prelabel_base_url(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip().startswith(("http://", "https://")):
+            raise ValueError("PRELABEL_BASE_URL must start with http:// or https://")
+        return value.strip() if value is not None else None
+
     @field_validator("llm_model")
     @classmethod
     def _check_model(cls, value: str) -> str:
@@ -104,6 +148,48 @@ class Settings(BaseSettings):
         if not value:
             raise ValueError("LLM_MODEL must not be empty")
         return value
+
+    def prelabel_settings(self) -> "Settings":
+        """The settings the pre-labeling model's client runs with: the same client class, pointed
+        at PRELABEL_*. Everything else (timeouts, retries, repairs, cache) is inherited. The
+        extractor's reasoning effort and cost cap do not apply to it."""
+        missing = [
+            name
+            for name, value in (
+                ("PRELABEL_BASE_URL", self.prelabel_base_url),
+                ("PRELABEL_MODEL", self.prelabel_model),
+            )
+            if not value
+        ]
+        if missing:
+            raise ValueError(
+                f"{' and '.join(missing)} not set: pre-labeling needs its own model and endpoint "
+                "(see .env.example)"
+            )
+        return self.model_copy(
+            update={
+                "llm_base_url": self.prelabel_base_url,
+                "llm_model": self.prelabel_model,
+                "llm_api_key": self.prelabel_api_key,
+                "llm_price_input_per_mtok": self.prelabel_price_input_per_mtok,
+                "llm_price_output_per_mtok": self.prelabel_price_output_per_mtok,
+                "llm_structured_mode": self.prelabel_structured_mode,
+                "llm_reasoning_effort": None,
+                "llm_image_max_long_edge": self.prelabel_image_max_long_edge,
+                "max_run_cost_usd": self.prelabel_max_run_cost_usd,
+            }
+        )
+
+    def same_model_as_prelabel(self) -> bool:
+        """True when pre-labeling would use the very endpoint and model the extractor uses."""
+
+        def norm(url: str | None) -> str:
+            return (url or "").strip().rstrip("/").lower()
+
+        return (
+            norm(self.llm_base_url) == norm(self.prelabel_base_url)
+            and self.llm_model.strip().lower() == (self.prelabel_model or "").strip().lower()
+        )
 
     def cost_usd(self, input_tokens: int, output_tokens: int) -> Decimal:
         """Cost of one call in USD, from the configured per-1M-token prices."""
