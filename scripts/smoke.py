@@ -1,11 +1,13 @@
 """Send one image to the configured LLM and print the parsed extraction, tokens and latency.
 
-Usage: python -m uv run python scripts/smoke.py [IMAGE] [--raw] [--env-file PATH] [--output PATH]
+Usage: python -m uv run python scripts/smoke.py [IMAGE] [--raw] [--cache] [--env-file PATH]
+       [--output PATH]
 
 IMAGE defaults to the first image in data/raw, then to tests/fixtures/sample_receipt.png.
 Configuration (LLM_BASE_URL, LLM_MODEL, LLM_API_KEY, ...) comes from the environment, then
 from the env file (default: .env at the repo root).
 
+The response cache is BYPASSED here (a smoke check must hit the real API); --cache allows it.
 With --raw the model's raw text is printed before the parsed result. Whatever the outcome, a
 JSON artifact (raw text, parsed result, validator output, repaired failures, usage) is written
 to --output (default outputs/smoke-last.json, which is gitignored). It never contains the key.
@@ -19,6 +21,7 @@ import asyncio
 import json
 import sys
 from collections.abc import Sequence
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -84,7 +87,7 @@ def describe_config_error(exc: ValidationError) -> str:
     return "Configuration problem (see .env.example):\n" + "\n".join(lines)
 
 
-async def run(image: Path, env_file: Path, output: Path, show_raw: bool) -> int:
+async def run(image: Path, env_file: Path, output: Path, show_raw: bool, use_cache: bool) -> int:
     if not image.is_file():
         hint = (
             "  generate it with: python -m uv run python scripts/make_sample_receipt.py"
@@ -98,6 +101,9 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool) -> int:
     except ValidationError as exc:
         print(describe_config_error(exc), file=sys.stderr)
         return 2
+
+    if not use_cache:
+        settings = settings.model_copy(update={"llm_cache": "off"})
 
     try:
         message = build_image_message(USER_PROMPT, [image])
@@ -120,7 +126,16 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool) -> int:
             print(f"\nModel output was not usable: {exc}", file=sys.stderr)
             print(f"--- raw output (first 2000 chars) ---\n{exc.raw_text[:2000]}", file=sys.stderr)
             _print_repaired(exc.history, file=sys.stderr)
-            _print_stats(settings, exc.usage, exc.latency_ms, exc.attempts, exc.repairs, None, None)
+            _print_stats(
+                exc.usage,
+                exc.cost_usd,
+                exc.latency_ms,
+                exc.attempts,
+                exc.repairs,
+                None,
+                None,
+                exc.cached_calls,
+            )
             _print_budget(client.budget)
             artifact |= {
                 "ok": False,
@@ -179,13 +194,15 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool) -> int:
     _print_repaired(result.repair_history, file=sys.stdout)
     _print_validators(parsed, validated)
     _print_stats(
-        settings,
         result.usage,
+        result.cost_usd,
         result.latency_ms,
         result.attempts,
         result.repairs,
         result.structured_mode_used,
         result.finish_reason,
+        result.cached_calls,
+        result.avoided_cost_usd,
     )
     _print_budget(client.budget)
     artifact |= {
@@ -198,6 +215,8 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool) -> int:
         "usage": result.usage.model_dump(mode="json"),
         "provider_usage": result.raw.get("usage"),  # exactly what the server reported
         "cost_usd": str(result.cost_usd),
+        "cached_calls": result.cached_calls,
+        "avoided_cost_usd": str(result.avoided_cost_usd),
         "raw_text": result.text,
         "parsed": parsed.model_dump(mode="json"),
         "validated": validated.model_dump(mode="json"),
@@ -254,13 +273,15 @@ def _print_validators(raw: DocumentExtraction, validated: DocumentExtraction) ->
 
 
 def _print_stats(
-    settings: Settings,
     usage: Usage | None,
+    cost_usd: Decimal,
     latency_ms: float,
     attempts: int,
     repairs: int,
     mode: str | None,
     finish_reason: str | None,
+    cached_calls: int = 0,
+    avoided_cost_usd: Decimal = Decimal(0),
 ) -> None:
     tokens = usage or Usage()
     reported = "" if tokens.reported else " (server reported no usage)"
@@ -273,7 +294,12 @@ def _print_stats(
         )
     print(f"reasoning     : {tokens.reasoning_note}")
     print(f"latency       : {latency_ms:.0f} ms over {attempts} attempt(s), {repairs} repair(s)")
-    print(f"cost          : ${tokens.cost_usd(settings):.6f}")
+    print(f"cost          : ${cost_usd:.6f}")
+    if cached_calls:
+        print(
+            f"cache         : {cached_calls} call(s) answered from the cache"
+            f" (would have cost ${avoided_cost_usd:.6f})"
+        )
     if mode is not None:
         print(f"structured    : {mode}   finish_reason={finish_reason}")
 
@@ -306,8 +332,15 @@ def main() -> int:
         help="JSON artifact: raw text, parsed result, usage (default: outputs/smoke-last.json)",
     )
     parser.add_argument("--raw", action="store_true", help="print the model's raw text first")
+    parser.add_argument(
+        "--cache",
+        action="store_true",
+        help="allow the response cache (default: bypassed, a smoke check must hit the real API)",
+    )
     args = parser.parse_args()
-    return asyncio.run(run(pick_image(args.image), args.env_file, args.output, args.raw))
+    return asyncio.run(
+        run(pick_image(args.image), args.env_file, args.output, args.raw, args.cache)
+    )
 
 
 if __name__ == "__main__":

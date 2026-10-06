@@ -603,6 +603,42 @@ def test_smoke_script_survives_an_unwritable_artifact_path(
 
 
 @pytest.mark.slow
+def test_smoke_script_bypasses_the_response_cache_by_default(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    # even with the cache switched on in the environment, a smoke check must hit the real API
+    cache_env = {"LLM_CACHE": "on", "LLM_CACHE_DIR": str(tmp_path / "cache")}
+    first = run_smoke(fake_llm.base_url, tmp_path, **cache_env)
+    second = run_smoke(fake_llm.base_url, tmp_path, **cache_env)
+
+    assert first.returncode == 0, first.stderr
+    assert second.returncode == 0, second.stderr
+    assert len(fake_llm.requests) == 2
+    assert "answered from the cache" not in second.stdout
+    assert not (tmp_path / "cache").exists()
+
+
+@pytest.mark.slow
+def test_smoke_script_cache_flag_replays_for_free_and_says_so(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    cache_env = {"LLM_CACHE": "on", "LLM_CACHE_DIR": str(tmp_path / "cache")}
+    first = run_smoke(fake_llm.base_url, tmp_path, "--cache", **cache_env)
+    second = run_smoke(fake_llm.base_url, tmp_path, "--cache", **cache_env)
+
+    assert first.returncode == 0, first.stderr
+    assert second.returncode == 0, second.stderr
+    assert len(fake_llm.requests) == 1  # the second run never reached the server
+    assert "cost          : $0.002200" in first.stdout
+    assert "cost          : $0.000000" in second.stdout
+    assert "1 call(s) answered from the cache (would have cost $0.002200)" in second.stdout
+    artifact = read_artifact(tmp_path)
+    assert artifact["cached_calls"] == 1
+    assert artifact["cost_usd"] == "0"
+    assert artifact["avoided_cost_usd"] == "0.0022"
+
+
+@pytest.mark.slow
 def test_smoke_script_without_configuration_exits_2(tmp_path: Path) -> None:
     done = run_smoke(None, tmp_path)
 

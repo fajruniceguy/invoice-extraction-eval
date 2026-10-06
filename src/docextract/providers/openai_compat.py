@@ -18,13 +18,21 @@ from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Generic, Literal, Self, TypeVar, overload
+from typing import Any, Generic, Literal, Self, TypeVar, cast, overload
 
 import httpx
 from pydantic import BaseModel, ValidationError, computed_field
 
-from docextract.config import Settings
+from docextract.config import CacheMode, Settings
 from docextract.providers.budget import BudgetExceededError, RunBudget
+from docextract.providers.cache import (
+    CacheEntry,
+    CacheKey,
+    ResponseCache,
+    fingerprint,
+    now_iso,
+    schema_hash,
+)
 from docextract.providers.schema_utils import simplify_schema
 
 logger = logging.getLogger(__name__)
@@ -143,12 +151,16 @@ class ProviderError(Exception):
         attempts: int = 0,
         latency_ms: float = 0.0,
         usage: Usage | None = None,
+        cost_usd: Decimal = Decimal(0),
+        cached_calls: int = 0,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.attempts = attempts
         self.latency_ms = latency_ms
-        self.usage = usage
+        self.usage = usage  # tokens, including those of calls answered from the cache
+        self.cost_usd = cost_usd  # what was actually paid (cache hits cost nothing)
+        self.cached_calls = cached_calls
 
 
 class ResponseParseError(ProviderError):
@@ -186,6 +198,13 @@ class LLMResponse(Generic[M]):
     raw: dict[str, Any]
     repairs: int = 0  # times the model was re-asked to fix unusable output
     repair_history: tuple[RepairRecord, ...] = ()  # what those unusable outputs were
+    # Response cache. cost_usd above is what was actually paid: calls answered from the cache
+    # cost 0, and what they would have cost is kept in avoided_cost_usd so scorecards can show
+    # real and cached spend apart. `usage` still counts the tokens of cached calls.
+    cache_hit: bool = False  # every model call in this chat() came from the cache
+    cached_calls: int = 0
+    avoided_cost_usd: Decimal = Decimal(0)
+    cached_latency_ms: float = 0.0  # how long the cached calls originally took
 
 
 @dataclass
@@ -196,6 +215,11 @@ class _Tally:
     attempts: int = 0
     repairs: int = 0
     usage: Usage | None = None  # None until some call has returned (nothing spent yet)
+    calls: int = 0  # model calls that produced a completion (real or cached)
+    cached_calls: int = 0
+    cost: Decimal = Decimal(0)  # real spend only
+    avoided: Decimal = Decimal(0)  # what the cached calls would have cost
+    cached_latency_ms: float = 0.0
     history: list[RepairRecord] = field(default_factory=list)  # failures that were re-asked
 
     @property
@@ -209,7 +233,13 @@ class _Tally:
         return {"repairs": self.repairs, "history": tuple(self.history), **self.error_context()}
 
     def error_context(self) -> dict[str, Any]:
-        return {"attempts": self.attempts, "latency_ms": self.latency_ms, "usage": self.usage}
+        return {
+            "attempts": self.attempts,
+            "latency_ms": self.latency_ms,
+            "usage": self.usage,
+            "cost_usd": self.cost,
+            "cached_calls": self.cached_calls,
+        }
 
 
 @dataclass(frozen=True)
@@ -220,6 +250,7 @@ class _Completion:
     finish_reason: str | None
     tier: Tier
     payload: dict[str, Any]
+    cached: bool = False
 
 
 # ---------------------------------------------------------------- messages
@@ -400,8 +431,12 @@ class OpenAICompatClient:
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         rng: Callable[[], float] = random.random,
         budget: RunBudget | None = None,
+        cache: ResponseCache | None = None,
     ) -> None:
         self._settings = settings
+        # always built (no I/O until used): a call can opt in with cache="on" even when the
+        # setting is "off"
+        self.cache = cache if cache is not None else ResponseCache(settings.llm_cache_dir)
         # one budget per client unless several clients are given the same one to share
         self.budget = budget if budget is not None else RunBudget.from_settings(settings)
         key = settings.llm_api_key.get_secret_value()
@@ -432,6 +467,7 @@ class OpenAICompatClient:
         *,
         temperature: float = ...,
         max_tokens: int | None = ...,
+        cache: CacheMode | None = ...,
     ) -> LLMResponse[M]: ...
 
     @overload
@@ -442,6 +478,7 @@ class OpenAICompatClient:
         *,
         temperature: float = ...,
         max_tokens: int | None = ...,
+        cache: CacheMode | None = ...,
     ) -> LLMResponse[BaseModel]: ...
 
     async def chat(
@@ -451,20 +488,22 @@ class OpenAICompatClient:
         *,
         temperature: float = 0.0,
         max_tokens: int | None = None,
+        cache: CacheMode | None = None,
     ) -> LLMResponse[Any]:
+        """`cache` overrides the LLM_CACHE setting for this call: on, off or refresh."""
+        cache_mode = cache or self._settings.llm_cache
         tally = _Tally(started=time.perf_counter())
         max_repairs = self._settings.llm_max_repairs
         conversation = list(messages)
         last_error: ResponseParseError | None = None
         while True:
             try:
-                self.budget.ensure_available()
+                completion = await self._complete(
+                    conversation, response_model, temperature, max_tokens, cache_mode, tally
+                )
             except BudgetExceededError as exceeded:
                 # a refused repair keeps the parse error it was trying to fix as its cause
                 raise exceeded from last_error
-            completion = await self._complete(
-                conversation, response_model, temperature, max_tokens, tally
-            )
             if response_model is None:
                 return self._response(completion, None, tally)
             try:
@@ -494,9 +533,19 @@ class OpenAICompatClient:
         response_model: type[BaseModel] | None,
         temperature: float,
         max_tokens: int | None,
+        cache_mode: CacheMode,
         tally: _Tally,
     ) -> _Completion:
-        """One logical call: structured-output tiers (with fallback), retries, body parsing."""
+        """One logical call: cache lookup, structured-output tiers (with fallback), retries,
+        body parsing. Cache hits are free: they are never refused by the budget."""
+        key: CacheKey | None = None
+        if cache_mode != "off":
+            key = self._cache_key(messages, response_model, temperature, max_tokens)
+            if cache_mode == "on" and (entry := self.cache.get(key.digest)) is not None:
+                return self._replay(entry, tally)
+
+        self.budget.ensure_available()  # only a real HTTP call can spend money
+        exchange_started = time.perf_counter()
         tiers = self._tiers(response_model)
         fell_back = False
 
@@ -533,7 +582,10 @@ class OpenAICompatClient:
         # usage is read before the message so a malformed response is still costed
         usage = parse_usage(payload.get("usage") if isinstance(payload, dict) else None)
         tally.add_usage(usage)
-        self.budget.record(usage.cost_usd(self._settings), metered=usage.reported)
+        cost = usage.cost_usd(self._settings)
+        tally.cost += cost
+        tally.calls += 1
+        self.budget.record(cost, metered=usage.reported)
         if not usage.reported and self.budget.limit is not None:
             logger.warning("response had no usage block: its cost is unknown and not counted")
         try:
@@ -544,7 +596,55 @@ class OpenAICompatClient:
                 raw_text=response.text,
                 **tally.parse_error_context(),
             ) from exc
+        if key is not None:  # on or refresh
+            self.cache.put(
+                key,
+                CacheEntry(
+                    text=text,
+                    finish_reason=finish_reason,
+                    tier=tier,
+                    payload=payload,
+                    latency_ms=_elapsed_ms(exchange_started),
+                    created_at=now_iso(),
+                ),
+            )
         return _Completion(text=text, finish_reason=finish_reason, tier=tier, payload=payload)
+
+    def _cache_key(
+        self,
+        messages: Sequence[Message],
+        response_model: type[BaseModel] | None,
+        temperature: float,
+        max_tokens: int | None,
+    ) -> CacheKey:
+        settings = self._settings
+        return fingerprint(
+            messages,
+            model=settings.llm_model,
+            base_url=settings.llm_base_url,
+            reasoning_effort=settings.llm_reasoning_effort,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            structured_mode=settings.llm_structured_mode,
+            schema_hash=schema_hash(response_model),
+        )
+
+    def _replay(self, entry: CacheEntry, tally: _Tally) -> _Completion:
+        """A completion served from the cache: no HTTP, no spend, tokens still recorded."""
+        usage = parse_usage(entry.payload.get("usage"))
+        tally.add_usage(usage)
+        tally.calls += 1
+        tally.cached_calls += 1
+        tally.avoided += usage.cost_usd(self._settings)
+        tally.cached_latency_ms += entry.latency_ms
+        self.budget.record_cached()
+        return _Completion(
+            text=entry.text,
+            finish_reason=entry.finish_reason,
+            tier=cast(Tier, entry.tier),
+            payload=entry.payload,
+            cached=True,
+        )
 
     def _response(
         self, completion: _Completion, parsed: BaseModel | None, tally: _Tally
@@ -558,11 +658,15 @@ class OpenAICompatClient:
             attempts=tally.attempts,
             finish_reason=completion.finish_reason,
             structured_mode_used=completion.tier,
-            cost_usd=usage.cost_usd(self._settings),
+            cost_usd=tally.cost,
             model=self._settings.llm_model,
             raw=completion.payload,
             repairs=tally.repairs,
             repair_history=tuple(tally.history),
+            cache_hit=tally.calls > 0 and tally.cached_calls == tally.calls,
+            cached_calls=tally.cached_calls,
+            avoided_cost_usd=tally.avoided,
+            cached_latency_ms=tally.cached_latency_ms,
         )
 
     # -- helpers

@@ -7,12 +7,16 @@ fails loudly instead of silently calling the wrong model.
 
 from decimal import Decimal
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal, Self
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 StructuredMode = Literal["auto", "json_schema", "json_object"]
+# on: read and write the response cache; off: bypass it entirely;
+# refresh: skip reads but overwrite entries (re-ask the model, keep the cache current)
+CacheMode = Literal["on", "off", "refresh"]
 
 _TOKENS_PER_MTOK = Decimal(1_000_000)
 
@@ -43,6 +47,11 @@ class Settings(BaseSettings):
 
     # auto: try json_schema, fall back to json_object. The others pin a single tier.
     llm_structured_mode: StructuredMode = "auto"
+
+    # Content-hash cache of raw completions (see providers/cache.py). On by default; the live
+    # smoke check and anything that must hit the real API turn it off.
+    llm_cache: CacheMode = "on"
+    llm_cache_dir: Path = Path("outputs/cache")
 
     # Passed through as `reasoning_effort` when set (e.g. none/minimal/low/medium/high; accepted
     # values differ per provider, so it is not validated here). Blank means unset.

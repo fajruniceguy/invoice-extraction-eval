@@ -3,6 +3,7 @@ import json
 import logging
 from collections.abc import Callable
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -1212,6 +1213,294 @@ async def test_a_loop_that_swallows_provider_errors_cannot_swallow_the_cap() -> 
             except ProviderError:
                 swallowed += 1
     assert swallowed == 0
+
+
+# ---------------------------------------------------------------- response cache
+
+
+def cached(tmp_path: Path, **overrides: Any) -> dict[str, Any]:
+    """Settings overrides that turn the cache on in a throwaway directory (tests default off)."""
+    return {"llm_cache": "on", "llm_cache_dir": tmp_path / "cache", **DOLLAR_PRICES, **overrides}
+
+
+async def test_a_second_identical_call_is_served_from_the_cache(tmp_path: Path) -> None:
+    h = Harness([ok(), ok()], **cached(tmp_path))
+    async with h.client as client:
+        first = await client.chat(USER, Receipt)
+        second = await client.chat(USER, Receipt)
+
+    assert len(h.requests) == 1  # the second call never reached the server
+    assert first.cache_hit is False
+    assert first.cost_usd == 140
+    assert second.cache_hit is True
+    assert second.cached_calls == 1
+    assert second.attempts == 0  # attempts counts HTTP requests
+    assert second.cost_usd == 0  # a replay costs nothing...
+    assert second.avoided_cost_usd == 140  # ...and says what it would have cost
+    assert second.usage == first.usage  # tokens are still on record
+    assert second.parsed == first.parsed
+    assert second.text == first.text
+    assert second.structured_mode_used == first.structured_mode_used
+    assert second.cached_latency_ms > 0 or first.latency_ms >= 0
+
+
+async def test_cache_hits_are_counted_apart_from_real_spend_in_the_budget(tmp_path: Path) -> None:
+    h = Harness([ok()], **cached(tmp_path))
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+        await client.chat(USER, Receipt)
+    assert h.client.budget.spent == 140
+    assert h.client.budget.calls == 1
+    assert h.client.budget.cached_calls == 1
+
+
+async def test_a_different_prompt_or_image_is_a_miss(tmp_path: Path) -> None:
+    h = Harness([ok(), ok(), ok(), ok()], **cached(tmp_path))
+    page = build_image_message("read", [PNG])
+    other_page = build_image_message("read", [PNG + b"\x01"])
+    async with h.client as client:
+        await client.chat([page], Receipt)
+        await client.chat([page], Receipt)  # same image: hit
+        await client.chat([other_page], Receipt)  # different pixels: miss
+        await client.chat([build_image_message("read it again", [PNG])], Receipt)  # prompt: miss
+    assert len(h.requests) == 3
+
+
+async def test_model_and_reasoning_effort_are_part_of_the_key(tmp_path: Path) -> None:
+    first = Harness([ok()], **cached(tmp_path))
+    async with first.client as client:
+        await client.chat(USER, Receipt)
+    for override in ({"llm_model": "another-model"}, {"llm_reasoning_effort": "low"}):
+        other = Harness([ok()], **cached(tmp_path, **override))
+        async with other.client as client:
+            result = await client.chat(USER, Receipt)
+        assert result.cache_hit is False
+        assert len(other.requests) == 1
+
+
+class ReceiptWithNote(Receipt):
+    """A different schema that still accepts the canned reply."""
+
+    note: str | None = None
+
+
+async def test_the_response_schema_is_part_of_the_key(tmp_path: Path) -> None:
+    h = Harness([ok(), ok()], **cached(tmp_path))
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+        await client.chat(USER, ReceiptWithNote)  # same prompt, different schema: miss
+    assert len(h.requests) == 2
+
+
+async def test_the_cache_is_shared_across_clients_and_runs(tmp_path: Path) -> None:
+    first = Harness([ok()], **cached(tmp_path))
+    async with first.client as client:
+        await client.chat(USER, Receipt)
+    second = Harness([], **cached(tmp_path))  # an empty script: any request would blow up
+    async with second.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.cache_hit is True
+    assert second.requests == []
+
+
+async def test_per_call_cache_off_neither_reads_nor_writes(tmp_path: Path) -> None:
+    h = Harness([ok(), ok(), ok()], **cached(tmp_path))
+    async with h.client as client:
+        await client.chat(USER, Receipt, cache="off")  # not written
+        second = await client.chat(USER, Receipt)  # miss: nothing was stored
+        third = await client.chat(USER, Receipt, cache="off")  # does not read the entry either
+    assert second.cache_hit is False
+    assert third.cache_hit is False
+    assert len(h.requests) == 3
+
+
+async def test_refresh_re_asks_the_model_and_overwrites_the_entry(tmp_path: Path) -> None:
+    newer = '{"vendor": "NEWER", "total": "1.00"}'
+    h = Harness([ok(), ok(completion(newer))], **cached(tmp_path))
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+        refreshed = await client.chat(USER, Receipt, cache="refresh")  # skips the read
+        replay = await client.chat(USER, Receipt)  # now serves the refreshed answer
+    assert refreshed.cache_hit is False
+    assert refreshed.parsed is not None
+    assert refreshed.parsed.vendor == "NEWER"
+    assert replay.cache_hit is True
+    assert replay.parsed is not None
+    assert replay.parsed.vendor == "NEWER"
+    assert len(h.requests) == 2
+
+
+async def test_a_cache_setting_of_off_writes_nothing_but_a_call_can_opt_in(tmp_path: Path) -> None:
+    h = Harness([ok(), ok()], **cached(tmp_path, llm_cache="off"))
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+        assert not (tmp_path / "cache").exists()  # not even the directory
+        await client.chat(USER, Receipt, cache="on")  # opt in for one call: miss, then stored
+        replay = await client.chat(USER, Receipt, cache="on")
+    assert replay.cache_hit is True
+    assert len(h.requests) == 2
+
+
+async def test_refresh_as_a_setting_never_reads(tmp_path: Path) -> None:
+    h = Harness([ok(), ok()], **cached(tmp_path, llm_cache="refresh"))
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+        second = await client.chat(USER, Receipt)
+    assert second.cache_hit is False
+    assert len(h.requests) == 2
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        httpx.Response(400, text="bad request"),
+        httpx.Response(503, text="overloaded"),
+        httpx.Response(200, text="<html>gateway</html>"),
+        httpx.Response(200, json={"choices": []}),
+    ],
+)
+async def test_failed_exchanges_are_not_cached(tmp_path: Path, reply: httpx.Response) -> None:
+    h = Harness([reply], **cached(tmp_path, llm_max_retries=0, llm_structured_mode="json_object"))
+    async with h.client as client:
+        with pytest.raises(ProviderError):
+            await client.chat(USER, Receipt)
+    assert list((tmp_path / "cache").rglob("*.json")) == []
+
+
+async def test_unparseable_model_output_is_cached_so_repair_sequences_replay(
+    tmp_path: Path,
+) -> None:
+    first = Harness(
+        [ok(completion(BAD_JSON)), ok(completion(GOOD))], **cached(tmp_path, llm_max_repairs=1)
+    )
+    async with first.client as client:
+        original = await client.chat(USER, Receipt)
+    assert original.repairs == 1
+
+    replay_harness = Harness([], **cached(tmp_path, llm_max_repairs=1))
+    async with replay_harness.client as client:
+        replay = await client.chat(USER, Receipt)
+    assert replay_harness.requests == []  # both the bad answer and its repair came from the cache
+    assert replay.cache_hit is True
+    assert replay.cached_calls == 2
+    assert replay.repairs == 1
+    assert replay.parsed == original.parsed
+    assert replay.cost_usd == 0
+    assert replay.avoided_cost_usd == 280
+    assert [r.raw_text for r in replay.repair_history] == [BAD_JSON]
+
+
+async def test_a_response_that_is_part_cached_and_part_real_pays_only_for_the_real_part(
+    tmp_path: Path,
+) -> None:
+    # run 1: no repairs allowed, so only the unusable first answer is produced (and cached)
+    first = Harness([ok(completion(BAD_JSON))], **cached(tmp_path, llm_max_repairs=0))
+    async with first.client as client:
+        with pytest.raises(ResponseParseError):
+            await client.chat(USER, Receipt)
+    # run 2: repairs allowed: the first call is a hit, the repair is real
+    second = Harness([ok(completion(GOOD))], **cached(tmp_path, llm_max_repairs=1))
+    async with second.client as client:
+        result = await client.chat(USER, Receipt)
+
+    assert result.repairs == 1
+    assert result.cached_calls == 1
+    assert result.cache_hit is False  # not ALL of its calls were cached
+    assert result.attempts == 1  # one HTTP request: the repair
+    assert result.cost_usd == 140  # only the real call was paid for
+    assert result.avoided_cost_usd == 140
+    assert result.usage.input_tokens == 200  # tokens of both calls are recorded
+    assert second.client.budget.spent == 140
+
+
+async def test_errors_report_real_spend_and_cached_calls_separately(tmp_path: Path) -> None:
+    first = Harness([ok(completion(BAD_JSON))], **cached(tmp_path, llm_max_repairs=0))
+    async with first.client as client:
+        with pytest.raises(ResponseParseError) as real:
+            await client.chat(USER, Receipt)
+    assert real.value.cost_usd == 140
+    assert real.value.cached_calls == 0
+
+    again = Harness([], **cached(tmp_path, llm_max_repairs=0))
+    async with again.client as client:
+        with pytest.raises(ResponseParseError) as replayed:
+            await client.chat(USER, Receipt)
+    assert replayed.value.cost_usd == 0
+    assert replayed.value.cached_calls == 1
+    assert replayed.value.usage is not None
+    assert replayed.value.usage.input_tokens == 100  # the tokens are still on record
+
+
+async def test_cache_hits_are_never_refused_by_an_exceeded_budget_but_misses_are(
+    tmp_path: Path,
+) -> None:
+    h = Harness([ok(), ok()], **cached(tmp_path, max_run_cost_usd="100"))
+    async with h.client as client:
+        await client.chat(USER, Receipt)  # $140: over the $100 cap
+        assert h.client.budget.exceeded
+        replay = await client.chat(USER, Receipt)  # free, so allowed
+        assert replay.cache_hit is True
+        with pytest.raises(BudgetExceededError):  # a real call is refused
+            await client.chat([{"role": "user", "content": "something new"}], Receipt)
+    assert len(h.requests) == 1
+
+
+async def test_a_replay_skips_structured_output_negotiation_and_keeps_the_recorded_tier(
+    tmp_path: Path,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if json.loads(request.content)["response_format"]["type"] == "json_schema":
+            return httpx.Response(400, text="unsupported")
+        return ok()
+
+    first = Harness(handler=handler, **cached(tmp_path))
+    async with first.client as client:
+        original = await client.chat(USER, Receipt)
+    assert original.structured_mode_used == "json_object"
+    assert len(first.requests) == 2  # the rejected json_schema attempt, then json_object
+
+    second = Harness([], **cached(tmp_path))  # a fresh client: it has not learned anything
+    async with second.client as client:
+        replay = await client.chat(USER, Receipt)
+    assert second.requests == []  # the rejected attempt is not repeated either
+    assert replay.structured_mode_used == "json_object"
+
+
+async def test_a_corrupt_entry_is_a_miss_and_gets_rewritten(tmp_path: Path) -> None:
+    h = Harness([ok(), ok()], **cached(tmp_path))
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+        for entry_file in (tmp_path / "cache").rglob("*.json"):
+            entry_file.write_text("{truncated", encoding="utf-8")
+        again = await client.chat(USER, Receipt)
+        replay = await client.chat(USER, Receipt)
+    assert again.cache_hit is False
+    assert replay.cache_hit is True
+    assert len(h.requests) == 2
+
+
+async def test_entries_hold_no_api_key_and_no_page_pixels(tmp_path: Path) -> None:
+    page = build_image_message("read", [PNG])
+    h = Harness([ok()], **cached(tmp_path))
+    async with h.client as client:
+        await client.chat([page], Receipt)
+    (entry_file,) = (tmp_path / "cache").rglob("*.json")
+    text = entry_file.read_text(encoding="utf-8")
+    assert API_KEY not in text
+    assert "base64" not in text  # the image is identified by its hash, never stored
+    document = json.loads(text)
+    assert document["key_parts"]["model"] == "test-model"
+    assert len(document["key_parts"]["image_hashes"]) == 1
+
+
+async def test_plain_chat_is_cached_too(tmp_path: Path) -> None:
+    h = Harness([ok(completion("hello"))], **cached(tmp_path))
+    async with h.client as client:
+        first = await client.chat(USER)
+        second = await client.chat(USER)
+    assert (first.text, second.text) == ("hello", "hello")
+    assert second.cache_hit is True
+    assert len(h.requests) == 1
 
 
 # ---------------------------------------------------------------- secrets

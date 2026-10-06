@@ -9,6 +9,7 @@ How it behaves:
   - The call that crosses the limit completes, because its cost is only known afterwards.
     With concurrency, calls already in flight also complete, so the overshoot is bounded by
     concurrency x the cost of one call.
+  - Calls answered from the response cache cost nothing and are never refused.
   - A response with no usage block cannot be costed. Such calls are counted as unmetered and
     logged, so a provider that omits usage cannot silently defeat the cap.
 
@@ -45,6 +46,7 @@ class RunBudget:
         self.spent = Decimal(0)
         self.calls = 0  # calls whose cost was recorded
         self.unmetered_calls = 0  # calls that returned no usage, so their cost is unknown
+        self.cached_calls = 0  # calls answered from the response cache (cost 0)
 
     @classmethod
     def from_settings(cls, settings: Settings) -> Self:
@@ -66,6 +68,10 @@ class RunBudget:
             self.calls += 1
         else:
             self.unmetered_calls += 1
+
+    def record_cached(self) -> None:
+        """A call served from the response cache: free, and counted apart from real calls."""
+        self.cached_calls += 1
 
     def ensure_available(self) -> None:
         if self.limit is not None and self.spent > self.limit:

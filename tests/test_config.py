@@ -16,6 +16,8 @@ LLM_ENV_VARS = [
     "LLM_MAX_RETRIES",
     "LLM_BACKOFF_BASE_S",
     "LLM_BACKOFF_MAX_S",
+    "LLM_CACHE",
+    "LLM_CACHE_DIR",
     "LLM_MAX_REPAIRS",
     "LLM_REASONING_EFFORT",
     "LLM_STRUCTURED_MODE",
@@ -190,6 +192,29 @@ def test_a_non_positive_cost_cap_is_rejected(bad: str) -> None:
 
 def test_prices_without_a_cap_are_fine() -> None:
     assert make(llm_price_output_per_mtok="2.50").max_run_cost_usd is None
+
+
+def test_the_response_cache_is_on_by_default_in_outputs_cache() -> None:
+    settings = make()
+    assert settings.llm_cache == "on"
+    assert settings.llm_cache_dir == Path("outputs/cache")
+
+
+@pytest.mark.parametrize("mode", ["on", "off", "refresh"])
+def test_cache_mode_and_directory_come_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mode: str
+) -> None:
+    monkeypatch.setenv("LLM_CACHE", mode)
+    monkeypatch.setenv("LLM_CACHE_DIR", str(tmp_path / "elsewhere"))
+    settings = make()
+    assert settings.llm_cache == mode
+    assert settings.llm_cache_dir == tmp_path / "elsewhere"
+
+
+@pytest.mark.parametrize("bad", ["yes", "true", "maybe", ""])
+def test_unknown_cache_mode_is_rejected(bad: str) -> None:
+    with pytest.raises(ValidationError):
+        make(llm_cache=bad)
 
 
 def test_get_settings_is_cached(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

@@ -28,6 +28,12 @@ docs/
 - Tests and fakes must never read `.env` or call the real API (`scripts/smoke.py --env-file <empty file>` plus a scrubbed environment; see `tests/test_provider_integration.py`).
 - Reasoning ("thinking") tokens: providers disagree on whether `completion_tokens` already includes them. `Usage` settles it per response from `total_tokens` (see `parse_usage`), so cost never double-counts. Always cost a call with `Usage.cost_usd(settings)`, never from `output_tokens` alone.
 
+## Response cache (`LLM_CACHE=on|off|refresh`)
+- Content-hash cache of RAW completions (`providers/cache.py`), keyed per HTTP exchange on page-image hashes, prompt, model, endpoint, reasoning effort, temperature, max_tokens, structured mode and schema hash. Parsing, normalization and validation rerun on every replay, so a validator change never serves a stale result and repair sequences replay deterministically.
+- On by default (eval); `smoke.py` bypasses it unless `--cache`, because a smoke check must hit the real API. `chat(cache="off"|"refresh")` overrides per call. Tests force it off and into a tmp dir (autouse fixture in `tests/conftest.py`).
+- A hit costs 0: `LLMResponse.cost_usd` is what was actually paid, `avoided_cost_usd` what the hits would have cost, `cached_calls`/`cache_hit` say how much came from the cache, and the budget counts cached calls apart. Scorecards must report real and cached cost separately. Hits are never refused by the cost cap.
+- It replays the FIRST answer ever seen for a key: use `refresh` (or `off`) when you actually want a new sample.
+
 ## Cost cap (`MAX_RUN_COST_USD`)
 - The client records the cost of every completed call (repairs included) in a `RunBudget` and refuses to start a new call or repair once spend exceeds the cap, raising `BudgetExceededError`. The call that crosses the cap completes; concurrent in-flight calls can overshoot by up to concurrency x one call's cost.
 - Settings refuse a cap while both prices are 0 (it could never trigger).
