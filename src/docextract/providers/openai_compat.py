@@ -1,0 +1,460 @@
+"""Async client for OpenAI-compatible chat-completions endpoints.
+
+Features: multi-image (base64) messages, structured output (json_schema, falling back to
+json_object plus a schema instruction when the server rejects it), timeouts, retry with
+exponential backoff on 429/5xx/transport errors, and token usage + latency on every call.
+
+The key never appears in errors or logs; endpoint, model and key come from `Settings`.
+"""
+
+import asyncio
+import base64
+import json
+import logging
+import random
+import time
+from collections.abc import Awaitable, Callable, Sequence
+from dataclasses import dataclass
+from decimal import Decimal
+from pathlib import Path
+from typing import Any, Generic, Literal, Self, TypeVar, overload
+
+import httpx
+from pydantic import BaseModel, ValidationError
+
+from docextract.config import Settings
+from docextract.providers.schema_utils import simplify_schema
+
+logger = logging.getLogger(__name__)
+
+M = TypeVar("M", bound=BaseModel)
+Message = dict[str, Any]
+Tier = Literal["json_schema", "json_object", "none"]
+
+_CHAT_PATH = "chat/completions"
+_FALLBACK_STATUSES = frozenset({400, 422})  # "this server does not like my response_format"
+_ERROR_BODY_CHARS = 500
+_MAX_JSON_CANDIDATES = 50
+_SCHEMA_INSTRUCTION = (
+    "Respond with a single JSON object that conforms to the following JSON Schema. "
+    "Output JSON only: no prose and no code fences.\n"
+)
+
+
+class Usage(BaseModel):
+    input_tokens: int = 0
+    output_tokens: int = 0
+    reported: bool = False  # False when the server returned no usage block
+
+
+class ProviderError(Exception):
+    """A call failed. Carries what we know about the failed call, including its cost."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+        attempts: int = 0,
+        latency_ms: float = 0.0,
+        usage: Usage | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.attempts = attempts
+        self.latency_ms = latency_ms
+        self.usage = usage
+
+
+class ResponseParseError(ProviderError):
+    """The HTTP call succeeded but the model output was not usable JSON for the schema."""
+
+    def __init__(self, message: str, *, raw_text: str, **kwargs: Any) -> None:
+        super().__init__(message, **kwargs)
+        self.raw_text = raw_text
+
+
+@dataclass(frozen=True)
+class LLMResponse(Generic[M]):
+    text: str
+    parsed: M | None
+    usage: Usage
+    latency_ms: float  # wall time of the whole call, including retries and backoff sleeps
+    attempts: int  # HTTP requests made (retries and structured-output fallbacks included)
+    finish_reason: str | None
+    structured_mode_used: Tier
+    cost_usd: Decimal
+    model: str
+    raw: dict[str, Any]
+
+
+# ---------------------------------------------------------------- messages
+
+
+def _sniff_mime(data: bytes) -> str:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    raise ValueError("unsupported image format (expected PNG, JPEG or WebP)")
+
+
+def build_image_message(
+    prompt: str, images: Sequence[bytes | Path], *, role: str = "user"
+) -> Message:
+    """One message with the prompt text followed by the images, in order, as data URLs."""
+    if not images:
+        raise ValueError("at least one image is required")
+    parts: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
+    for image in images:
+        data = image.read_bytes() if isinstance(image, Path) else image
+        encoded = base64.b64encode(data).decode("ascii")
+        url = f"data:{_sniff_mime(data)};base64,{encoded}"
+        parts.append({"type": "image_url", "image_url": {"url": url}})
+    return {"role": role, "content": parts}
+
+
+def _with_schema_instruction(messages: Sequence[Message], schema: dict[str, Any]) -> list[Message]:
+    instruction = _SCHEMA_INSTRUCTION + json.dumps(schema)
+    out = [dict(message) for message in messages]
+    if out and out[0].get("role") == "system" and isinstance(out[0].get("content"), str):
+        out[0]["content"] = f"{out[0]['content']}\n\n{instruction}"
+    else:
+        out.insert(0, {"role": "system", "content": instruction})
+    return out
+
+
+# ---------------------------------------------------------------- response parsing
+
+
+def parse_json_payload(text: str) -> dict[str, Any]:
+    """Pull the first JSON object out of model text (tolerates code fences and prose)."""
+    stripped = text.strip()
+    if not stripped:
+        raise ValueError("empty response")
+    decoder = json.JSONDecoder()
+    position = -1
+    for _ in range(_MAX_JSON_CANDIDATES):
+        position = stripped.find("{", position + 1)
+        if position == -1:
+            break
+        try:
+            value, _end = decoder.raw_decode(stripped, position)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            return value
+    raise ValueError("no valid JSON object found in response")
+
+
+def parse_usage(raw: object) -> Usage:
+    """Accepts OpenAI (prompt/completion_tokens) and input/output_tokens spellings."""
+    if not isinstance(raw, dict):
+        return Usage()
+    input_tokens = _first_int(raw, "prompt_tokens", "input_tokens")
+    output_tokens = _first_int(raw, "completion_tokens", "output_tokens")
+    if input_tokens is None and output_tokens is None:
+        return Usage()
+    return Usage(input_tokens=input_tokens or 0, output_tokens=output_tokens or 0, reported=True)
+
+
+def _first_int(source: dict[str, Any], *keys: str) -> int | None:
+    for key in keys:
+        value = source.get(key)
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value
+    return None
+
+
+def _extract_message(payload: Any) -> tuple[str, str | None]:
+    choices = payload.get("choices") if isinstance(payload, dict) else None
+    if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+        raise ValueError("response has no choices")
+    choice = choices[0]
+    message = choice.get("message") or {}
+    finish_reason = choice.get("finish_reason")
+    content = message.get("content")
+    if isinstance(content, list):  # some servers return a list of content parts
+        content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
+    if content is None:
+        content = ""
+    if not isinstance(content, str):
+        raise ValueError("response content has an unexpected type")
+    return content, finish_reason if isinstance(finish_reason, str) else None
+
+
+def _parse_retry_after(value: str | None) -> float | None:
+    if value is None:
+        return None
+    try:
+        seconds = float(value)
+    except ValueError:
+        return None  # HTTP-date form is not honored; fall back to exponential backoff
+    return seconds if seconds >= 0 else None
+
+
+def _elapsed_ms(started: float) -> float:
+    return (time.perf_counter() - started) * 1000
+
+
+def _is_retryable(status_code: int) -> bool:
+    return status_code == 429 or status_code >= 500
+
+
+# ---------------------------------------------------------------- client
+
+
+class OpenAICompatClient:
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        transport: httpx.AsyncBaseTransport | None = None,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+        rng: Callable[[], float] = random.random,
+    ) -> None:
+        self._settings = settings
+        key = settings.llm_api_key.get_secret_value()
+        self._http = httpx.AsyncClient(
+            base_url=settings.llm_base_url,
+            headers={"Authorization": f"Bearer {key}"} if key else {},
+            timeout=httpx.Timeout(settings.llm_timeout_s),
+            transport=transport,
+        )
+        self._sleep = sleep
+        self._rng = rng
+        self._json_schema_unsupported = False  # learned once json_object worked where it failed
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *exc_info: object) -> None:
+        await self.aclose()
+
+    async def aclose(self) -> None:
+        await self._http.aclose()
+
+    @overload
+    async def chat(
+        self,
+        messages: Sequence[Message],
+        response_model: type[M],
+        *,
+        temperature: float = ...,
+        max_tokens: int | None = ...,
+    ) -> LLMResponse[M]: ...
+
+    @overload
+    async def chat(
+        self,
+        messages: Sequence[Message],
+        response_model: None = ...,
+        *,
+        temperature: float = ...,
+        max_tokens: int | None = ...,
+    ) -> LLMResponse[BaseModel]: ...
+
+    async def chat(
+        self,
+        messages: Sequence[Message],
+        response_model: type[M] | None = None,
+        *,
+        temperature: float = 0.0,
+        max_tokens: int | None = None,
+    ) -> LLMResponse[Any]:
+        started = time.perf_counter()
+        attempts = 0
+        tiers = self._tiers(response_model)
+        fell_back = False
+
+        for index, tier in enumerate(tiers):
+            body = self._build_body(messages, response_model, tier, temperature, max_tokens)
+            response, attempts = await self._post(body, attempts=attempts, started=started)
+            if response.is_success:
+                break
+            error = ProviderError(
+                f"HTTP {response.status_code} from LLM endpoint: "
+                f"{response.text[:_ERROR_BODY_CHARS]}",
+                status_code=response.status_code,
+                attempts=attempts,
+                latency_ms=_elapsed_ms(started),
+            )
+            if response.status_code in _FALLBACK_STATUSES and index < len(tiers) - 1:
+                logger.warning("%s rejected (HTTP %s); falling back", tier, response.status_code)
+                fell_back = True
+                continue
+            raise error
+        else:  # pragma: no cover - tiers is never empty
+            raise AssertionError("no structured-output tier was attempted")
+
+        latency_ms = _elapsed_ms(started)
+        if fell_back and self._settings.llm_structured_mode == "auto":
+            self._json_schema_unsupported = True
+
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise ResponseParseError(
+                "LLM endpoint returned a non-JSON body",
+                raw_text=response.text,
+                attempts=attempts,
+                latency_ms=latency_ms,
+            ) from exc
+
+        # usage is read before the message so a malformed response is still costed
+        usage = parse_usage(payload.get("usage") if isinstance(payload, dict) else None)
+        try:
+            text, finish_reason = _extract_message(payload)
+        except ValueError as exc:
+            raise ResponseParseError(
+                f"unusable response from LLM endpoint: {exc}",
+                raw_text=response.text,
+                attempts=attempts,
+                latency_ms=latency_ms,
+                usage=usage,
+            ) from exc
+
+        parsed = None
+        if response_model is not None:
+            parsed = self._parse_model(
+                text,
+                response_model,
+                finish_reason,
+                attempts=attempts,
+                latency_ms=latency_ms,
+                usage=usage,
+            )
+
+        return LLMResponse(
+            text=text,
+            parsed=parsed,
+            usage=usage,
+            latency_ms=latency_ms,
+            attempts=attempts,
+            finish_reason=finish_reason,
+            structured_mode_used=tier,
+            cost_usd=self._settings.cost_usd(usage.input_tokens, usage.output_tokens),
+            model=self._settings.llm_model,
+            raw=payload,
+        )
+
+    # -- helpers
+
+    def _tiers(self, response_model: type[BaseModel] | None) -> list[Tier]:
+        if response_model is None:
+            return ["none"]
+        mode = self._settings.llm_structured_mode
+        if mode == "auto":
+            return (
+                ["json_object"] if self._json_schema_unsupported else ["json_schema", "json_object"]
+            )
+        return [mode]
+
+    def _build_body(
+        self,
+        messages: Sequence[Message],
+        response_model: type[BaseModel] | None,
+        tier: Tier,
+        temperature: float,
+        max_tokens: int | None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "model": self._settings.llm_model,
+            "messages": list(messages),
+            "temperature": temperature,
+        }
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
+        if response_model is not None and tier != "none":
+            schema = simplify_schema(response_model.model_json_schema())
+            if tier == "json_schema":
+                body["response_format"] = {
+                    "type": "json_schema",
+                    "json_schema": {"name": response_model.__name__, "schema": schema},
+                }
+            else:
+                body["response_format"] = {"type": "json_object"}
+                body["messages"] = _with_schema_instruction(messages, schema)
+        return body
+
+    async def _post(
+        self, body: dict[str, Any], *, attempts: int, started: float
+    ) -> tuple[httpx.Response, int]:
+        """POST with retry on 429/5xx/transport errors. Returns any non-retryable response."""
+        settings = self._settings
+        for retry in range(settings.llm_max_retries + 1):
+            attempts += 1
+            response: httpx.Response | None = None
+            try:
+                response = await self._http.post(_CHAT_PATH, json=body)
+            except httpx.UnsupportedProtocol as exc:
+                raise ProviderError(
+                    f"invalid LLM_BASE_URL: {exc}",
+                    attempts=attempts,
+                    latency_ms=_elapsed_ms(started),
+                ) from exc
+            except httpx.TransportError as exc:
+                reason = f"{type(exc).__name__}: {exc}"
+            else:
+                if not _is_retryable(response.status_code):
+                    return response, attempts
+                reason = f"HTTP {response.status_code}"
+
+            if retry == settings.llm_max_retries:
+                raise ProviderError(
+                    f"LLM call failed after {attempts} attempt(s): {reason}",
+                    status_code=response.status_code if response is not None else None,
+                    attempts=attempts,
+                    latency_ms=_elapsed_ms(started),
+                )
+            delay = self._backoff_delay(retry, response)
+            logger.warning("LLM call failed (%s); retry %d in %.2fs", reason, retry + 1, delay)
+            await self._sleep(delay)
+        raise AssertionError("unreachable")  # pragma: no cover
+
+    def _backoff_delay(self, retry: int, response: httpx.Response | None) -> float:
+        settings = self._settings
+        retry_after = (
+            _parse_retry_after(response.headers.get("retry-after"))
+            if response is not None
+            else None
+        )
+        if retry_after is not None:
+            return min(retry_after, settings.llm_backoff_max_s)
+        ceiling = min(settings.llm_backoff_max_s, settings.llm_backoff_base_s * 2**retry)
+        return ceiling * (0.5 + self._rng() / 2)  # jitter: 50-100% of the ceiling
+
+    @staticmethod
+    def _parse_model(
+        text: str,
+        response_model: type[M],
+        finish_reason: str | None,
+        *,
+        attempts: int,
+        latency_ms: float,
+        usage: Usage,
+    ) -> M:
+        context: dict[str, Any] = {"attempts": attempts, "latency_ms": latency_ms, "usage": usage}
+        try:
+            data = parse_json_payload(text)
+        except ValueError as exc:
+            hint = (
+                " (output was truncated: finish_reason=length)" if finish_reason == "length" else ""
+            )
+            raise ResponseParseError(
+                f"model output is not valid JSON{hint}: {exc}", raw_text=text, **context
+            ) from exc
+        try:
+            return response_model.model_validate(data)
+        except ValidationError as exc:
+            problems = "; ".join(
+                f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}"
+                for error in exc.errors()[:5]
+            )
+            raise ResponseParseError(
+                f"model output does not match {response_model.__name__}: {problems}",
+                raw_text=text,
+                **context,
+            ) from exc
