@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from collections.abc import Callable
 from decimal import Decimal
 from typing import Any
@@ -10,6 +11,7 @@ from pydantic import BaseModel, create_model
 
 from docextract.config import Settings
 from docextract.extract.schema import Field as ExtractedField
+from docextract.providers.budget import BudgetExceededError, RunBudget
 from docextract.providers.openai_compat import (
     OpenAICompatClient,
     ProviderError,
@@ -74,6 +76,7 @@ class Harness:
         script: list[Any] | None = None,
         handler: Callable[[httpx.Request], Any] | None = None,
         rng: Callable[[], float] = lambda: 1.0,  # 1.0 = no jitter reduction: delay == ceiling
+        budget: RunBudget | None = None,
         **settings_overrides: Any,
     ) -> None:
         self.requests: list[httpx.Request] = []
@@ -96,6 +99,7 @@ class Harness:
             transport=httpx.MockTransport(respond),
             sleep=fake_sleep,
             rng=rng,
+            budget=budget,
         )
 
     def body(self, index: int = 0) -> dict[str, Any]:
@@ -922,6 +926,177 @@ async def test_very_long_error_text_is_capped_in_the_repair_prompt() -> None:
     assert len(str(exc.value)) > 5_000  # the premise: the uncapped message is huge
     prompt = h.body(1)["messages"][-1]["content"]
     assert len(prompt) < 1_500  # but what goes back to the model is capped
+
+
+# ---------------------------------------------------------------- run budget
+
+# with DOLLAR_PRICES one default completion() (100 in, 20 out) costs 100 x $1 + 20 x $2 = $140
+
+
+async def test_calls_are_refused_once_spend_exceeds_the_cap() -> None:
+    h = Harness([ok(), ok(), ok()], max_run_cost_usd="300", **DOLLAR_PRICES)
+    async with h.client as client:
+        await client.chat(USER)  # $140
+        await client.chat(USER)  # $280, still within the cap
+        await client.chat(USER)  # $420: this call completes, but crosses the line
+        with pytest.raises(BudgetExceededError) as exc:
+            await client.chat(USER)
+    assert len(h.requests) == 3  # the refused call never reached the server
+    assert exc.value.spent == 420
+    assert exc.value.limit == 300
+    assert h.client.budget.exceeded
+
+
+async def test_spending_exactly_the_cap_is_still_allowed() -> None:
+    h = Harness([ok(), ok(), ok()], max_run_cost_usd="280", **DOLLAR_PRICES)
+    async with h.client as client:
+        await client.chat(USER)
+        await client.chat(USER)
+        assert h.client.budget.spent == 280
+        assert not h.client.budget.exceeded
+        await client.chat(USER)  # allowed: 280 is not over 280
+        with pytest.raises(BudgetExceededError):
+            await client.chat(USER)
+    assert len(h.requests) == 3
+
+
+async def test_the_call_that_crosses_the_cap_still_returns_its_result() -> None:
+    h = Harness([ok()], max_run_cost_usd="100", **DOLLAR_PRICES)
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.parsed == Receipt(vendor="ACME", total=Decimal("9.72"))
+    assert result.cost_usd == 140
+    assert h.client.budget.exceeded
+
+
+async def test_a_repair_is_refused_when_the_first_call_already_exceeded_the_cap() -> None:
+    h = Harness(
+        [ok(completion(BAD_JSON)), ok(completion(GOOD))],
+        max_run_cost_usd="100",
+        llm_max_repairs=1,
+        **DOLLAR_PRICES,
+    )
+    async with h.client as client:
+        with pytest.raises(BudgetExceededError) as exc:
+            await client.chat(USER, Receipt)
+    assert len(h.requests) == 1  # no repair request was made
+    # the parse error it was trying to fix is kept as the cause, with the raw output
+    assert isinstance(exc.value.__cause__, ResponseParseError)
+    assert exc.value.__cause__.raw_text == BAD_JSON
+
+
+async def test_a_repair_within_the_cap_goes_ahead() -> None:
+    h = Harness(
+        [ok(completion(BAD_JSON)), ok(completion(GOOD))],
+        max_run_cost_usd="1000",
+        llm_max_repairs=1,
+        **DOLLAR_PRICES,
+    )
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    assert result.repairs == 1
+    assert h.client.budget.spent == 280
+    assert h.client.budget.calls == 2  # each completed call is recorded on its own
+
+
+async def test_unparseable_calls_still_count_toward_the_cap() -> None:
+    h = Harness(
+        [ok(completion(BAD_JSON))], max_run_cost_usd="1000", llm_max_repairs=0, **DOLLAR_PRICES
+    )
+    async with h.client as client:
+        with pytest.raises(ResponseParseError):
+            await client.chat(USER, Receipt)
+    assert h.client.budget.spent == 140
+    assert h.client.budget.calls == 1
+
+
+async def test_calls_that_failed_before_any_usage_cost_nothing() -> None:
+    h = Harness(failing(503, 1), max_run_cost_usd="100", llm_max_retries=0, **DOLLAR_PRICES)
+    async with h.client as client:
+        with pytest.raises(ProviderError):
+            await client.chat(USER)
+    assert h.client.budget.spent == 0
+    assert h.client.budget.calls == 0
+
+
+async def test_reasoning_tokens_count_toward_the_cap() -> None:
+    # Google-style: 100 in, 100 out, 200 reasoning on top -> 100 + 300 x 2 = $700
+    h = Harness(
+        [usage_reply(100, 100, total=400, reasoning=200)], max_run_cost_usd="500", **DOLLAR_PRICES
+    )
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+    assert h.client.budget.spent == 700
+    assert h.client.budget.exceeded
+
+
+async def test_a_budget_can_be_shared_by_several_clients() -> None:
+    budget = RunBudget(Decimal(200))
+    first = Harness([ok(), ok()], budget=budget, **DOLLAR_PRICES)
+    second = Harness([ok()], budget=budget, **DOLLAR_PRICES)
+    async with first.client as a, second.client as b:
+        await a.chat(USER)  # $140
+        await b.chat(USER)  # $280 in total: over
+        with pytest.raises(BudgetExceededError):
+            await a.chat(USER)
+        with pytest.raises(BudgetExceededError):
+            await b.chat(USER)
+    assert budget.spent == 280
+    assert len(first.requests) == 1
+    assert len(second.requests) == 1
+
+
+async def test_the_budget_is_built_from_settings_and_tracks_spend_even_without_a_cap() -> None:
+    capped = Harness([ok()], max_run_cost_usd="5", **DOLLAR_PRICES)
+    assert capped.client.budget.limit == Decimal(5)
+
+    uncapped = Harness([ok(), ok()], **DOLLAR_PRICES)
+    async with uncapped.client as client:
+        await client.chat(USER)
+        await client.chat(USER)
+    assert uncapped.client.budget.limit is None
+    assert uncapped.client.budget.spent == 280  # tracked for reporting, never enforced
+    await capped.client.aclose()
+
+
+async def test_responses_without_usage_are_counted_unmetered_and_warned_about(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    payload = completion("hi")
+    del payload["usage"]
+    h = Harness([ok(payload)], max_run_cost_usd="100", **DOLLAR_PRICES)
+    with caplog.at_level(logging.WARNING, logger="docextract.providers.openai_compat"):
+        async with h.client as client:
+            await client.chat(USER)
+    assert h.client.budget.unmetered_calls == 1
+    assert h.client.budget.calls == 0
+    assert h.client.budget.spent == 0
+    assert "no usage block" in caplog.text
+
+
+async def test_no_missing_usage_warning_when_there_is_no_cap(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    payload = completion("hi")
+    del payload["usage"]
+    h = Harness([ok(payload)])
+    with caplog.at_level(logging.WARNING, logger="docextract.providers.openai_compat"):
+        async with h.client as client:
+            await client.chat(USER)
+    assert "no usage block" not in caplog.text
+
+
+async def test_a_loop_that_swallows_provider_errors_cannot_swallow_the_cap() -> None:
+    h = Harness([ok(), ok()], max_run_cost_usd="100", **DOLLAR_PRICES)
+    swallowed = 0
+    async with h.client as client:
+        await client.chat(USER)  # $140: over the cap
+        with pytest.raises(BudgetExceededError):
+            try:
+                await client.chat(USER)
+            except ProviderError:
+                swallowed += 1
+    assert swallowed == 0
 
 
 # ---------------------------------------------------------------- secrets

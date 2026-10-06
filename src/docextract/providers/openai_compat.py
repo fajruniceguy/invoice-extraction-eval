@@ -2,7 +2,8 @@
 
 Features: multi-image (base64) messages, structured output (json_schema, falling back to
 json_object plus a schema instruction when the server rejects it), timeouts, retry with
-exponential backoff on 429/5xx/transport errors, and token usage + latency on every call.
+exponential backoff on 429/5xx/transport errors, token usage + latency on every call, and a
+run-level cost cap (see budget.py).
 
 The key never appears in errors or logs; endpoint, model and key come from `Settings`.
 """
@@ -23,6 +24,7 @@ import httpx
 from pydantic import BaseModel, ValidationError, computed_field
 
 from docextract.config import Settings
+from docextract.providers.budget import BudgetExceededError, RunBudget
 from docextract.providers.schema_utils import simplify_schema
 
 logger = logging.getLogger(__name__)
@@ -375,8 +377,11 @@ class OpenAICompatClient:
         transport: httpx.AsyncBaseTransport | None = None,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         rng: Callable[[], float] = random.random,
+        budget: RunBudget | None = None,
     ) -> None:
         self._settings = settings
+        # one budget per client unless several clients are given the same one to share
+        self.budget = budget if budget is not None else RunBudget.from_settings(settings)
         key = settings.llm_api_key.get_secret_value()
         self._http = httpx.AsyncClient(
             base_url=settings.llm_base_url,
@@ -428,7 +433,13 @@ class OpenAICompatClient:
         tally = _Tally(started=time.perf_counter())
         max_repairs = self._settings.llm_max_repairs
         conversation = list(messages)
+        last_error: ResponseParseError | None = None
         while True:
+            try:
+                self.budget.ensure_available()
+            except BudgetExceededError as exceeded:
+                # a refused repair keeps the parse error it was trying to fix as its cause
+                raise exceeded from last_error
             completion = await self._complete(
                 conversation, response_model, temperature, max_tokens, tally
             )
@@ -440,6 +451,7 @@ class OpenAICompatClient:
                 # truncated output would just truncate again, so it is not worth a repair
                 if tally.repairs >= max_repairs or completion.finish_reason == "length":
                     raise
+                last_error = error
                 tally.repairs += 1
                 problem = _shorten(str(error), _REPAIR_ERROR_CHARS)
                 logger.warning("unusable model output; repair %d/%d", tally.repairs, max_repairs)
@@ -497,7 +509,11 @@ class OpenAICompatClient:
             ) from exc
 
         # usage is read before the message so a malformed response is still costed
-        tally.add_usage(parse_usage(payload.get("usage") if isinstance(payload, dict) else None))
+        usage = parse_usage(payload.get("usage") if isinstance(payload, dict) else None)
+        tally.add_usage(usage)
+        self.budget.record(usage.cost_usd(self._settings), metered=usage.reported)
+        if not usage.reported and self.budget.limit is not None:
+            logger.warning("response had no usage block: its cost is unknown and not counted")
         try:
             text, finish_reason = _extract_message(payload)
         except ValueError as exc:

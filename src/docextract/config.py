@@ -7,9 +7,9 @@ fails loudly instead of silently calling the wrong model.
 
 from decimal import Decimal
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 StructuredMode = Literal["auto", "json_schema", "json_object"]
@@ -54,6 +54,30 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return value.strip() or None
         return value
+
+    # Hard cap on what one run may spend, in USD. Unset = no cap. Enforced by RunBudget.
+    max_run_cost_usd: Decimal | None = Field(default=None, gt=0)
+
+    @field_validator("max_run_cost_usd", mode="before")
+    @classmethod
+    def _blank_cost_cap_is_unset(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip() or None
+        return value
+
+    @model_validator(mode="after")
+    def _cost_cap_needs_prices(self) -> Self:
+        if (
+            self.max_run_cost_usd is not None
+            and self.llm_price_input_per_mtok == 0
+            and self.llm_price_output_per_mtok == 0
+        ):
+            raise ValueError(
+                "MAX_RUN_COST_USD is set but LLM_PRICE_INPUT_PER_MTOK and "
+                "LLM_PRICE_OUTPUT_PER_MTOK are both 0, so every call costs $0 and the cap "
+                "could never trigger. Set the prices, or unset MAX_RUN_COST_USD."
+            )
+        return self
 
     @field_validator("llm_base_url")
     @classmethod

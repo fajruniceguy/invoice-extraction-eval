@@ -6,7 +6,8 @@ IMAGE defaults to the first image in data/raw, then to tests/fixtures/sample_rec
 Configuration (LLM_BASE_URL, LLM_MODEL, LLM_API_KEY, ...) comes from the environment, then
 from the env file (default: .env at the repo root).
 
-Exit codes: 0 success, 1 the call or the model output failed, 2 configuration/input problem.
+Exit codes: 0 success, 1 the call or the model output failed, 2 configuration/input problem,
+3 the run cost cap (MAX_RUN_COST_USD) was exceeded.
 """
 
 import argparse
@@ -18,6 +19,7 @@ from pydantic import ValidationError
 
 from docextract.config import Settings
 from docextract.extract.schema import DocumentExtraction
+from docextract.providers.budget import BudgetExceededError, RunBudget
 from docextract.providers.openai_compat import (
     OpenAICompatClient,
     ProviderError,
@@ -100,8 +102,28 @@ async def run(image: Path, env_file: Path) -> int:
         except ResponseParseError as exc:
             print(f"\nModel output was not usable: {exc}", file=sys.stderr)
             print(f"--- raw output (first 2000 chars) ---\n{exc.raw_text[:2000]}", file=sys.stderr)
-            _print_stats(settings, exc.usage, exc.latency_ms, exc.attempts, exc.repairs, None, None)
+            _print_stats(
+                settings,
+                exc.usage,
+                exc.latency_ms,
+                exc.attempts,
+                exc.repairs,
+                None,
+                None,
+                client.budget,
+            )
             return 1
+        except BudgetExceededError as exc:
+            print(f"\nStopped: {exc}", file=sys.stderr)
+            if isinstance(exc.__cause__, ResponseParseError):
+                # a refused repair: show the output we were not allowed to fix
+                print(f"The last model output was not usable: {exc.__cause__}", file=sys.stderr)
+                print(
+                    f"--- raw output (first 2000 chars) ---\n{exc.__cause__.raw_text[:2000]}",
+                    file=sys.stderr,
+                )
+            _print_budget(client.budget)
+            return 3
         except ProviderError as exc:
             print(f"\nLLM call failed: {exc}", file=sys.stderr)
             print(f"attempts={exc.attempts} latency_ms={exc.latency_ms:.0f}", file=sys.stderr)
@@ -117,6 +139,7 @@ async def run(image: Path, env_file: Path) -> int:
         result.repairs,
         result.structured_mode_used,
         result.finish_reason,
+        client.budget,
     )
     return 0
 
@@ -129,6 +152,7 @@ def _print_stats(
     repairs: int,
     mode: str | None,
     finish_reason: str | None,
+    budget: RunBudget | None = None,
 ) -> None:
     tokens = usage or Usage()
     reported = "" if tokens.reported else " (server reported no usage)"
@@ -144,6 +168,19 @@ def _print_stats(
     print(f"cost          : ${tokens.cost_usd(settings):.6f}")
     if mode is not None:
         print(f"structured    : {mode}   finish_reason={finish_reason}")
+    if budget is not None:
+        _print_budget(budget)
+
+
+def _print_budget(budget: RunBudget) -> None:
+    if budget.limit is None:
+        return
+    unmetered = (
+        f"   ({budget.unmetered_calls} call(s) returned no usage and are not counted)"
+        if budget.unmetered_calls
+        else ""
+    )
+    print(f"budget        : ${budget.spent:.6f} spent of the ${budget.limit:.6f} cap{unmetered}")
 
 
 def main() -> int:

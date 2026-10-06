@@ -19,6 +19,7 @@ LLM_ENV_VARS = [
     "LLM_MAX_REPAIRS",
     "LLM_REASONING_EFFORT",
     "LLM_STRUCTURED_MODE",
+    "MAX_RUN_COST_USD",
 ]
 
 
@@ -133,6 +134,62 @@ def test_reasoning_effort_from_env_is_trimmed_and_blank_means_unset(
 def test_reasoning_effort_is_not_restricted_to_a_known_list() -> None:
     # accepted values differ per provider (none/minimal/low/medium/high/...), so pass through
     assert make(llm_reasoning_effort="xhigh").llm_reasoning_effort == "xhigh"
+
+
+def test_run_cost_cap_is_unset_by_default() -> None:
+    assert make().max_run_cost_usd is None
+
+
+def test_run_cost_cap_is_read_from_the_environment_as_a_decimal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MAX_RUN_COST_USD", "0.05")
+    monkeypatch.setenv("LLM_PRICE_OUTPUT_PER_MTOK", "2.50")
+    assert make().max_run_cost_usd == Decimal("0.05")
+
+
+@pytest.mark.parametrize("blank", ["", "   "])
+def test_blank_run_cost_cap_means_unset_even_without_prices(
+    monkeypatch: pytest.MonkeyPatch, blank: str
+) -> None:
+    monkeypatch.setenv("MAX_RUN_COST_USD", blank)
+    assert make().max_run_cost_usd is None
+
+
+def test_a_cost_cap_without_any_prices_is_refused() -> None:
+    with pytest.raises(ValidationError, match="could never trigger"):
+        make(max_run_cost_usd="1")
+
+
+def test_the_refusal_names_the_settings_to_fix() -> None:
+    with pytest.raises(ValidationError) as exc:
+        make(max_run_cost_usd="1")
+    message = str(exc.value)
+    assert "MAX_RUN_COST_USD" in message
+    assert "LLM_PRICE_INPUT_PER_MTOK" in message
+    assert "LLM_PRICE_OUTPUT_PER_MTOK" in message
+
+
+@pytest.mark.parametrize(
+    "prices",
+    [
+        {"llm_price_input_per_mtok": "0.30"},
+        {"llm_price_output_per_mtok": "2.50"},
+        {"llm_price_input_per_mtok": "0.30", "llm_price_output_per_mtok": "2.50"},
+    ],
+)
+def test_a_cost_cap_needs_only_one_nonzero_price(prices: dict[str, str]) -> None:
+    assert make(max_run_cost_usd="1", **prices).max_run_cost_usd == Decimal(1)
+
+
+@pytest.mark.parametrize("bad", ["0", "-1", "-0.01"])
+def test_a_non_positive_cost_cap_is_rejected(bad: str) -> None:
+    with pytest.raises(ValidationError):
+        make(max_run_cost_usd=bad, llm_price_output_per_mtok="2.50")
+
+
+def test_prices_without_a_cap_are_fine() -> None:
+    assert make(llm_price_output_per_mtok="2.50").max_run_cost_usd is None
 
 
 def test_get_settings_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:

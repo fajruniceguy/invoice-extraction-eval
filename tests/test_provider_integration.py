@@ -16,6 +16,7 @@ import pytest
 
 from docextract.config import Settings
 from docextract.extract.schema import DocumentExtraction
+from docextract.providers.budget import BudgetExceededError
 from docextract.providers.openai_compat import (
     OpenAICompatClient,
     ProviderError,
@@ -265,6 +266,35 @@ async def test_reasoning_effort_is_absent_from_the_wire_when_unset(fake_llm: Fak
     assert "reasoning_effort" not in fake_llm.requests[0].body
 
 
+# ---------------------------------------------------------------- run budget
+
+
+async def test_a_batch_loop_aborts_cleanly_when_the_cap_is_hit(fake_llm: FakeLLMServer) -> None:
+    # every call costs 1500 x $0.30/M + 700 x $2.50/M = $0.0022; the third crosses a $0.005 cap
+    results = []
+    stopped: BudgetExceededError | None = None
+    async with make_client(
+        fake_llm,
+        Sleeps(),
+        llm_price_input_per_mtok="0.30",
+        llm_price_output_per_mtok="2.50",
+        max_run_cost_usd="0.005",
+    ) as client:
+        for _document in range(10):
+            try:
+                results.append(await client.chat(MESSAGES, DocumentExtraction))
+            except BudgetExceededError as exc:
+                stopped = exc
+                break
+
+    assert len(results) == 3  # partial results are kept
+    assert len(fake_llm.requests) == 3  # nothing was sent after the cap was crossed
+    assert stopped is not None
+    assert stopped.spent == Decimal("0.0066")
+    assert stopped.limit == Decimal("0.005")
+    assert all(result.parsed is not None for result in results)
+
+
 # ---------------------------------------------------------------- smoke script end to end
 
 
@@ -340,6 +370,45 @@ def test_smoke_script_shows_reasoning_tokens_separately_and_costs_them(
     assert "300 tokens, inferred from total_tokens" in done.stdout
     assert "cost          : $0.002950" in done.stdout
     assert fake_llm.requests[0].body["reasoning_effort"] == "low"  # env var -> wire
+
+
+def test_smoke_script_reports_the_budget_when_a_cap_is_set(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    done = run_smoke(fake_llm.base_url, tmp_path, MAX_RUN_COST_USD="1")
+
+    assert done.returncode == 0, done.stderr
+    assert "budget        : $0.002200 spent of the $1.000000 cap" in done.stdout
+
+
+def test_smoke_script_exits_3_when_the_cost_cap_blocks_a_repair(
+    fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    fake_llm.enqueue(chat_reply(BAD_TEXT), chat_reply(BAD_TEXT))
+    # one call costs $0.0022, so the first (unusable) reply already exceeds the $0.001 cap
+    done = run_smoke(fake_llm.base_url, tmp_path, MAX_RUN_COST_USD="0.001")
+
+    assert done.returncode == 3
+    assert "Stopped: run cost cap exceeded" in done.stderr
+    assert BAD_TEXT in done.stderr  # the output we were not allowed to repair is shown
+    assert "budget        : $0.002200 spent of the $0.001000 cap" in done.stdout
+    assert len(fake_llm.requests) == 1  # no repair request was sent
+    assert "Traceback" not in done.stderr
+
+
+def test_smoke_script_refuses_a_cap_without_prices(tmp_path: Path) -> None:
+    # config validation, before any request: nothing listens at this address
+    done = run_smoke(
+        "http://127.0.0.1:9/v1",
+        tmp_path,
+        MAX_RUN_COST_USD="1",
+        LLM_PRICE_INPUT_PER_MTOK="0",
+        LLM_PRICE_OUTPUT_PER_MTOK="0",
+    )
+
+    assert done.returncode == 2
+    assert "could never trigger" in done.stderr
+    assert "Traceback" not in done.stderr
 
 
 def test_smoke_script_reports_a_failed_call_cleanly(
