@@ -142,6 +142,9 @@ class PreprocessResult:
         str, ...
     ] = ()  # values it could not resolve without guessing (left as they were)
     changes: tuple[str, ...] = ()  # values it rewrote, e.g. "total.value: '1.250,00' -> '1250.00'"
+    # rules the output breaks that the schema cannot see (e.g. a page beyond the pages sent):
+    # like problems they force a parse error, but they are reported as they are worded
+    violations: tuple[str, ...] = ()
 
 
 Preprocess = Callable[[dict[str, Any]], PreprocessResult]
@@ -825,9 +828,11 @@ class OpenAICompatClient:
             ) from exc
         problems: tuple[str, ...] = ()
         changes: tuple[str, ...] = ()
+        violations: tuple[str, ...] = ()
         if preprocess is not None:  # deterministic clean-up first: it can save a repair call
             cleaned = preprocess(data)
             data, problems, changes = cleaned.data, cleaned.problems, cleaned.changes
+            violations = cleaned.violations
         reasons: list[str] = []
         cause: ValidationError | None = None
         try:
@@ -839,12 +844,13 @@ class OpenAICompatClient:
                 for error in exc.errors()[:5]
             )
         else:
-            if not problems:
+            if not problems and not violations:
                 return parsed, changes
         # A value the normalizer declined to resolve (an ambiguous "1.250" with no currency) is an
         # error EVEN IF validation passed: Decimal("1.250") parses fine, and accepting it would
         # silently make the very guess the normalizer refused to make.
         reasons.extend(f"could not normalize: {problem}" for problem in problems)
+        reasons.extend(violations)
         raise ResponseParseError(
             f"model output does not match {response_model.__name__}: {'; '.join(reasons)}",
             raw_text=text,
