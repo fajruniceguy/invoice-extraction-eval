@@ -31,16 +31,23 @@ IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 SYSTEM_PROMPT = """\
 You extract structured data from an invoice or receipt image.
 
-For every field return: value, confidence (0 to 1), status, evidence and page.
-- status "extracted": the document states the field. value is non-null and evidence is a \
-verbatim quote from the document.
-- status "abstained": the document does not state the field. value MUST be null, confidence \
-0, and reasons should say why. Never guess or infer a field that is not printed.
+For every field return: value, confidence (0 to 1), status, evidence, page and reasons.
+status is exactly one of:
+- "extracted": the document states the field. value is non-null, evidence is a verbatim \
+quote from the document, and confidence is how sure you are the value is right.
+- "absent": the document does not state this field at all (for example a receipt with no \
+due date). value MUST be null. confidence is how sure you are that it is absent, and can be \
+high. reasons is optional.
+- "abstained": the field may be on the document but you cannot read or decide it confidently \
+(blurry, ambiguous, conflicting). value MUST be null and reasons MUST say why.
+Never guess or infer a value that is not printed.
+
 - Dates as ISO YYYY-MM-DD. Money as plain decimal numbers: no currency symbols, no thousands \
 separators. currency is the ISO 4217 code.
 - page is the 1-based number of the image the evidence is on.
-- line_items: one entry per printed line, each with ONE confidence/evidence/page for the row; \
-use null for cells the row does not show.
+- line_items: one entry per printed line. Each row has ONE status, confidence, evidence, page \
+and reasons for the whole row. An "extracted" row has at least one non-null cell; use null \
+for cells the row does not show.
 """
 
 USER_PROMPT = "Extract the fields from this document."

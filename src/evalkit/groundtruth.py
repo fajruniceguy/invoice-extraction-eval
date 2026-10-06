@@ -3,7 +3,8 @@
 Each labeled field is one of three things:
   - a value                 -> the document states this; score the prediction against it
   - explicit null           -> "labeled absent": the document does NOT state it, so the
-                               right answer is to abstain
+                               right answer is status "absent" (how an "abstained"
+                               prediction is scored against it is decided in metrics)
   - "__unlabeled__"         -> nobody labeled this field; skip it in scoring
 
 The default for every field is unlabeled, so an omitted JSON key means unlabeled, never
