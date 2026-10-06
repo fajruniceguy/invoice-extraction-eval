@@ -367,6 +367,25 @@ class TestAssignRefusals:
         with pytest.raises(SplitError, match=r"labeled: has ground truth.*test/None -> test/"):
             assign_splits(rows, locked={"labeled"})
 
+    def test_a_locked_document_with_no_split_yet_may_be_given_its_first(self) -> None:
+        # a constructed invoice is labeled when it is generated, long before it is split:
+        # the label does not record the split, so assigning one is not a change to the label
+        constructed = [mk(f"cons_{i}", "invoice", capture="constructed") for i in range(3)]
+        locked = {row.doc_id for row in constructed}
+        plan = assign_splits(constructed, locked=locked)
+        assert all(r.split in ("dev", "test") for r in plan.rows)
+        assert all(r.label_mode is None for r in plan.rows)  # and nobody labels them
+        assert assign_splits(plan.rows, locked=locked).changes == []  # settled: a re-run is quiet
+
+    def test_but_the_first_split_does_not_open_the_door_to_moving_it(self) -> None:
+        constructed = [mk(f"cons_{i}", "invoice", capture="constructed") for i in range(6)]
+        locked = {row.doc_id for row in constructed}
+        first = assign_splits(constructed, locked=locked).rows
+        with pytest.raises(
+            SplitError, match="has ground truth, so its split/label_mode cannot change"
+        ):
+            assign_splits(first, locked=locked, seed="another seed", force=True)
+
     def test_locked_documents_may_stay_but_not_move(self) -> None:
         rows = docs(20, prefix="r")
         first = assign_splits(rows).rows

@@ -205,7 +205,11 @@ def assign_splits(
         assert group is not None
         split = assigned[group]
         mode = label_mode.get(row.doc_id, row.label_mode)
-        if row.doc_id in locked and (split != row.split or mode != row.label_mode):
+        # A label does not record the split, so a document that has none yet (a constructed
+        # invoice, labeled when it was generated) may be given its first; what is refused is
+        # MOVING one, or changing a label_mode the label file records.
+        moved = row.split is not None and split != row.split
+        if row.doc_id in locked and (moved or mode != row.label_mode):
             problems.append(
                 f"{row.doc_id}: has ground truth, so its split/label_mode cannot change "
                 f"({row.split}/{row.label_mode} -> {split}/{mode})"
