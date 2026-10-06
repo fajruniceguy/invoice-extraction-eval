@@ -24,6 +24,7 @@ import httpx
 from pydantic import BaseModel, ValidationError, computed_field
 
 from docextract.config import CacheMode, Settings
+from docextract.imaging import prepare_for_model
 from docextract.providers.budget import BudgetExceededError, RunBudget
 from docextract.providers.cache import (
     CacheEntry,
@@ -267,16 +268,30 @@ def _sniff_mime(data: bytes) -> str:
 
 
 def build_image_message(
-    prompt: str, images: Sequence[bytes | Path], *, role: str = "user"
+    prompt: str,
+    images: Sequence[bytes | Path],
+    *,
+    role: str = "user",
+    max_long_edge: int | None = None,
+    max_bytes: int | None = None,
 ) -> Message:
-    """One message with the prompt text followed by the images, in order, as data URLs."""
+    """One message with the prompt text followed by the images, in order, as data URLs.
+
+    By default the bytes are sent exactly as given. `max_long_edge` / `max_bytes` derive a
+    smaller copy in memory (see docextract.imaging.prepare_for_model); the stored file is never
+    modified, and a page that already fits is sent untouched.
+    """
     if not images:
         raise ValueError("at least one image is required")
     parts: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
     for image in images:
-        data = image.read_bytes() if isinstance(image, Path) else image
+        if max_long_edge is None and max_bytes is None:
+            data = image.read_bytes() if isinstance(image, Path) else image
+            mime = _sniff_mime(data)
+        else:
+            data, mime = prepare_for_model(image, max_long_edge=max_long_edge, max_bytes=max_bytes)
         encoded = base64.b64encode(data).decode("ascii")
-        url = f"data:{_sniff_mime(data)};base64,{encoded}"
+        url = f"data:{mime};base64,{encoded}"
         parts.append({"type": "image_url", "image_url": {"url": url}})
     return {"role": role, "content": parts}
 

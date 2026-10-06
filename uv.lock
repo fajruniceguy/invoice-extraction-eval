@@ -48,13 +48,13 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
+    { name = "pillow" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "pillow" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
@@ -63,13 +63,13 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
+    { name = "pillow", specifier = ">=10.1" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pydantic-settings", specifier = ">=2.3" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pillow", specifier = ">=10.1" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-asyncio", specifier = ">=0.23" },
     { name = "ruff", specifier = ">=0.5" },

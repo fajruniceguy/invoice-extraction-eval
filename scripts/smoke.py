@@ -106,7 +106,9 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool, use_cac
         settings = settings.model_copy(update={"llm_cache": "off"})
 
     try:
-        message = build_image_message(USER_PROMPT, [image])
+        message = build_image_message(
+            USER_PROMPT, [image], max_long_edge=settings.llm_image_max_long_edge
+        )
     except ValueError as exc:
         print(f"Cannot use {image}: {exc}", file=sys.stderr)
         return 2

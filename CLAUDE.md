@@ -28,6 +28,11 @@ docs/
 - Tests and fakes must never read `.env` or call the real API (`scripts/smoke.py --env-file <empty file>` plus a scrubbed environment; see `tests/test_provider_integration.py`).
 - Reasoning ("thinking") tokens: providers disagree on whether `completion_tokens` already includes them. `Usage` settles it per response from `total_tokens` (see `parse_usage`), so cost never double-counts. Always cost a call with `Usage.cost_usd(settings)`, never from `output_tokens` alone.
 
+## Page images: two different sizes (`docextract/imaging.py`)
+- The STORED size is a ceiling applied once at ingestion (`INGEST_MAX_LONG_EDGE`, 2400 px). The SENT size is `LLM_IMAGE_MAX_LONG_EDGE`, derived in memory from the stored page per request (`build_image_message(max_long_edge=...)`), so a resolution sweep never needs a re-ingest and the stored page is never modified. Both use the same rule.
+- Rule: normal pages cap the long edge; elongated pages (long/short > 2.5, thermal receipts) cap the AREA (~6 MP at E=2400, scaling with E squared) so the width stays legible; no upscaling; no side over 8000 px.
+- Encoding: PDF renders and PNG sources are stored as PNG, JPEG/HEIC photos as JPEG q92. Every encode strips ALL metadata, including what Pillow would otherwise re-emit from `.info` (comment, ICC, DPI): never save a page without going through `encode_page`.
+
 ## Response cache (`LLM_CACHE=on|off|refresh`)
 - Content-hash cache of RAW completions (`providers/cache.py`), keyed per HTTP exchange on page-image hashes, prompt, model, endpoint, reasoning effort, temperature, max_tokens, structured mode and schema hash. Parsing, normalization and validation rerun on every replay, so a validator change never serves a stale result and repair sequences replay deterministically.
 - On by default (eval); `smoke.py` bypasses it unless `--cache`, because a smoke check must hit the real API. `chat(cache="off"|"refresh")` overrides per call. Tests force it off and into a tmp dir (autouse fixture in `tests/conftest.py`).

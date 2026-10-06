@@ -57,22 +57,23 @@ class Settings(BaseSettings):
     # values differ per provider, so it is not validated here). Blank means unset.
     llm_reasoning_effort: str | None = None
 
-    @field_validator("llm_reasoning_effort", mode="before")
+    # Longest edge (px) of the page images SENT to the model. Applied in memory at request time
+    # to the stored page (which is never touched), so a resolution sweep needs no re-ingest.
+    # Unset = send the stored page as is. Same shape rule as ingestion (docextract.imaging).
+    llm_image_max_long_edge: int | None = Field(default=None, ge=1)
+
+    @field_validator(
+        "llm_reasoning_effort", "max_run_cost_usd", "llm_image_max_long_edge", mode="before"
+    )
     @classmethod
-    def _blank_reasoning_effort_is_unset(cls, value: object) -> object:
+    def _blank_is_unset(cls, value: object) -> object:
+        """`NAME=` in an env file means "not set", not "an empty string to parse"."""
         if isinstance(value, str):
             return value.strip() or None
         return value
 
     # Hard cap on what one run may spend, in USD. Unset = no cap. Enforced by RunBudget.
     max_run_cost_usd: Decimal | None = Field(default=None, gt=0)
-
-    @field_validator("max_run_cost_usd", mode="before")
-    @classmethod
-    def _blank_cost_cap_is_unset(cls, value: object) -> object:
-        if isinstance(value, str):
-            return value.strip() or None
-        return value
 
     @model_validator(mode="after")
     def _cost_cap_needs_prices(self) -> Self:
