@@ -1,13 +1,15 @@
 """Send one image to the configured LLM and print the parsed extraction, tokens and latency.
 
-Usage: uv run python scripts/smoke.py [IMAGE]
+Usage: python -m uv run python scripts/smoke.py [IMAGE] [--env-file PATH]
 
 IMAGE defaults to the first image in data/raw, then to tests/fixtures/sample_receipt.png.
-Configuration (LLM_BASE_URL, LLM_MODEL, LLM_API_KEY, ...) comes from the environment or .env.
+Configuration (LLM_BASE_URL, LLM_MODEL, LLM_API_KEY, ...) comes from the environment, then
+from the env file (default: .env at the repo root).
 
 Exit codes: 0 success, 1 the call or the model output failed, 2 configuration/input problem.
 """
 
+import argparse
 import asyncio
 import sys
 from pathlib import Path
@@ -69,7 +71,7 @@ def describe_config_error(exc: ValidationError) -> str:
     return "Configuration problem (see .env.example):\n" + "\n".join(lines)
 
 
-async def run(image: Path) -> int:
+async def run(image: Path, env_file: Path) -> int:
     if not image.is_file():
         hint = (
             "  generate it with: uv run python scripts/make_sample_receipt.py"
@@ -79,7 +81,7 @@ async def run(image: Path) -> int:
         print(f"Image not found: {image}\n{hint}".rstrip(), file=sys.stderr)
         return 2
     try:
-        settings = Settings(_env_file=ROOT / ".env")
+        settings = Settings(_env_file=env_file)
     except ValidationError as exc:
         print(describe_config_error(exc), file=sys.stderr)
         return 2
@@ -140,7 +142,15 @@ def _print_stats(
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
-    return asyncio.run(run(pick_image(sys.argv[1] if len(sys.argv) > 1 else None)))
+    parser = argparse.ArgumentParser(
+        description="Send one image to the configured LLM; print the extraction, tokens, latency."
+    )
+    parser.add_argument("image", nargs="?", help="image to send (default: data/raw, then fixture)")
+    parser.add_argument(
+        "--env-file", type=Path, default=ROOT / ".env", help="env file (default: repo .env)"
+    )
+    args = parser.parse_args()
+    return asyncio.run(run(pick_image(args.image), args.env_file))
 
 
 if __name__ == "__main__":
