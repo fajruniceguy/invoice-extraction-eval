@@ -28,7 +28,8 @@ from typing import Any, TextIO
 from pydantic import ValidationError
 
 from docextract.config import Settings
-from docextract.extract.preprocess import normalize_extraction_payload
+from docextract.extract.preprocess import extraction_preprocess
+from docextract.extract.prompt import SYSTEM_PROMPT, user_text
 from docextract.extract.schema import DocumentExtraction
 from docextract.providers.budget import BudgetExceededError, RunBudget
 from docextract.providers.openai_compat import (
@@ -46,30 +47,6 @@ FIXTURE = ROOT / "tests" / "fixtures" / "sample_receipt.png"
 DEFAULT_OUTPUT = ROOT / "outputs" / "smoke-last.json"
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 RAW_EXCERPT_CHARS = 600
-
-SYSTEM_PROMPT = """\
-You extract structured data from an invoice or receipt image.
-
-For every field return: value, confidence (0 to 1), status, evidence, page and reasons.
-status is exactly one of:
-- "extracted": the document states the field. value is non-null, evidence is a verbatim \
-quote from the document, and confidence is how sure you are the value is right.
-- "absent": the document does not state this field at all (for example a receipt with no \
-due date). value MUST be null. confidence is how sure you are that it is absent, and can be \
-high. reasons is optional.
-- "abstained": the field may be on the document but you cannot read or decide it confidently \
-(blurry, ambiguous, conflicting). value MUST be null and reasons MUST say why.
-Never guess or infer a value that is not printed.
-
-- Dates as ISO YYYY-MM-DD. Money as plain decimal numbers: no currency symbols, no thousands \
-separators. currency is the ISO 4217 code.
-- page is the 1-based number of the image the evidence is on.
-- line_items: one entry per printed line. Each row has ONE status, confidence, evidence, page \
-and reasons for the whole row. An "extracted" row has at least one non-null cell; use null \
-for cells the row does not show.
-"""
-
-USER_PROMPT = "Extract the fields from this document."
 
 
 def pick_image(argument: str | None) -> Path:
@@ -108,7 +85,7 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool, use_cac
 
     try:
         message = build_image_message(
-            USER_PROMPT, [image], max_long_edge=settings.llm_image_max_long_edge
+            user_text(1), [image], max_long_edge=settings.llm_image_max_long_edge
         )
     except ValueError as exc:
         print(f"Cannot use {image}: {exc}", file=sys.stderr)
@@ -128,7 +105,7 @@ async def run(image: Path, env_file: Path, output: Path, show_raw: bool, use_cac
                 messages,
                 DocumentExtraction,
                 temperature=0.0,
-                preprocess=normalize_extraction_payload,
+                preprocess=extraction_preprocess(1),  # one image: the evidence must be on page 1
             )
         except ResponseParseError as exc:
             print(f"\nModel output was not usable: {exc}", file=sys.stderr)

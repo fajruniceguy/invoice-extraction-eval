@@ -21,6 +21,7 @@ LLM_ENV_VARS = [
     "LLM_MAX_REPAIRS",
     "LLM_REASONING_EFFORT",
     "LLM_STRUCTURED_MODE",
+    "LLM_MAX_PAGES",
     "MAX_RUN_COST_USD",
 ]
 
@@ -117,6 +118,18 @@ def test_max_repairs_defaults_to_one_and_can_be_set(monkeypatch: pytest.MonkeyPa
 def test_rejects_negative_max_repairs() -> None:
     with pytest.raises(ValidationError):
         make(llm_max_repairs=-1)
+
+
+def test_max_pages_defaults_to_15_and_can_be_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert make().llm_max_pages == 15
+    monkeypatch.setenv("LLM_MAX_PAGES", "3")
+    assert make().llm_max_pages == 3
+
+
+@pytest.mark.parametrize("bad", [0, -1])
+def test_rejects_max_pages_below_one(bad: int) -> None:
+    with pytest.raises(ValidationError):
+        make(llm_max_pages=bad)
 
 
 def test_reasoning_effort_is_unset_by_default() -> None:

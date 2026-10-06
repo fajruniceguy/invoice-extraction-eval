@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     # Unset = send the stored page as is. Same shape rule as ingestion (docextract.imaging).
     llm_image_max_long_edge: int | None = Field(default=None, ge=1)
 
+    # Most pages one extraction call may carry (every page of a document goes in ONE call). A
+    # longer bundle is refused before any request: split it with page_range in the manifest.
+    llm_max_pages: int = Field(default=15, ge=1)
+
     # Pre-labeling (scripts/prelabel.py): a DIFFERENT model drafts labels that a human verifies.
     # It talks to its own OpenAI-compatible endpoint through the same client class; see
     # `prelabel_settings()`. Unset base URL / model = pre-labeling is not configured.
