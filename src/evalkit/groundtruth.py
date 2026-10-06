@@ -11,16 +11,23 @@ The default for every field is unlabeled, so an omitted JSON key means unlabeled
 absent. Unknown keys are rejected so that a typo like "vendor_nme" fails loudly instead of
 silently turning into an unlabeled field.
 
+A label also records HOW it was made: `label_mode` ("prelabel": a model drafted it and a human
+verified every field; "blind": a human labeled from the page alone, no draft ever shown) and
+`labeled_at` (when, timezone-aware). `field_notes` is an optional {field: note} for the humans
+reading the label ("redacted", "total not printed"); notes are never scored.
+
 "__unlabeled__" is a reserved string: it can never be a real field value.
 """
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Final, Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 UNLABELED: Final = "__unlabeled__"
+
+LabelMode = Literal["prelabel", "blind"]
 
 T = TypeVar("T")
 
@@ -46,7 +53,10 @@ class GroundTruth(BaseModel):
 
     doc_id: str = Field(min_length=1)
     source_file: str | None = None
+    label_mode: LabelMode | None = None  # None: generated labels (constructed documents)
+    labeled_at: datetime | None = None  # timezone-aware
     notes: str | None = None
+    field_notes: dict[str, str] = Field(default_factory=dict)
 
     vendor_name: GTValue[str] = UNLABELED
     vendor_address: GTValue[str] = UNLABELED
@@ -66,6 +76,24 @@ class GroundTruth(BaseModel):
     discount: GTValue[Decimal] = UNLABELED
     total: GTValue[Decimal] = UNLABELED
 
+    @field_validator("labeled_at")
+    @classmethod
+    def _timezone_aware(cls, value: datetime | None) -> datetime | None:
+        if value is not None and value.tzinfo is None:
+            raise ValueError("labeled_at needs a timezone (write it as 2026-10-06T09:15:00Z)")
+        return value
+
+    @field_validator("field_notes")
+    @classmethod
+    def _known_fields_and_real_notes(cls, notes: dict[str, str]) -> dict[str, str]:
+        unknown = sorted(name for name in notes if name not in NOTE_FIELDS)
+        if unknown:
+            raise ValueError(f"field_notes for unknown field(s): {', '.join(unknown)}")
+        blank = sorted(name for name, note in notes.items() if not note.strip())
+        if blank:
+            raise ValueError(f"empty field_notes for: {', '.join(blank)}")
+        return notes
+
     def labeled_fields(self) -> dict[str, Any]:
         """Scalar fields that carry a label (a value or explicit null), keyed by name."""
         return {
@@ -75,9 +103,20 @@ class GroundTruth(BaseModel):
         }
 
 
-_NON_SCALAR = {"doc_id", "source_file", "notes", "line_items"}
+_NON_SCALAR = {
+    "doc_id",
+    "source_file",
+    "notes",
+    "line_items",
+    "label_mode",
+    "labeled_at",
+    "field_notes",
+}
 
 # Same names as docextract.extract.schema.SCALAR_FIELD_NAMES (a test keeps them in sync).
 SCALAR_FIELD_NAMES: tuple[str, ...] = tuple(
     name for name in GroundTruth.model_fields if name not in _NON_SCALAR
 )
+
+# the fields a note can be about: the scalars and the line items as a whole
+NOTE_FIELDS: tuple[str, ...] = (*SCALAR_FIELD_NAMES, "line_items")

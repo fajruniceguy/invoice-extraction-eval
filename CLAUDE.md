@@ -11,7 +11,7 @@ A document extraction system for invoices/receipts plus a rigorous evaluation ha
 ## Layout
 ```
 src/docextract/{config.py, providers/, ingest/, extract/, validate/, confidence/, api/}
-src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, compare.py, groundtruth.py, construct.py, construct_io.py}
+src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, compare.py, groundtruth.py, gt_store.py, construct.py, construct_io.py}
 data/{manifest.csv, redactions.yaml, pages/, private/{raw,preview}}
 ground_truth/{, drafts/}
 outputs/
@@ -19,7 +19,7 @@ scripts/
 tests/{fakes/, fixtures/}
 docs/
 ```
-`groundtruth.py` (the ground-truth schema) and `construct*.py` (constructed invoices) are the files in `evalkit` not in the original layout brief.
+`groundtruth.py` (the ground-truth schema), `gt_store.py` (label files) and `construct*.py` (constructed invoices) are the files in `evalkit` not in the original layout brief.
 
 ## Provider
 - The provider is OpenAI-compatible and fully configured via env: `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, plus per-token prices for cost (`LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`, USD per 1M tokens).
@@ -68,6 +68,7 @@ docs/
 
 ## Ground truth
 - Never edit `ground_truth/*.json` silently. Every change gets a line in `ground_truth/CHANGELOG.md`.
+- Format and rules: `ground_truth/LABELING.md`. A label records HOW it was made (`label_mode` prelabel|blind, `labeled_at` with a timezone) and may carry per-field `field_notes`. `evalkit/gt_store.py` reads, writes (atomically, every field explicit, fixed order) and resolves labels: a document with `gt_from` has NO file of its own and gets the owner's label under its own id; `check_labels` / `scripts/check_ground_truth.py` check the lot, including that a BLIND document never has a model draft in `ground_truth/drafts/`.
 
 ## Workflow
 - Small conventional commits after each working step.
@@ -92,6 +93,7 @@ python -m uv run python scripts/ingest.py --preview --doc ID   # UNREDACTED page
 python -m uv run python scripts/assign_split.py [--dry-run] [--force]   # dev/test split + blind picks -> manifest
 python -m uv run python scripts/degrade_docs.py (--doc ID | --all) [--levels light,heavy] [--check]   # degraded variants + manifest rows
 python -m uv run python scripts/construct_invoices.py [--check] [--force]   # 3 constructed multi-page invoices + labels
+python -m uv run python scripts/check_ground_truth.py   # label files vs manifest, blind-draft rule, coverage per split
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
 python -m uv run python tests/fakes/fake_llm.py 8765 [--reject-schema]   # fake OpenAI-compatible server, no key needed

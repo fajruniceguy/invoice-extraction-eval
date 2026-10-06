@@ -158,3 +158,78 @@ class TestLabeledFields:
             {"doc_id": "d1", "notes": "n", "source_file": "a.png", "line_items": None}
         )
         assert gt.labeled_fields() == {}
+
+
+class TestLabelProvenance:
+    def test_a_label_may_carry_how_and_when_it_was_made(self) -> None:
+        gt = GroundTruth.model_validate(
+            {"doc_id": "d1", "label_mode": "blind", "labeled_at": "2026-10-06T09:15:00Z"}
+        )
+        assert gt.label_mode == "blind"
+        assert gt.labeled_at is not None and gt.labeled_at.utcoffset() is not None
+        assert (gt.labeled_at.year, gt.labeled_at.hour) == (2026, 9)
+
+    def test_they_are_optional_and_never_count_as_labeled_fields(self) -> None:
+        bare = GroundTruth.model_validate({"doc_id": "d1"})
+        assert (bare.label_mode, bare.labeled_at, bare.field_notes) == (None, None, {})
+        full = GroundTruth.model_validate(
+            {
+                "doc_id": "d1",
+                "label_mode": "prelabel",
+                "labeled_at": "2026-10-06T09:15:00+07:00",
+                "field_notes": {"total": "total not printed"},
+                "total": None,
+            }
+        )
+        assert set(full.labeled_fields()) == {"total"}  # the provenance is not a scored field
+
+    def test_scalar_field_names_do_not_include_the_provenance(self) -> None:
+        for name in ("label_mode", "labeled_at", "field_notes", "notes", "doc_id"):
+            assert name not in SCALAR_FIELD_NAMES
+
+    @pytest.mark.parametrize("mode", ["", "manual", "Blind", "model"])
+    def test_label_mode_is_prelabel_or_blind(self, mode: str) -> None:
+        with pytest.raises(ValidationError):
+            GroundTruth.model_validate({"doc_id": "d1", "label_mode": mode})
+
+    @pytest.mark.parametrize("stamp", ["2026-10-06T09:15:00", "2026-10-06 09:15:00"])
+    def test_a_timestamp_without_a_timezone_is_refused(self, stamp: str) -> None:
+        with pytest.raises(ValidationError, match="needs a timezone"):
+            GroundTruth.model_validate({"doc_id": "d1", "labeled_at": stamp})
+
+    def test_a_date_alone_is_not_a_timestamp(self) -> None:
+        with pytest.raises(ValidationError):
+            GroundTruth.model_validate({"doc_id": "d1", "labeled_at": "not a time"})
+
+
+class TestFieldNotes:
+    def test_notes_are_kept_per_field(self) -> None:
+        gt = GroundTruth.model_validate(
+            {
+                "doc_id": "d1",
+                "field_notes": {"total": "total not printed", "vendor_name": "redacted"},
+            }
+        )
+        assert gt.field_notes == {"total": "total not printed", "vendor_name": "redacted"}
+
+    def test_line_items_can_have_a_note_too(self) -> None:
+        gt = GroundTruth.model_validate(
+            {"doc_id": "d1", "field_notes": {"line_items": "two pages"}}
+        )
+        assert gt.field_notes == {"line_items": "two pages"}
+
+    @pytest.mark.parametrize("key", ["totl", "doc_id", "notes", "label_mode", "vendor_nme"])
+    def test_a_note_on_a_field_that_does_not_exist_is_refused(self, key: str) -> None:
+        with pytest.raises(ValidationError, match="unknown field"):
+            GroundTruth.model_validate({"doc_id": "d1", "field_notes": {key: "x"}})
+
+    @pytest.mark.parametrize("note", ["", "   "])
+    def test_an_empty_note_is_refused(self, note: str) -> None:
+        with pytest.raises(ValidationError, match="empty field_notes for: total"):
+            GroundTruth.model_validate({"doc_id": "d1", "field_notes": {"total": note}})
+
+    def test_every_scalar_field_can_carry_a_note(self) -> None:
+        notes = {name: "n" for name in SCALAR_FIELD_NAMES}
+        assert set(
+            GroundTruth.model_validate({"doc_id": "d1", "field_notes": notes}).field_notes
+        ) == set(SCALAR_FIELD_NAMES)
