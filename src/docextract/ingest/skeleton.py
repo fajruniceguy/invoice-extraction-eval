@@ -101,7 +101,13 @@ def build_skeleton(raw_dir: Path, existing: list[ManifestRow]) -> SkeletonResult
 
     referenced = {name for row in existing for name in row.raw_files}
     for row in existing:
-        result.missing.extend((row.doc_id, name) for name in row.raw_files if name not in on_disk)
+        # missing means NOT ON DISK, not "not in the scan": the scan skips reserved folders
+        # (the constructed invoices live in one) that rows legitimately point into
+        result.missing.extend(
+            (row.doc_id, name)
+            for name in row.raw_files
+            if name not in on_disk and not long_path(raw_dir / name).is_file()
+        )
 
     number, width = _next_number(existing)
     by_hash: dict[str, list[str]] = defaultdict(list)

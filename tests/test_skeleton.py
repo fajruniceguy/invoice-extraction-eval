@@ -400,6 +400,22 @@ class TestBuildSkeleton:
         assert second.missing == [("doc_002", "photo.jpg")]
         assert len(second.rows) == len(first.rows)
 
+    def test_a_row_in_a_reserved_folder_is_missing_only_if_its_file_really_is(
+        self, raw: Path
+    ) -> None:
+        # the scan skips constructed/ on purpose (its rows come from construct_invoices), but the
+        # rows pointing into it must not be reported as vanished while the files are there
+        (raw / "constructed").mkdir()
+        (raw / "constructed" / "cons_001.pdf").write_bytes(b"%PDF-1.4")
+        existing = [
+            ManifestRow(doc_id="cons_001", raw_files=("constructed/cons_001.pdf",)),
+            ManifestRow(doc_id="cons_002", raw_files=("constructed/cons_002.pdf",)),
+        ]
+        result = build_skeleton(raw, existing)
+        assert result.missing == [("cons_002", "constructed/cons_002.pdf")]
+        added = result.rows[len(existing) :]  # the scan still never adds a row for constructed/
+        assert not any(row.raw_files[0].startswith("constructed/") for row in added)
+
     def test_a_multi_file_row_reports_only_the_missing_part(self, raw: Path) -> None:
         existing = [ManifestRow(doc_id="doc_001", raw_files=("photo.jpg", "gone.jpg"))]
         assert build_skeleton(raw, existing).missing == [("doc_001", "gone.jpg")]
