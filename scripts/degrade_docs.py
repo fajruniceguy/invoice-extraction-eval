@@ -106,6 +106,7 @@ def main() -> int:
     failures = 0
     made: list[tuple[ManifestRow, Variant]] = []
     for source in sources:
+        reported: set[str] = set()  # a problem with the source repeats for every level: say it once
         for level in levels:
             try:
                 result = degrade_document(
@@ -119,8 +120,10 @@ def main() -> int:
                     dry_run=args.check,
                 )
             except DegradeError as exc:
-                failures += 1
-                print(f"  FAILED    {exc}")
+                if exc.message not in reported:
+                    reported.add(exc.message)
+                    failures += 1
+                    print(f"  FAILED    {exc}")
                 continue
             made.append((source, level))
             print(f"  {result.status:<12}{result.doc_id}  {len(result.pages)} page(s)")

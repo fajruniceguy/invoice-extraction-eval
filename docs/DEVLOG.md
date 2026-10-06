@@ -110,3 +110,79 @@ Follow-ups found while doing the above or on the live run: repair history [30f8e
 - The json_object fallback and a repair against a real model: json_schema was accepted and no repair
   was needed, so both are proven only against the fake server.
 - Gemini 3.6-3.8 behaviour: overloaded during the run, so only 3.5 was exercised.
+
+## M2 - Dataset, ingestion and ground-truth tooling (2026-10-06)
+
+**Done.** Everything between a folder of raw documents and a labeled, split, redacted dataset.
+Groundwork first (slow-test marker; content-hash response cache; shared page geometry with a
+request-time resolution; the number/date normalizer run BEFORE any repair), then the ten steps,
+one commit each:
+
+1. `manifest.csv` + Pydantic model + `manifest_init` (merge-safe, infers only on strong evidence)
+2. `ingest`: EXIF upright, all metadata stripped, PDFs at 200 dpi, 2400 px ceiling (elongated
+   receipts capped by area), PNG for PDF/PNG sources and JPEG q92 for photos, idempotent by content hash
+3. redaction: `redactions.yaml` burned in before encoding, a hard gate, `--preview` for coordinates
+4. `assign_split`: ~35/65 by content group, stratified, never moves an existing assignment, 8-10 blind picks
+5. `degrade_docs`: light/medium/heavy variants (Augraphy, OpenCV fallback) of born-digital documents
+6. `construct_invoices`: 3 multi-page invoices (3 layouts, 30-60 items, totals on the last page only)
+   with labels known by construction
+7. ground-truth format (`label_mode`, `labeled_at`, `field_notes`), `gt_store`, `LABELING.md`,
+   `check_ground_truth`
+8. `prelabel`: a DIFFERENT model drafts, a human verifies (PRELABEL_* config, same client class)
+9. the labeling app (Streamlit) over a pure, tested form state machine
+10. an end-to-end test of the real scripts in order, which found one more bug (below)
+
+1772 default tests (~52 s) + 128 `slow` ones (~2 min) = 1900, all offline. Every new piece of logic
+was mutation-tested (break it, confirm a test fails): over 400 mutants in steps 3-10 alone, plus those
+of the groundwork and steps 1-2. Survivors were either fixed with a stronger test or shown to be
+equivalent (a redundant branch, an implementation choice) and the code simplified.
+
+**Decisions.**
+- **Privacy by location.** Originals and unredacted previews live in `data/private/` (gitignored);
+  only redacted pages, the manifest, redaction boxes and labels are committed. Tooling never reads real
+  page content: it uses synthetic fixtures, and for real files only metadata and counts.
+- **Redaction is a hard gate and its parser is strict**: a repeated YAML key (PyYAML silently keeps the
+  last), an empty entry, an unknown doc_id or boxes on a variant stop the run before any page is written.
+  A box left untouched while its page changed size (new DPI or cap) is refused.
+- **The stored resolution is only a ceiling**; what the model is sent is a request-time setting, so a
+  resolution sweep needs no re-ingest.
+- **The unit of the split is the content group** (a gt_from row must share its target's group), and
+  assignments are ranked by a hash of (seed, stratum, group), so adding a document never reshuffles
+  the others. A label_mode already in the manifest is a decision: a document that may carry a
+  model-influenced label can never turn blind.
+- **Label once, never copy**: variants and duplicate photos borrow their owner's label (`gt_from`)
+  and must not have a file of their own.
+- **Pre-labeling by a different model**, enforced in code: blind documents are refused (zero requests
+  are made), same endpoint+model as the extractor is refused, only stored redacted pages are sent, and
+  what the normalizer cannot settle without guessing becomes `"__unlabeled__"` with a note.
+- **Save is blocked until every field is decided** (verified / absent / unlabeled), and a label is never
+  written without its CHANGELOG line (if the log fails, the label file is put back).
+- **Values are labeled AS PRINTED** (Indonesian "1.250.000,00" -> "1250000.00", printed scale kept), a
+  faktur with no printed grand total has `total = null`; see `ground_truth/LABELING.md`.
+
+**Problems found and fixed** (the ones worth remembering):
+- A 218-character file name made `Path.is_file()` False on Windows, so the file silently vanished from
+  the scan. Everything now goes through `fsutil.long_path`.
+- Pillow re-emitted comment/ICC/DPI from `.info`, and a transparent PNG became black on `convert("RGB")`.
+- Pydantic accepted an ambiguous "1.250" the normalizer had refused to resolve: normalizer problems now
+  force a parse error.
+- Augraphy: its seed goes to `cv2.setRNGSeed` (signed 32-bit) and 0 means "unseeded"; `BadPhotoCopy` is
+  not reproducible inside a pipeline (dropped); it writes 13 MB into `./augraphy_cache` (now run inside
+  `outputs/cache/augraphy`). Found only by running the real pipeline several times over.
+- The labeling form trusted a saved "verified" blindly and crashed on malformed saved work; both fixed
+  (shape checked, every verified field re-verified on load).
+- The end-to-end test found that `assign_split` refused to give the constructed invoices (which have
+  generated labels from the start) a FIRST split: a lock now stops moves, not first assignments.
+- Heredoc backslash-halving corrupted scripts more than once, even after it was written down: anything
+  containing `\n` goes through the Edit/Write tools, never `cat <<EOF`.
+
+**Real documents** (metadata only, never viewed): 31 files ingested into a scratch folder, 133 pages,
+~88 MB, 0 failures, a second run all unchanged. `doc_017` (78 pages, 51 MB) and `doc_010` (20 pages,
+22 MB) are bundles that need `page_range` rows before they are usable. WhatsApp photos carry no EXIF
+(so `capture` cannot be inferred for them), one `.png` is really a JPEG, and the raw file names are in
+the (uncommitted) manifest: review them before committing it.
+
+**Not done / left for the human.** `doc_type`, `template_group`, `needs_redaction` (and the boxes),
+`license_note`, duplicates (`gt_from`) and bundle splitting for the 31 real documents; then
+`ingest`, `assign_split`, `degrade_docs`, `prelabel` and labeling, in that order. The prelabel path
+has been tested against a fake server only: no live call was made.

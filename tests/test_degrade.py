@@ -737,6 +737,17 @@ class TestCommandLine:
             "doc_001", "doc_001-deg-light", "doc_002",
         ]  # fmt: skip
 
+    def test_a_problem_with_a_source_is_reported_once_not_once_per_level(
+        self, tmp_path: Path
+    ) -> None:
+        _, manifest, pages = self.setup_dataset(tmp_path, [source_row()])
+        for sidecar in pages.glob("*/ingest.json"):
+            sidecar.unlink()
+        code, out, _ = self.run(manifest, pages, "--doc", "doc_001")  # all three levels
+        assert code == 1
+        assert out.count("not ingested yet") == 1
+        assert "done: 0 variant(s), 1 failed" in out
+
     def test_a_source_that_was_not_ingested_is_reported(self, tmp_path: Path) -> None:
         _, manifest, pages = self.setup_dataset(tmp_path, [source_row()])
         for sidecar in pages.glob("*/ingest.json"):
