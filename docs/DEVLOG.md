@@ -201,3 +201,16 @@ has been tested against a fake server only: no live call was made.
 **Deviations.** ROADMAP.md is at the repo root and untracked (CLAUDE.md says `docs/ROADMAP.md`); `docs/milestones/` is absent.
 **Next: M3** (extractor + dev-set runner), buildable offline on the fake server and the 3 constructed invoices.
 Its DoD run on "all dev docs" is gated by M2's human steps (classify, redact, split, blind-label), not by code.
+
+## M3 - Extraction v1 (2026-10-07)
+**Outcome.** Spec criteria 1-7 pass; `pytest -m "slow or not slow"` 2012 passed, 1 skipped; ruff clean. 82 mutants, 5 survivors closed with stronger tests.
+Criterion 8 (live, gemini-3.5-flash) **FAILS as written**: cons_001 got HTTP 503 "high demand" on all 10 attempts over 2 runs. cons_002/003 passed live:
+57/33 rows (= labels), every extracted value cited on a real page, totals = labels, 0 repairs, json_schema accepted. Paid $0.1863 (list prices as process env).
+**New interfaces.** `ingest.stored.stored_pages` (ingest.json or degrade.json, hash-checked; prelabel delegates); `extract.prompt` (SYSTEM_PROMPT,
+`user_text`, `PROMPT_SHA256`); `extract.preprocess.check_contract` / `extraction_preprocess` + `PreprocessResult.violations` (uncited or off-page
+values are repaired); `extract.extractor.extract_pages` (all pages, one call); `extract.runner` (`run_extraction`, `DocRecord`, `RunRecord`, blind rule,
+exit codes) + `scripts/extract.py` -> `outputs/runs/<id>/`; `LLM_MAX_PAGES` (15).
+**Deviations.** No dev split exists: DoD met on a synthetic dev set offline + the constructed invoices live. A repair never happened live (proven offline only).
+**Tech debt.** CLAUDE.md "Order in the pipeline" still names `normalize_extraction_payload`; smoke.py's default image folder is the old `data/raw`; attempts
+that time out or drop return no usage, so their cost (if billed) is unknown; `.env` prices are 0, so costs read $0 unless overridden.
+**Next.** Re-run criterion 8 when Gemini is not overloaded (cons_002/003 replay from the cache, only cons_001 is paid, ~$0.08); M2's human steps; then M4.
