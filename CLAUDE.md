@@ -25,7 +25,7 @@ docs/
 ## Provider
 - The provider is OpenAI-compatible and fully configured via env: `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, plus per-token prices for cost (`LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`, USD per 1M tokens).
 - Pre-labeling has its own `PRELABEL_*` variables (below); `.env.example` lists them.
-- Optional env: `LLM_MAX_REPAIRS` (default 1: re-asks when output is not valid JSON / does not match the schema), `LLM_REASONING_EFFORT` (passed through as `reasoning_effort` when set), `LLM_STRUCTURED_MODE`, `LLM_TIMEOUT_S`, `LLM_MAX_RETRIES`, `LLM_BACKOFF_BASE_S`, `LLM_BACKOFF_MAX_S`, and `MAX_RUN_COST_USD` (below). `.env.example` lists them all.
+- Optional env: `LLM_MAX_REPAIRS` (default 1: re-asks when output is not valid JSON / does not match the schema), `LLM_REASONING_EFFORT` (passed through as `reasoning_effort` when set), `LLM_STRUCTURED_MODE`, `LLM_TIMEOUT_S`, `LLM_MAX_RETRIES`, `LLM_BACKOFF_BASE_S`, `LLM_BACKOFF_MAX_S`, `LLM_MAX_PAGES` (default 15: a document with more pages is refused before any request; all its pages go in one call), and `MAX_RUN_COST_USD` (below). `.env.example` lists them all.
 - Never hardcode model names or secrets. `.env` is gitignored and holds a real key: never print it, never edit it, never commit it. `.env.example` is the only committed example.
 - Tests and fakes must never read `.env` or call the real API (`scripts/smoke.py --env-file <empty file>` plus a scrubbed environment; see `tests/test_provider_integration.py`).
 - Reasoning ("thinking") tokens: providers disagree on whether `completion_tokens` already includes them. `Usage` settles it per response from `total_tokens` (see `parse_usage`), so cost never double-counts. Always cost a call with `Usage.cost_usd(settings)`, never from `output_tokens` alone.
@@ -52,6 +52,9 @@ docs/
 - Money is `Decimal` end to end: model JSON is parsed with `parse_float=Decimal`.
 - **Normalization (`docextract/normalize.py`) never guesses.** `parse_number` / `parse_date` return `ok | ambiguous | invalid`; `1.250` is thousands in an IDR context, a decimal in a USD context, and **ambiguous** (with both candidates) with no context; `05/03/2024` is ambiguous unless a day is above 12 or `day_first` is known (IDR documents are read day-first). A currency marker in the text beats the caller's currency. Shared by the extraction pipeline, `prelabel` and the label app.
 - **Order in the pipeline: parse JSON -> normalize -> validate -> repair only if that still fails** (`chat(preprocess=normalize_extraction_payload)`). A value the normalizer declined to resolve is an error even if pydantic could parse it (`Decimal("1.250")` parses fine, and accepting it would make the guess the normalizer refused to make). Every rewrite is reported in `LLMResponse.normalizations`.
+
+## Extraction runs (`extract/runner.py`, `scripts/extract.py`)
+- **A BLIND document, or a variant of one (`gt_from`), is never extracted until its label is finished** (`ground_truth/<doc_id>.json` exists): it is refused with zero requests, because no model output may exist for it before a human has labeled it from the page alone.
 
 ## Pre-labeling (`evalkit/prelabel.py`, `scripts/prelabel.py`)
 - A model drafts ground truth into `ground_truth/drafts/<doc_id>.json` (a label file with `label_mode: prelabel` and no `labeled_at`); a human verifies every field. It is configured by `PRELABEL_BASE_URL/API_KEY/MODEL` (+ prices, `PRELABEL_MAX_RUN_COST_USD`) and runs through the same `OpenAICompatClient` via `Settings.prelabel_settings()`: json_object pinned (the schema is in the prompt: Anthropic's OpenAI-compatible endpoint ignores `response_format`), page images downscaled in memory to 1568 px and under 4.5 MB, the extractor's reasoning effort and cost cap not inherited.
@@ -109,6 +112,7 @@ python -m uv run python scripts/degrade_docs.py (--doc ID | --all) [--levels lig
 python -m uv run python scripts/construct_invoices.py [--check] [--force]   # 3 constructed multi-page invoices + labels
 python -m uv run python scripts/check_ground_truth.py   # label files vs manifest, blind-draft rule, coverage per split
 python -m uv run python scripts/prelabel.py (--doc ID | --all) [--dry-run] [--force]   # COSTS MONEY: model drafts -> ground_truth/drafts
+python -m uv run python scripts/extract.py (--split dev|test | --doc ID ...) [--run-id ID] [--cache on|off|refresh] [--dry-run]   # COSTS MONEY unless cached: -> outputs/runs/<run_id>/
 python -m uv run streamlit run tools/label_app.py   # the labeling app
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
