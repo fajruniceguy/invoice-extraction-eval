@@ -94,6 +94,26 @@ docs/
 - Commit with the existing global git identity; do not change git config or rewrite authorship.
 - Stage explicit paths, not `git add -A`: the working tree can hold edits that are not yours (e.g. a moved `.env.example`).
 
+## Milestone procedure
+Roadmap: `docs/ROADMAP.md`. Per-milestone spec: `docs/milestones/<ID>.md`.
+State: the latest entry in `docs/DEVLOG.md` (read the tail only, not the whole file).
+- One milestone per session. Do not touch files outside the spec's scope.
+- Write the spec from the approved plan to its file BEFORE any code, and commit it
+  on its own (`docs: <ID> spec`). Contents: goal, scope + explicit out-of-scope,
+  files to create/change, files that must NOT be touched, acceptance criteria
+  (runnable commands + expected output), risks.
+  Check it against the actual code; a stale roadmap is reported as a deviation.
+  Once written, the spec is not changed without my approval.
+- Acceptance criteria must be offline and deterministic. Costly commands
+  (smoke, prelabel, live eval) may appear only if marked [COSTS MONEY] with an
+  estimate, and run only after I approve.
+- Done = every criterion passes, and `pytest -q -m "slow or not slow"` and
+  `ruff check` are green. Never loosen a criterion to make it pass.
+- Wrap-up: a DEVLOG entry (max 15 lines: outcome, new public interfaces,
+  deviations, tech debt, what's next). Edit CLAUDE.md only for permanent
+  rules/modules (e.g. a new file in Layout), as little as possible.
+- Spec format: follow the template in `docs/milestones/_TEMPLATE.md`.
+
 ## Commands (this machine: Windows 10, PowerShell)
 `uv` is a per-user `pip install` whose Scripts directory is not on PATH, and bare `python` is the 3.10 Microsoft Store stub. So call uv as `python -m uv ...`; it runs the project's 3.11 venv for you. (Where `uv` is on PATH, plain `uv ...` is equivalent.)
 ```
