@@ -72,6 +72,11 @@ docs/
 ## Core logic
 - Extraction logic and the eval harness are hand-written. No LangChain / LlamaIndex for core logic.
 
+## Scoring (`evalkit/`, `scripts/score.py`)
+- A run is scored offline against the labels: type-aware comparators, line items paired by a hand-written Hungarian assignment, every miss classified in `evalkit.taxonomy.ERROR_CLASSES`. The scorecard (markdown + JSON), the per-doc results and the run manifest (git SHA + dirty, prompt/schema hashes, model, config, GT hash, dataset hash) go to `<run_dir>/score/`.
+- Only `validated` is scored, never `parsed`. An abstained or missing prediction is an error in the headline `accuracy`; `selective_accuracy` and `coverage` report it apart. Unlabeled GT is skipped, never a denominator.
+- The comparator thresholds are documented defaults, recorded in the manifest; scoring stays deterministic for the same inputs. How `abstained` scores is a scoring decision, not a validator one.
+
 ## Dataset and ingestion (`src/docextract/ingest/`)
 - **Privacy by location.** Real originals live in `data/private/raw/` and unredacted previews in `data/private/preview/`: that whole tree is gitignored and must never be committed. Only normalized, REDACTED pages (`data/pages/<doc_id>/p<N>.png|jpg`), `data/manifest.csv`, `data/redactions.yaml` and ground truth are committed. Do not read page content of real documents while building tooling: use synthetic fixtures (`tests/files.py`), and for real files only metadata, counts and sizes.
 - `data/manifest.csv` has one row per LOGICAL document (14 columns + optional `gt_from`, `variant`). `scripts/manifest_init.py` scans the raw folder and appends rows for unreferenced files only (merge-safe, neutral `doc_NNN` ids, only strong-evidence inference); the rest is filled by hand. A row is never overwritten.
@@ -135,6 +140,7 @@ python -m uv run python scripts/check_ground_truth.py   # label files vs manifes
 python -m uv run python scripts/prelabel.py (--doc ID | --all) [--dry-run] [--force]   # COSTS MONEY: model drafts -> ground_truth/drafts
 python -m uv run python scripts/extract.py (--split dev|test | --doc ID ...) [--run-id ID] [--cache on|off|refresh] [--dry-run]   # COSTS MONEY unless cached: -> outputs/runs/<run_id>/
 python -m uv run python scripts/check_run.py outputs/runs/<run_id>   # records vs the value/confidence/evidence/status/reasons contract (offline)
+python -m uv run python scripts/score.py outputs/runs/<run_id>   # scorecard (markdown + JSON) + per-doc results + run manifest -> <run_dir>/score/ (offline)
 python -m uv run streamlit run tools/label_app.py   # the labeling app
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
