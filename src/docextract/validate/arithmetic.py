@@ -19,8 +19,8 @@ them is discarded and recomputed, so re-validating a row gives the same result.
 from decimal import Decimal
 
 from docextract.extract.schema import DocumentExtraction, LineItem
+from docextract.validate.codes import QTY_X_PRICE_NE_AMOUNT
 
-QTY_X_PRICE_NE_AMOUNT = "qty_x_price_ne_amount"
 MISMATCH_CELLS: tuple[str, ...] = ("quantity", "unit_price", "amount")
 
 # Tolerance is max(ABSOLUTE, RELATIVE x |amount|). The relative part matters for currencies
