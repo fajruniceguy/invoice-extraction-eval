@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from docextract.normalize import convention_for, parse_date, parse_number
+from docextract.normalize import convention_for, currency_marker, parse_date, parse_number
 
 D = Decimal
 
@@ -445,3 +445,23 @@ class TestDates:
         assert result.ok
         assert result.value == date(2024, 3, 5)
         assert not parse_date("05/03/2024").ok
+
+
+class TestCurrencyMarker:
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("Rp 1.250.000", "IDR"),
+            ("rp.12.000", "IDR"),
+            ("US$ 12.00", "USD"),
+            ("$12.00", "USD"),
+            ("12.00 SGD", "SGD"),
+            ("EUR 9,90", "EUR"),
+            ("(Rp 12.000)", "IDR"),
+            ("1.250.000,00", None),
+            ("12 pcs", None),
+            ("", None),
+        ],
+    )
+    def test_the_marker_a_currency_names(self, text: str, expected: str | None) -> None:
+        assert currency_marker(text) == expected

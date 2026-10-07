@@ -132,6 +132,15 @@ def _strip_decorations(text: str) -> tuple[str, bool, str | None]:
     return remaining.strip(), negative, marker_currency
 
 
+def currency_marker(text: str) -> str | None:
+    """The currency a printed marker in `text` names ("Rp 12.000" -> "IDR"), or None.
+
+    The same markers `parse_number` strips, so a marker found here is printed evidence of
+    which currency the document's money is in."""
+    _, _, marker_currency = _strip_decorations(text)
+    return marker_currency
+
+
 def _grouped_integer(part: str, separator: str) -> str | None:
     """Digits of `part` if it is valid thousands grouping (1-3 digits, then groups of 3)."""
     groups = part.split(separator)
