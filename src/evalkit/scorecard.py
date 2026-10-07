@@ -107,9 +107,7 @@ def _git() -> tuple[str, bool]:
 
     def run(*arguments: str) -> str:
         try:
-            result = subprocess.run(
-                ["git", *arguments], capture_output=True, text=True, timeout=10
-            )
+            result = subprocess.run(["git", *arguments], capture_output=True, text=True, timeout=10)
         except (OSError, subprocess.SubprocessError):
             return ""
         return result.stdout.strip() if result.returncode == 0 else ""
@@ -264,7 +262,7 @@ class Scorecard:
             f"| abstention rate | {self.overall.abstention_rate:.3f} |",
             f"| no prediction rate | {self.overall.failure_rate:.3f} |",
             "",
-            "| field | labeled | corrected | accuracy | selective | coverage |",
+            "| field | labeled | correct | accuracy | selective | coverage |",
             "| --- | --- | --- | --- | --- | --- |",
         ]
         for name, metrics in self.fields.items():
@@ -376,9 +374,7 @@ def score_run(
     docs: list[DocumentScore] = []
     unscored: list[str] = []
     by_field: dict[str, list[FieldOutcome]] = {}
-    by_slice: dict[str, dict[str, list[FieldOutcome]]] = {
-        column: {} for column in SLICE_COLUMNS
-    }
+    by_slice: dict[str, dict[str, list[FieldOutcome]]] = {column: {} for column in SLICE_COLUMNS}
     all_errors: list[ErrorClass] = []
     owners: list[str] = []
     page_scope: list[tuple[str, bool]] = []
@@ -437,15 +433,12 @@ def score_run(
         overall=FieldMetrics.from_outcomes(
             [outcome for outcomes in by_field.values() for outcome in outcomes]
         ),
-        fields={
-            name: FieldMetrics.from_outcomes(outcomes) for name, outcomes in by_field.items()
-        },
+        fields={name: FieldMetrics.from_outcomes(outcomes) for name, outcomes in by_field.items()},
         rows=RowsScore.merge(score.rows for score in docs),
         errors=count_errors(all_errors),
         slices={
             column: {
-                value: FieldMetrics.from_outcomes(outcomes)
-                for value, outcomes in groups.items()
+                value: FieldMetrics.from_outcomes(outcomes) for value, outcomes in groups.items()
             }
             for column, groups in by_slice.items()
         },

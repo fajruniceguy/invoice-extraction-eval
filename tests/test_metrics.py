@@ -162,9 +162,7 @@ class TestScoreRows:
 
     def test_a_row_that_shares_nothing_counts_on_both_sides(self) -> None:
         expected, _ = row("Item 00", "1", "1000", "1000")
-        unrelated = LineItem(
-            description="Something else", status="extracted", confidence=1.0
-        )
+        unrelated = LineItem(description="Something else", status="extracted", confidence=1.0)
         score = score_rows([expected], [unrelated])
         assert (score.matched, score.missed, score.spurious) == (0, 1, 1)
         assert (score.row_precision, score.row_f1) == (0.0, 0.0)

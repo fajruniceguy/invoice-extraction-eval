@@ -254,9 +254,7 @@ def score_rows(expected: Any, predicted: Sequence[LineItem] | None) -> RowsScore
             errors=("row_spurious",) * len(rows),
         )
     if predicted is None:
-        return RowsScore(
-            labeled=True, missed=len(expected), errors=("row_missed",) * len(expected)
-        )
+        return RowsScore(labeled=True, missed=len(expected), errors=("row_missed",) * len(expected))
     match: RowMatch = match_rows(rows, expected)
     compared, correct, perfect, cell_errors = _score_pairs(match.pairs, expected, rows)
     errors: list[ErrorClass] = [
@@ -310,9 +308,7 @@ def score_document(
             continue
         prediction = None if document is None else getattr(document, name)
         fields.append(score_field(name, expected, prediction))
-    rows = score_rows(
-        label.line_items, None if document is None else list(document.line_items)
-    )
+    rows = score_rows(label.line_items, None if document is None else list(document.line_items))
     errors = count_errors([*(score.error_class for score in fields), *rows.errors])
     return DocumentScore(
         doc_id=label.doc_id,

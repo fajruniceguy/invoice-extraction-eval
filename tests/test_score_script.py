@@ -113,7 +113,7 @@ def test_out_puts_the_scorecard_somewhere_else(
 
 
 def test_a_run_folder_without_its_run_record_exits_1(
-    fixture: tuple[Path, Path, Path, Path]
+    fixture: tuple[Path, Path, Path, Path],
 ) -> None:
     folder, manifest, labels_dir, pages_dir = fixture
     (folder / "run.json").unlink()
@@ -123,7 +123,7 @@ def test_a_run_folder_without_its_run_record_exits_1(
 
 
 def test_a_run_without_labels_exits_1_and_names_the_unscored_documents(
-    fixture: tuple[Path, Path, Path, Path]
+    fixture: tuple[Path, Path, Path, Path],
 ) -> None:
     folder, manifest, labels_dir, pages_dir = fixture
     for path in labels_dir.glob("*.json"):
