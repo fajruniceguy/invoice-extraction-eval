@@ -3,7 +3,8 @@
     pages, in order -> the system prompt + one user message carrying every page as an image
       -> chat(DocumentExtraction, preprocess=extraction_preprocess(N)):
            parse JSON -> normalize -> validate + evidence contract -> repair only if that fails
-      -> validate_line_items (business rules; a copy, the model's parsed output is kept)
+      -> validate_document (business rules, field checks, evidence grounding, confidence caps
+         and abstention; a copy, the model's parsed output is kept)
 
 Both what the model said (`parsed`) and what the validators concluded (`validated`) are returned.
 The pages are whatever the caller passes; the runner passes STORED pages only
@@ -24,7 +25,7 @@ from docextract.providers.openai_compat import (
     OpenAICompatClient,
     build_image_message,
 )
-from docextract.validate.arithmetic import validate_line_items
+from docextract.validate import validate_document
 
 
 class ExtractionRefused(Exception):
@@ -73,4 +74,9 @@ async def extract_pages(
     )
     parsed = response.parsed
     assert parsed is not None  # chat() with a response model either parses or raises
-    return Extraction(response, parsed, validate_line_items(parsed), len(pages))
+    validated = validate_document(
+        parsed,
+        abstain_below=settings.abstain_below,
+        normalizations=response.normalizations,
+    )
+    return Extraction(response, parsed, validated, len(pages))

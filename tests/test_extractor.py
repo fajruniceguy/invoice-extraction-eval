@@ -3,12 +3,14 @@ import copy
 import io
 import json
 import os
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import pytest
 from PIL import Image
 
+from docextract.confidence import NORMALIZED_CAP, SHAPE_CAP
 from docextract.config import Settings
 from docextract.extract.extractor import (
     ExtractionRefused,
@@ -18,6 +20,11 @@ from docextract.extract.extractor import (
 from docextract.extract.prompt import SYSTEM_PROMPT, user_text
 from docextract.ingest.stored import stored_pages
 from docextract.providers.openai_compat import OpenAICompatClient, ResponseParseError
+from docextract.validate.codes import (
+    CONFIDENCE_BELOW_THRESHOLD,
+    EVIDENCE_NOT_GROUNDED,
+    TAX_ID_UNUSUAL_SHAPE,
+)
 from fakes.fake_llm import FakeLLMServer, canned_answer, chat_reply
 from files import A4, make_sized_pdf
 from ingest_support import Env, doc, settings
@@ -230,3 +237,65 @@ async def test_no_pages_are_refused_without_a_request(fake_llm: FakeLLMServer) -
     with pytest.raises(ExtractionRefused, match="no pages"):
         await run(fake_llm, [])
     assert fake_llm.requests == []
+
+
+# ------------------------------------------------------------------ the M4 verdict
+
+
+def _payload_field(value: Any, evidence: str, confidence: float = 0.95) -> dict[str, Any]:
+    return {
+        "value": value,
+        "confidence": confidence,
+        "status": "extracted",
+        "evidence": evidence,
+        "page": 1,
+        "reasons": [],
+    }
+
+
+async def test_the_validated_copy_carries_the_confidence_caps(
+    fake_llm: FakeLLMServer, three_pages: list[Path]
+) -> None:
+    # the fake's tax id ("12-3456789", 9 digits) is not NPWP-shaped: a shape cap on the copy
+    fake_llm.enqueue(chat_reply(canned_answer()))
+    result = await run(fake_llm, three_pages)
+    assert result.parsed.vendor_tax_id.reasons == []
+    assert result.parsed.vendor_tax_id.confidence == 0.95
+    assert result.validated.vendor_tax_id.reasons == [TAX_ID_UNUSUAL_SHAPE]
+    assert result.validated.vendor_tax_id.confidence == SHAPE_CAP
+
+
+async def test_a_value_its_own_evidence_contradicts_is_abstained(
+    fake_llm: FakeLLMServer, three_pages: list[Path]
+) -> None:
+    data = canned_answer()
+    data["vendor_name"] = _payload_field("Other Shop", "CORNER CAFE DEMO")
+    fake_llm.enqueue(chat_reply(data))
+    result = await run(fake_llm, three_pages)
+    assert result.parsed.vendor_name.value == "Other Shop"  # what the model said is kept
+    assert result.validated.vendor_name.status == "abstained"
+    assert result.validated.vendor_name.value is None
+    assert result.validated.vendor_name.evidence == "CORNER CAFE DEMO"
+    assert result.validated.vendor_name.reasons == [EVIDENCE_NOT_GROUNDED]
+
+
+async def test_abstain_below_reaches_the_chain(
+    fake_llm: FakeLLMServer, three_pages: list[Path]
+) -> None:
+    fake_llm.enqueue(chat_reply(canned_answer()))
+    result = await run(fake_llm, three_pages, abstain_below=0.99)
+    assert result.parsed.vendor_name.status == "extracted"
+    assert result.validated.vendor_name.status == "abstained"
+    assert result.validated.vendor_name.reasons == [CONFIDENCE_BELOW_THRESHOLD]
+
+
+async def test_a_rewritten_value_is_capped_by_the_normalizations(
+    fake_llm: FakeLLMServer, three_pages: list[Path]
+) -> None:
+    data = canned_answer()
+    data["total"] = _payload_field("17,28", "TOTAL $17.28")
+    fake_llm.enqueue(chat_reply(data))
+    result = await run(fake_llm, three_pages)
+    assert result.response.parsed.total.value == Decimal("17.28")
+    assert list(result.response.normalizations) == ["total.value: '17,28' -> '17.28'"]
+    assert result.validated.total.confidence == NORMALIZED_CAP
