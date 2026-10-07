@@ -66,6 +66,12 @@ class Settings(BaseSettings):
     # longer bundle is refused before any request: split it with page_range in the manifest.
     llm_max_pages: int = Field(default=15, ge=1)
 
+    # An extracted field or row whose final confidence (see docextract.confidence) is below
+    # this is abstained: value null, reason `confidence_below_threshold`. A placeholder until
+    # calibrated on the dev split (S1). 0 = never abstain on confidence alone (a value its own
+    # evidence contradicts is abstained whatever its confidence).
+    abstain_below: float = Field(default=0.3, ge=0.0, le=1.0)
+
     # Pre-labeling (scripts/prelabel.py): a DIFFERENT model drafts labels that a human verifies.
     # It talks to its own OpenAI-compatible endpoint through the same client class; see
     # `prelabel_settings()`. Unset base URL / model = pre-labeling is not configured.

@@ -23,6 +23,7 @@ LLM_ENV_VARS = [
     "LLM_STRUCTURED_MODE",
     "LLM_MAX_PAGES",
     "MAX_RUN_COST_USD",
+    "ABSTAIN_BELOW",
 ]
 
 
@@ -239,3 +240,18 @@ def test_get_settings_is_cached(monkeypatch: pytest.MonkeyPatch, tmp_path: Path)
         assert get_settings() is get_settings()
     finally:
         get_settings.cache_clear()
+
+
+def test_abstain_below_defaults_to_a_placeholder() -> None:
+    assert make().abstain_below == 0.3
+
+
+@pytest.mark.parametrize("bad", [-0.1, 1.1])
+def test_abstain_below_outside_0_to_1_is_rejected(bad: float) -> None:
+    with pytest.raises(ValidationError):
+        make(abstain_below=bad)
+
+
+def test_abstain_below_comes_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ABSTAIN_BELOW", "0")
+    assert make().abstain_below == 0

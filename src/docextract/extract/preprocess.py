@@ -83,6 +83,18 @@ def normalize_extraction_payload(data: dict[str, Any]) -> PreprocessResult:
     return PreprocessResult(data=payload, problems=tuple(problems), changes=tuple(changes))
 
 
+def change_label(change: str) -> str | None:
+    """The target one of `normalize_extraction_payload`'s changes names, or None for an entry
+    that is not one.
+
+    A change reads "<label>: <before> -> <after>", where the label is "<field>.value" for a
+    money or date field and "line_items[<n>].<cell>" for a row cell (1-based, as the payload
+    lists it). `docextract.confidence.formula` uses this to cap the fields it rewrote."""
+    label, separator, _ = change.partition(":")
+    label = label.strip()
+    return label if separator and label else None
+
+
 # ---------------------------------------------------------------- the evidence contract
 
 

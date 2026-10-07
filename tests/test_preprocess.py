@@ -8,6 +8,7 @@ import pytest
 
 from docextract.config import Settings
 from docextract.extract.preprocess import (
+    change_label,
     check_contract,
     extraction_preprocess,
     normalize_extraction_payload,
@@ -557,3 +558,33 @@ async def test_a_hook_with_only_violations_still_forces_the_error() -> None:
     async with h.client as client:
         with pytest.raises(ResponseParseError, match=r"does not match DocumentExtraction: rule X"):
             await client.chat(USER, DocumentExtraction, preprocess=strict)
+
+
+class TestChangeLabel:
+    @pytest.mark.parametrize(
+        ("change", "expected"),
+        [
+            ("total.value: '1.250.000,00' -> '1250000.00'", "total.value"),
+            ("document_date.value: '5 Maret 2024' -> '2024-03-05'", "document_date.value"),
+            ("line_items[3].amount: '1.250' -> '1250'", "line_items[3].amount"),
+            ("not a change", None),
+            (": no label", None),
+            ("", None),
+            ("   ", None),
+        ],
+    )
+    def test_the_target_a_change_names(self, change: str, expected: str | None) -> None:
+        assert change_label(change) == expected
+
+    def test_the_labels_of_a_real_normalization(self) -> None:
+        payload = idr_payload(
+            total=extracted("1.250.000,00"),
+            document_date=extracted("5 Maret 2024"),
+            line_items=[row(amount="1.250,00")],
+        )
+        result = normalize_extraction_payload(payload)
+        assert [change_label(change) for change in result.changes] == [
+            "total.value",
+            "document_date.value",
+            "line_items[1].amount",
+        ]
