@@ -453,6 +453,7 @@ class TestCurrencyMarker:
         [
             ("Rp 1.250.000", "IDR"),
             ("rp.12.000", "IDR"),
+            ("Rupiah 9.000", "IDR"),
             ("US$ 12.00", "USD"),
             ("$12.00", "USD"),
             ("12.00 SGD", "SGD"),

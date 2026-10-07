@@ -264,6 +264,28 @@ class TestRows:
         assert result.line_items[0].flagged_cells == ["quantity", "unit_price", "amount"]
 
 
+class TestCurrencyField:
+    def test_a_code_is_grounded_by_its_marker(self) -> None:
+        result = validate_grounding(make_doc(currency=scalar("IDR", "Total Rp 9.000")))
+        assert result.currency.reasons == []
+
+    def test_a_code_is_grounded_by_the_code_itself(self) -> None:
+        result = validate_grounding(make_doc(currency=scalar("IDR", "Mata uang: IDR")))
+        assert result.currency.reasons == []
+
+    def test_a_code_is_grounded_by_the_currency_word(self) -> None:
+        result = validate_grounding(make_doc(currency=scalar("IDR", "dibayar dalam Rupiah")))
+        assert result.currency.reasons == []
+
+    def test_a_contradicting_marker_does_not_ground_it(self) -> None:
+        result = validate_grounding(make_doc(currency=scalar("USD", "Total Rp 9.000")))
+        assert result.currency.reasons == [EVIDENCE_NOT_GROUNDED]
+
+    def test_evidence_with_no_currency_at_all_does_not_ground_it(self) -> None:
+        result = validate_grounding(make_doc(currency=scalar("IDR", "Total 9.000")))
+        assert result.currency.reasons == [EVIDENCE_NOT_GROUNDED]
+
+
 class TestIdempotenceAndCopies:
     def test_twice_is_once(self) -> None:
         document = make_doc(

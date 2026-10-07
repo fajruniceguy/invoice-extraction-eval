@@ -31,7 +31,7 @@ from typing import Any
 
 from docextract.extract.preprocess import DATE_FIELDS, MONEY_FIELDS
 from docextract.extract.schema import SCALAR_FIELD_NAMES, DocumentExtraction
-from docextract.normalize import parse_date, parse_number
+from docextract.normalize import currency_marker, parse_date, parse_number
 from docextract.validate.codes import DESCRIPTION_NOT_VERBATIM, EVIDENCE_NOT_GROUNDED
 from docextract.validate.reasons import with_document_reason, with_row, with_row_reason
 
@@ -74,6 +74,17 @@ def _number_grounded(quote: str, value: Decimal, currency: str | None) -> bool:
     return False
 
 
+def _quoted_currency(quote: str) -> str | None:
+    """The currency a printed marker anywhere in the quote names ("Total Rp 9.000" ->
+    "IDR"). `normalize.currency_marker` only sees a marker at the edge of a string, so the
+    quote is looked at token by token."""
+    for token in _number_candidates(quote):
+        marker = currency_marker(token)
+        if marker is not None:
+            return marker
+    return None
+
+
 def _date_grounded(quote: str, value: date, day_first: bool | None) -> bool:
     tokens = quote.split()
     for size in range(1, _DATE_WINDOW + 1):
@@ -91,6 +102,12 @@ def _scalar_grounded(
         return isinstance(value, Decimal) and _number_grounded(quote, value, currency)
     if name in DATE_FIELDS:
         return isinstance(value, date) and _date_grounded(quote, value, day_first)
+    if name == "currency":
+        # the value is the ISO code the normalizer reads a printed marker as ("Rp" -> IDR),
+        # so the quote grounds it through the marker, or by naming the code itself
+        return isinstance(value, str) and (
+            _quoted_currency(quote) == value.strip().upper() or _string_grounded(quote, value)
+        )
     return isinstance(value, str) and _string_grounded(quote, value)
 
 

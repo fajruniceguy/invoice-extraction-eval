@@ -44,8 +44,9 @@ _INTL_STYLE = frozenset(
     {"USD", "SGD", "AUD", "GBP", "MYR", "THB", "JPY", "CAD", "HKD", "CNY", "NZD", "INR"}
 )
 
-# longest first: "us$" before "s$" before "$", "rp." before "rp"
+# longest first: "rupiah" before "rp", "us$" before "s$" before "$", "rp." before "rp"
 _MARKERS: tuple[tuple[str, str], ...] = (
+    ("rupiah", "IDR"),
     ("us$", "USD"),
     ("rp.", "IDR"),
     ("idr", "IDR"),
