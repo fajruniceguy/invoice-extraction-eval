@@ -1,0 +1,169 @@
+{
+  "doc_id": "p03",
+  "errors": {},
+  "fields": [
+    {
+      "error_class": null,
+      "expected": "UD Berkah Sejahtera",
+      "how": "exact",
+      "name": "vendor_name",
+      "outcome": "correct",
+      "predicted": "UD Berkah Sejahtera",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "Jl. Diponegoro No. 5, Surabaya 60241",
+      "how": "exact",
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": "Jl. Diponegoro No. 5, Surabaya 60241",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "Yayasan Pendidikan Cendekia",
+      "how": "exact",
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": "Yayasan Pendidikan Cendekia",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "FK-2024-00540",
+      "how": "exact",
+      "name": "document_number",
+      "outcome": "correct",
+      "predicted": "FK-2024-00540",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "document_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "IDR",
+      "how": "exact",
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": "IDR",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "1278017500",
+      "how": "numeric",
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": "1278017500.0",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "140581925",
+      "how": "numeric",
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": "140581925.0",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "1418599425",
+      "how": "numeric",
+      "name": "total",
+      "outcome": "correct",
+      "predicted": "1418599425.0",
+      "predicted_status": "extracted",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 0,
+    "abstention_rate": 0.0,
+    "accuracy": 1.0,
+    "answered": 13,
+    "correct": 13,
+    "coverage": 1.0,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 1.0,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 0
+  },
+  "owner": "p03",
+  "rows": {
+    "cell_accuracy": 1.0,
+    "cells_compared": 228,
+    "cells_correct": 228,
+    "errors": [],
+    "labeled": true,
+    "matched": 57,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 57,
+    "row_accuracy": 1.0,
+    "row_f1": 1.0,
+    "row_precision": 1.0,
+    "row_recall": 1.0,
+    "spurious": 0
+  },
+  "status": "ok"
+}

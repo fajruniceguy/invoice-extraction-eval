@@ -454,6 +454,22 @@ class TestReport:
         assert "| c1 | s1 | ok | 4/4 |" in text
         assert text.rstrip().endswith("## Reading\n\nMy reading.")
 
+    def test_a_system_that_answers_no_erased_field_says_so(self, tmp_path: Path) -> None:
+        import dataclasses
+
+        report = analyse(*report_world(tmp_path))
+        clean = dataclasses.replace(
+            report,
+            cases=tuple(
+                dataclasses.replace(c, returned=ABSTAINED, value="", recovered=None)
+                for c in report.cases
+            ),
+        )
+        text = to_markdown(clean)
+        assert "The system returned no value for any erased field." in text
+        assert "values the system returned" not in text
+        assert "values the system returned" in to_markdown(report)
+
     def test_an_unreadable_run_is_an_error(self, tmp_path: Path) -> None:
         from evalkit.probe_report import ProbeReportError
 

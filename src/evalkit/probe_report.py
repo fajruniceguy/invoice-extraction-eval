@@ -366,9 +366,13 @@ def to_markdown(report: ProbeReport, *, notes: str | None = None) -> str:
             ],
         ),
         "",
-        f"Of the {returned_x} values the system returned for an erased field, {recovered} are the "
-        f"value that was erased (read from elsewhere on the page or computed from the rows: still "
-        f"a value the document does not state) and {invented} are another value.",
+        (
+            f"Of the {returned_x} values the system returned for an erased field, {recovered} are "
+            "the value that was erased (read from elsewhere on the page or computed from the "
+            f"rows: still a value the document does not state) and {invented} are another value."
+            if returned_x
+            else "The system returned no value for any erased field."
+        ),
         "",
     ]
     if report.not_ok:

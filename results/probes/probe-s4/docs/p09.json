@@ -1,0 +1,847 @@
+{
+  "doc_id": "p09",
+  "status": "ok",
+  "error": null,
+  "pages": [
+    {
+      "file": "p1.png",
+      "sha256": "fd90c6418edc35531637d844ea76758135ab4ba8dfd0981f7b0f10d6b92b4f83"
+    }
+  ],
+  "raw_text": "{\"vendor_name\": {\"value\": \"CV Karya Mandiri Jaya\", \"confidence\": 0.98, \"status\": \"extracted\", \"evidence\": \"CV Karya Mandiri Jaya\", \"page\": 1, \"reasons\": []}, \"vendor_address\": {\"value\": \"Jl. Sudirman Kav. 45, Jakarta Selatan 12190\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"Jl. Sudirman Kav. 45, Jakarta Selatan 12190\", \"page\": 1, \"reasons\": []}, \"vendor_tax_id\": {\"value\": \"72.551.623.1-533.000\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"NPWP 72.551.623.1-533.000\", \"page\": 1, \"reasons\": []}, \"buyer_name\": {\"value\": \"CV Mitra Teknik Mandiri\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"CV Mitra Teknik Mandiri\", \"page\": 1, \"reasons\": []}, \"document_number\": {\"value\": \"4428/CJ/2024\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"No.         : 4428/CJ/2024\", \"page\": 1, \"reasons\": []}, \"document_date\": {\"value\": \"2024-04-06\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"Tanggal     : 2024-04-06\", \"page\": 1, \"reasons\": []}, \"due_date\": {\"value\": \"2024-05-06\", \"confidence\": 0.96, \"status\": \"extracted\", \"evidence\": \"Jatuh Tempo : 2024-05-06\", \"page\": 1, \"reasons\": []}, \"currency\": {\"value\": \"IDR\", \"confidence\": 0.7, \"status\": \"extracted\", \"evidence\": \"Harga 1.344.500,00 ... Jumlah 10.756.000,00\", \"page\": 1, \"reasons\": [\"Indonesian invoice with rupiah-formatted amounts (dot thousands separators, comma decimals), though no explicit currency symbol is printed on this page.\"]}, \"payment_method\": {\"value\": \"Tunai\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"Pembayaran  : Tunai\", \"page\": 1, \"reasons\": []}, \"subtotal\": {\"value\": null, \"confidence\": 0.8, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No subtotal/DPP line is printed on page 1; the document continues on page 2 which is not provided.\"]}, \"tax\": {\"value\": null, \"confidence\": 0.8, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No tax line is printed on page 1; the document continues on page 2 which is not provided.\"]}, \"discount\": {\"value\": null, \"confidence\": 0.8, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No discount is printed on page 1.\"]}, \"total\": {\"value\": null, \"confidence\": 0.8, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No grand total is printed on page 1; the document continues on page 2 which is not provided.\"]}, \"line_items\": [{\"description\": \"Map Plastik Biru\", \"quantity\": \"8\", \"unit_price\": \"1344500.00\", \"amount\": \"10756000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-001 Map Plastik Biru 8 1.344.500,00 10.756.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Tisu Gulung (isi 6)\", \"quantity\": \"34\", \"unit_price\": \"1396500.00\", \"amount\": \"47481000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-002 Tisu Gulung (isi 6) 34 1.396.500,00 47.481.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Stabilo Kuning\", \"quantity\": \"9\", \"unit_price\": \"1674000.00\", \"amount\": \"15066000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-003 Stabilo Kuning 9 1.674.000,00 15.066.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Amplop Coklat A4\", \"quantity\": \"19\", \"unit_price\": \"1668500.00\", \"amount\": \"31701500.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-004 Amplop Coklat A4 19 1.668.500,00 31.701.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Lampu LED 12 Watt\", \"quantity\": \"1.5\", \"unit_price\": \"781500.00\", \"amount\": \"1172250.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-005 Lampu LED 12 Watt 1,5 781.500,00 1.172.250,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Jam Dinding 30cm\", \"quantity\": \"39\", \"unit_price\": \"481500.00\", \"amount\": \"18778500.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-006 Jam Dinding 30cm 39 481.500,00 18.778.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Hand Sanitizer 500ml\", \"quantity\": \"22\", \"unit_price\": \"769500.00\", \"amount\": \"16929000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-007 Hand Sanitizer 500ml 22 769.500,00 16.929.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Amplop Putih Panjang\", \"quantity\": \"3.5\", \"unit_price\": \"519500.00\", \"amount\": \"1818250.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-008 Amplop Putih Panjang 3,5 519.500,00 1.818.250,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Keyboard Standar USB\", \"quantity\": \"29\", \"unit_price\": \"1179500.00\", \"amount\": \"34205500.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-009 Keyboard Standar USB 29 1.179.500,00 34.205.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Kursi Lipat Besi\", \"quantity\": \"15\", \"unit_price\": \"1306500.00\", \"amount\": \"19597500.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-010 Kursi Lipat Besi 15 1.306.500,00 19.597.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Kabel HDMI 2m\", \"quantity\": \"40\", \"unit_price\": \"734500.00\", \"amount\": \"29380000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-011 Kabel HDMI 2m 40 734.500,00 29.380.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Kabel USB Type-C 1m\", \"quantity\": \"10\", \"unit_price\": \"80000.00\", \"amount\": \"800000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-012 Kabel USB Type-C 1m 10 80.000,00 800.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Beras Premium 5kg\", \"quantity\": \"16.5\", \"unit_price\": \"1875500.00\", \"amount\": \"30945750.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-013 Beras Premium 5kg 16,5 1.875.500,00 30.945.750,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Mie Instan Goreng (dus)\", \"quantity\": \"24\", \"unit_price\": \"1460500.00\", \"amount\": \"35052000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-014 Mie Instan Goreng (dus) 24 1.460.500,00 35.052.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Papan Tulis 60x90\", \"quantity\": \"2.5\", \"unit_price\": \"455000.00\", \"amount\": \"1137500.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-015 Papan Tulis 60x90 2,5 455.000,00 1.137.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Kipas Angin Berdiri\", \"quantity\": \"29\", \"unit_price\": \"396500.00\", \"amount\": \"11498500.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-016 Kipas Angin Berdiri 29 396.500,00 11.498.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Pel Lantai Ember Set\", \"quantity\": \"29\", \"unit_price\": \"1665500.00\", \"amount\": \"48299500.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-017 Pel Lantai Ember Set 29 1.665.500,00 48.299.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Baterai AA Alkaline (4)\", \"quantity\": \"19.5\", \"unit_price\": \"1676000.00\", \"amount\": \"32682000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-018 Baterai AA Alkaline (4) 19,5 1.676.000,00 32.682.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Klip Kertas Warna\", \"quantity\": \"4.5\", \"unit_price\": \"13500.00\", \"amount\": \"60750.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-019 Klip Kertas Warna 4,5 13.500,00 60.750,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Setrika Listrik 350W\", \"quantity\": \"12\", \"unit_price\": \"1165500.00\", \"amount\": \"13986000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-020 Setrika Listrik 350W 12 1.165.500,00 13.986.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Pulpen Gel Biru 0.5\", \"quantity\": \"19\", \"unit_price\": \"1758500.00\", \"amount\": \"33411500.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-021 Pulpen Gel Biru 0.5 19 1.758.500,00 33.411.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Lemari Besi 2 Pintu\", \"quantity\": \"31\", \"unit_price\": \"620000.00\", \"amount\": \"19220000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-022 Lemari Besi 2 Pintu 31 620.000,00 19.220.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Baterai AAA Alkaline (4)\", \"quantity\": \"11\", \"unit_price\": \"255000.00\", \"amount\": \"2805000.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-023 Baterai AAA Alkaline (4) 11 255.000,00 2.805.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Rompi Proyek Oranye\", \"quantity\": \"17.5\", \"unit_price\": \"836500.00\", \"amount\": \"14638750.00\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"BRG-024 Rompi Proyek Oranye 17,5 836.500,00 14.638.750,00\", \"page\": 1, \"reasons\": []}]}",
+  "parsed": {
+    "vendor_name": {
+      "value": "CV Karya Mandiri Jaya",
+      "confidence": 0.98,
+      "status": "extracted",
+      "evidence": "CV Karya Mandiri Jaya",
+      "page": 1,
+      "reasons": []
+    },
+    "vendor_address": {
+      "value": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "page": 1,
+      "reasons": []
+    },
+    "vendor_tax_id": {
+      "value": "72.551.623.1-533.000",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "NPWP 72.551.623.1-533.000",
+      "page": 1,
+      "reasons": []
+    },
+    "buyer_name": {
+      "value": "CV Mitra Teknik Mandiri",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "CV Mitra Teknik Mandiri",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": "4428/CJ/2024",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "No.         : 4428/CJ/2024",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": "2024-04-06",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Tanggal     : 2024-04-06",
+      "page": 1,
+      "reasons": []
+    },
+    "due_date": {
+      "value": "2024-05-06",
+      "confidence": 0.96,
+      "status": "extracted",
+      "evidence": "Jatuh Tempo : 2024-05-06",
+      "page": 1,
+      "reasons": []
+    },
+    "currency": {
+      "value": "IDR",
+      "confidence": 0.7,
+      "status": "extracted",
+      "evidence": "Harga 1.344.500,00 ... Jumlah 10.756.000,00",
+      "page": 1,
+      "reasons": [
+        "Indonesian invoice with rupiah-formatted amounts (dot thousands separators, comma decimals), though no explicit currency symbol is printed on this page."
+      ]
+    },
+    "payment_method": {
+      "value": "Tunai",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Pembayaran  : Tunai",
+      "page": 1,
+      "reasons": []
+    },
+    "line_items": [
+      {
+        "description": "Map Plastik Biru",
+        "quantity": "8",
+        "unit_price": "1344500.00",
+        "amount": "10756000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-001 Map Plastik Biru 8 1.344.500,00 10.756.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Tisu Gulung (isi 6)",
+        "quantity": "34",
+        "unit_price": "1396500.00",
+        "amount": "47481000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-002 Tisu Gulung (isi 6) 34 1.396.500,00 47.481.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Stabilo Kuning",
+        "quantity": "9",
+        "unit_price": "1674000.00",
+        "amount": "15066000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-003 Stabilo Kuning 9 1.674.000,00 15.066.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Amplop Coklat A4",
+        "quantity": "19",
+        "unit_price": "1668500.00",
+        "amount": "31701500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-004 Amplop Coklat A4 19 1.668.500,00 31.701.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Lampu LED 12 Watt",
+        "quantity": "1.5",
+        "unit_price": "781500.00",
+        "amount": "1172250.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-005 Lampu LED 12 Watt 1,5 781.500,00 1.172.250,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Jam Dinding 30cm",
+        "quantity": "39",
+        "unit_price": "481500.00",
+        "amount": "18778500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-006 Jam Dinding 30cm 39 481.500,00 18.778.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Hand Sanitizer 500ml",
+        "quantity": "22",
+        "unit_price": "769500.00",
+        "amount": "16929000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-007 Hand Sanitizer 500ml 22 769.500,00 16.929.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Amplop Putih Panjang",
+        "quantity": "3.5",
+        "unit_price": "519500.00",
+        "amount": "1818250.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-008 Amplop Putih Panjang 3,5 519.500,00 1.818.250,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Keyboard Standar USB",
+        "quantity": "29",
+        "unit_price": "1179500.00",
+        "amount": "34205500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-009 Keyboard Standar USB 29 1.179.500,00 34.205.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Kursi Lipat Besi",
+        "quantity": "15",
+        "unit_price": "1306500.00",
+        "amount": "19597500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-010 Kursi Lipat Besi 15 1.306.500,00 19.597.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Kabel HDMI 2m",
+        "quantity": "40",
+        "unit_price": "734500.00",
+        "amount": "29380000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-011 Kabel HDMI 2m 40 734.500,00 29.380.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Kabel USB Type-C 1m",
+        "quantity": "10",
+        "unit_price": "80000.00",
+        "amount": "800000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-012 Kabel USB Type-C 1m 10 80.000,00 800.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Beras Premium 5kg",
+        "quantity": "16.5",
+        "unit_price": "1875500.00",
+        "amount": "30945750.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-013 Beras Premium 5kg 16,5 1.875.500,00 30.945.750,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Mie Instan Goreng (dus)",
+        "quantity": "24",
+        "unit_price": "1460500.00",
+        "amount": "35052000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-014 Mie Instan Goreng (dus) 24 1.460.500,00 35.052.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Papan Tulis 60x90",
+        "quantity": "2.5",
+        "unit_price": "455000.00",
+        "amount": "1137500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-015 Papan Tulis 60x90 2,5 455.000,00 1.137.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Kipas Angin Berdiri",
+        "quantity": "29",
+        "unit_price": "396500.00",
+        "amount": "11498500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-016 Kipas Angin Berdiri 29 396.500,00 11.498.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Pel Lantai Ember Set",
+        "quantity": "29",
+        "unit_price": "1665500.00",
+        "amount": "48299500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-017 Pel Lantai Ember Set 29 1.665.500,00 48.299.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Baterai AA Alkaline (4)",
+        "quantity": "19.5",
+        "unit_price": "1676000.00",
+        "amount": "32682000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-018 Baterai AA Alkaline (4) 19,5 1.676.000,00 32.682.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Klip Kertas Warna",
+        "quantity": "4.5",
+        "unit_price": "13500.00",
+        "amount": "60750.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-019 Klip Kertas Warna 4,5 13.500,00 60.750,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Setrika Listrik 350W",
+        "quantity": "12",
+        "unit_price": "1165500.00",
+        "amount": "13986000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-020 Setrika Listrik 350W 12 1.165.500,00 13.986.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Pulpen Gel Biru 0.5",
+        "quantity": "19",
+        "unit_price": "1758500.00",
+        "amount": "33411500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-021 Pulpen Gel Biru 0.5 19 1.758.500,00 33.411.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Lemari Besi 2 Pintu",
+        "quantity": "31",
+        "unit_price": "620000.00",
+        "amount": "19220000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-022 Lemari Besi 2 Pintu 31 620.000,00 19.220.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Baterai AAA Alkaline (4)",
+        "quantity": "11",
+        "unit_price": "255000.00",
+        "amount": "2805000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-023 Baterai AAA Alkaline (4) 11 255.000,00 2.805.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Rompi Proyek Oranye",
+        "quantity": "17.5",
+        "unit_price": "836500.00",
+        "amount": "14638750.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-024 Rompi Proyek Oranye 17,5 836.500,00 14.638.750,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No subtotal/DPP line is printed on page 1; the document continues on page 2 which is not provided."
+      ]
+    },
+    "tax": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No tax line is printed on page 1; the document continues on page 2 which is not provided."
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No discount is printed on page 1."
+      ]
+    },
+    "total": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No grand total is printed on page 1; the document continues on page 2 which is not provided."
+      ]
+    }
+  },
+  "validated": {
+    "vendor_name": {
+      "value": "CV Karya Mandiri Jaya",
+      "confidence": 0.98,
+      "status": "extracted",
+      "evidence": "CV Karya Mandiri Jaya",
+      "page": 1,
+      "reasons": []
+    },
+    "vendor_address": {
+      "value": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "page": 1,
+      "reasons": []
+    },
+    "vendor_tax_id": {
+      "value": "72.551.623.1-533.000",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "NPWP 72.551.623.1-533.000",
+      "page": 1,
+      "reasons": []
+    },
+    "buyer_name": {
+      "value": "CV Mitra Teknik Mandiri",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "CV Mitra Teknik Mandiri",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": "4428/CJ/2024",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "No.         : 4428/CJ/2024",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": "2024-04-06",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Tanggal     : 2024-04-06",
+      "page": 1,
+      "reasons": []
+    },
+    "due_date": {
+      "value": "2024-05-06",
+      "confidence": 0.96,
+      "status": "extracted",
+      "evidence": "Jatuh Tempo : 2024-05-06",
+      "page": 1,
+      "reasons": []
+    },
+    "currency": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": "Harga 1.344.500,00 ... Jumlah 10.756.000,00",
+      "page": 1,
+      "reasons": [
+        "Indonesian invoice with rupiah-formatted amounts (dot thousands separators, comma decimals), though no explicit currency symbol is printed on this page.",
+        "evidence_not_grounded"
+      ]
+    },
+    "payment_method": {
+      "value": "Tunai",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Pembayaran  : Tunai",
+      "page": 1,
+      "reasons": []
+    },
+    "line_items": [
+      {
+        "description": "Map Plastik Biru",
+        "quantity": "8",
+        "unit_price": "1344500.00",
+        "amount": "10756000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-001 Map Plastik Biru 8 1.344.500,00 10.756.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Tisu Gulung (isi 6)",
+        "quantity": "34",
+        "unit_price": "1396500.00",
+        "amount": "47481000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-002 Tisu Gulung (isi 6) 34 1.396.500,00 47.481.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Stabilo Kuning",
+        "quantity": "9",
+        "unit_price": "1674000.00",
+        "amount": "15066000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-003 Stabilo Kuning 9 1.674.000,00 15.066.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Amplop Coklat A4",
+        "quantity": "19",
+        "unit_price": "1668500.00",
+        "amount": "31701500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-004 Amplop Coklat A4 19 1.668.500,00 31.701.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Lampu LED 12 Watt",
+        "quantity": "1.5",
+        "unit_price": "781500.00",
+        "amount": "1172250.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-005 Lampu LED 12 Watt 1,5 781.500,00 1.172.250,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Jam Dinding 30cm",
+        "quantity": "39",
+        "unit_price": "481500.00",
+        "amount": "18778500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-006 Jam Dinding 30cm 39 481.500,00 18.778.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Hand Sanitizer 500ml",
+        "quantity": "22",
+        "unit_price": "769500.00",
+        "amount": "16929000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-007 Hand Sanitizer 500ml 22 769.500,00 16.929.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Amplop Putih Panjang",
+        "quantity": "3.5",
+        "unit_price": "519500.00",
+        "amount": "1818250.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-008 Amplop Putih Panjang 3,5 519.500,00 1.818.250,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Keyboard Standar USB",
+        "quantity": "29",
+        "unit_price": "1179500.00",
+        "amount": "34205500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-009 Keyboard Standar USB 29 1.179.500,00 34.205.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Kursi Lipat Besi",
+        "quantity": "15",
+        "unit_price": "1306500.00",
+        "amount": "19597500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-010 Kursi Lipat Besi 15 1.306.500,00 19.597.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Kabel HDMI 2m",
+        "quantity": "40",
+        "unit_price": "734500.00",
+        "amount": "29380000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-011 Kabel HDMI 2m 40 734.500,00 29.380.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Kabel USB Type-C 1m",
+        "quantity": "10",
+        "unit_price": "80000.00",
+        "amount": "800000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-012 Kabel USB Type-C 1m 10 80.000,00 800.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Beras Premium 5kg",
+        "quantity": "16.5",
+        "unit_price": "1875500.00",
+        "amount": "30945750.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-013 Beras Premium 5kg 16,5 1.875.500,00 30.945.750,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Mie Instan Goreng (dus)",
+        "quantity": "24",
+        "unit_price": "1460500.00",
+        "amount": "35052000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-014 Mie Instan Goreng (dus) 24 1.460.500,00 35.052.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Papan Tulis 60x90",
+        "quantity": "2.5",
+        "unit_price": "455000.00",
+        "amount": "1137500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-015 Papan Tulis 60x90 2,5 455.000,00 1.137.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Kipas Angin Berdiri",
+        "quantity": "29",
+        "unit_price": "396500.00",
+        "amount": "11498500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-016 Kipas Angin Berdiri 29 396.500,00 11.498.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Pel Lantai Ember Set",
+        "quantity": "29",
+        "unit_price": "1665500.00",
+        "amount": "48299500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-017 Pel Lantai Ember Set 29 1.665.500,00 48.299.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Baterai AA Alkaline (4)",
+        "quantity": "19.5",
+        "unit_price": "1676000.00",
+        "amount": "32682000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-018 Baterai AA Alkaline (4) 19,5 1.676.000,00 32.682.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Klip Kertas Warna",
+        "quantity": "4.5",
+        "unit_price": "13500.00",
+        "amount": "60750.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-019 Klip Kertas Warna 4,5 13.500,00 60.750,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Setrika Listrik 350W",
+        "quantity": "12",
+        "unit_price": "1165500.00",
+        "amount": "13986000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-020 Setrika Listrik 350W 12 1.165.500,00 13.986.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Pulpen Gel Biru 0.5",
+        "quantity": "19",
+        "unit_price": "1758500.00",
+        "amount": "33411500.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-021 Pulpen Gel Biru 0.5 19 1.758.500,00 33.411.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Lemari Besi 2 Pintu",
+        "quantity": "31",
+        "unit_price": "620000.00",
+        "amount": "19220000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-022 Lemari Besi 2 Pintu 31 620.000,00 19.220.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Baterai AAA Alkaline (4)",
+        "quantity": "11",
+        "unit_price": "255000.00",
+        "amount": "2805000.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-023 Baterai AAA Alkaline (4) 11 255.000,00 2.805.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Rompi Proyek Oranye",
+        "quantity": "17.5",
+        "unit_price": "836500.00",
+        "amount": "14638750.00",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "BRG-024 Rompi Proyek Oranye 17,5 836.500,00 14.638.750,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No subtotal/DPP line is printed on page 1; the document continues on page 2 which is not provided."
+      ]
+    },
+    "tax": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No tax line is printed on page 1; the document continues on page 2 which is not provided."
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No discount is printed on page 1."
+      ]
+    },
+    "total": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No grand total is printed on page 1; the document continues on page 2 which is not provided."
+      ]
+    }
+  },
+  "repairs": 0,
+  "repair_history": [],
+  "normalizations": [],
+  "usage": {
+    "input_tokens": 4559,
+    "output_tokens": 4948,
+    "reasoning_tokens": 1740,
+    "reasoning_outside_output": 0,
+    "total_tokens": 9507,
+    "reasoning_inferred": false,
+    "output_includes_reasoning": true,
+    "reported": true,
+    "billable_output_tokens": 4948
+  },
+  "cost_usd": "0.0073053",
+  "avoided_cost_usd": "0",
+  "cached_calls": 0,
+  "cache_hit": false,
+  "latency_ms": 17313.70150001021,
+  "attempts": 1,
+  "structured_mode_used": "json_object",
+  "finish_reason": "stop"
+}

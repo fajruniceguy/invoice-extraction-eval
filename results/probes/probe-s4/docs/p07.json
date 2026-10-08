@@ -1,0 +1,990 @@
+{
+  "doc_id": "p07",
+  "status": "ok",
+  "error": null,
+  "pages": [
+    {
+      "file": "p1.png",
+      "sha256": "9034696df4e84ece4d3820a42ce676c40d3b5b858421289f495aafe8129cdaee"
+    }
+  ],
+  "raw_text": "{\"vendor_name\": {\"value\": \"CV Karya Mandiri Jaya\", \"confidence\": 0.98, \"status\": \"extracted\", \"evidence\": \"CV Karya Mandiri Jaya\", \"page\": 1, \"reasons\": []}, \"vendor_address\": {\"value\": \"Jl. Sudirman Kav. 45, Jakarta Selatan 12190\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"Jl. Sudirman Kav. 45, Jakarta Selatan 12190\", \"page\": 1, \"reasons\": []}, \"vendor_tax_id\": {\"value\": \"32.723.399.8-880.000\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"NPWP: 32.723.399.8-880.000\", \"page\": 1, \"reasons\": []}, \"buyer_name\": {\"value\": \"Koperasi Karyawan Harapan\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"Kepada Yth:\\nKoperasi Karyawan Harapan\", \"page\": 1, \"reasons\": []}, \"document_number\": {\"value\": \"INV/2024/2360\", \"confidence\": 0.98, \"status\": \"extracted\", \"evidence\": \"No. : INV/2024/2360\", \"page\": 1, \"reasons\": []}, \"document_date\": {\"value\": \"2024-03-23\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"Tanggal : 23 Maret 2024\", \"page\": 1, \"reasons\": []}, \"due_date\": {\"value\": \"2024-04-22\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"Jatuh Tempo : 22 April 2024\", \"page\": 1, \"reasons\": []}, \"currency\": {\"value\": null, \"confidence\": 0.8, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No currency symbol or code (e.g. Rp/IDR) is printed anywhere on the page; amounts appear only as bare numbers such as 1.205.500,00.\"]}, \"payment_method\": {\"value\": \"Transfer Bank BCA\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"Pembayaran : Transfer Bank BCA\", \"page\": 1, \"reasons\": []}, \"subtotal\": {\"value\": null, \"confidence\": 0.5, \"status\": \"abstained\", \"evidence\": null, \"page\": null, \"reasons\": [\"Only page 1 of 2 was provided; the item table continues and any subtotal, if printed, would be on the missing page 2.\"]}, \"tax\": {\"value\": null, \"confidence\": 0.5, \"status\": \"abstained\", \"evidence\": null, \"page\": null, \"reasons\": [\"Only page 1 of 2 was provided; a tax line, if printed, would be on the missing page 2.\"]}, \"discount\": {\"value\": null, \"confidence\": 0.5, \"status\": \"abstained\", \"evidence\": null, \"page\": null, \"reasons\": [\"Only page 1 of 2 was provided; a discount line, if printed, would be on the missing page 2.\"]}, \"total\": {\"value\": null, \"confidence\": 0.5, \"status\": \"abstained\", \"evidence\": null, \"page\": null, \"reasons\": [\"Only page 1 of 2 was provided; the grand total, if printed, would be on the missing page 2.\"]}, \"line_items\": [{\"description\": \"Bateral AA Alkaline (4)\", \"quantity\": 32, \"unit_price\": 1205500.0, \"amount\": 38576000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"1 Bateral AA Alkaline (4) 32 1.205.500,00 38.576.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Air Mineral 600ml (dus)\", \"quantity\": 25, \"unit_price\": 25000.0, \"amount\": 625000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"2 Air Mineral 600ml (dus) 25 25.000,00 625.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Refill Staples 10\", \"quantity\": 18, \"unit_price\": 1664000.0, \"amount\": 29952000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"3 Refill Staples 10 18 1.664.000,00 29.952.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Termos Air 2L\", \"quantity\": 39, \"unit_price\": 1586500.0, \"amount\": 61873500.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"4 Termos Air 2L 39 1.586.500,00 61.873.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Toner Hitam 12A\", \"quantity\": 12, \"unit_price\": 349500.0, \"amount\": 4194000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"5 Toner Hitam 12A 12 349.500,00 4.194.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Lakban Coklat 48mm\", \"quantity\": 24, \"unit_price\": 1466000.0, \"amount\": 35184000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"6 Lakban Coklat 48mm 24 1.466.000,00 35.184.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Teh Celup Isi 25\", \"quantity\": 20, \"unit_price\": 43500.0, \"amount\": 870000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"7 Teh Celup Isi 25 20 43.500,00 870.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Map Snelhecter Folio\", \"quantity\": 34, \"unit_price\": 1306000.0, \"amount\": 44404000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"8 Map Snelhecter Folio 34 1.306.000,00 44.404.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Pulpen Gel Hitam 0.5\", \"quantity\": 14, \"unit_price\": 1005500.0, \"amount\": 14077000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"9 Pulpen Gel Hitam 0.5 14 1.005.500,00 14.077.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Rice Cooker 1.8L\", \"quantity\": 40, \"unit_price\": 926000.0, \"amount\": 37040000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"10 Rice Cooker 1.8L 40 926.000,00 37.040.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Tas Ransel 20L\", \"quantity\": 21, \"unit_price\": 1962000.0, \"amount\": 41202000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"11 Tas Ransel 20L 21 1.962.000,00 41.202.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Klip Kertas Warna\", \"quantity\": 37, \"unit_price\": 1931500.0, \"amount\": 71465500.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"12 Klip Kertas Warna 37 1.931.500,00 71.465.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Tinta Printer Warna 003\", \"quantity\": 32, \"unit_price\": 92000.0, \"amount\": 2944000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"13 Tinta Printer Warna 003 32 92.000,00 2.944.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Keyboard Standar USB\", \"quantity\": 12, \"unit_price\": 903000.0, \"amount\": 10836000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"14 Keyboard Standar USB 12 903.000,00 10.836.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Minyak Goreng 2L\", \"quantity\": 16, \"unit_price\": 710500.0, \"amount\": 11368000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"15 Minyak Goreng 2L 16 710.500,00 11.368.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Buku Folio 100 lembar\", \"quantity\": 40, \"unit_price\": 661500.0, \"amount\": 26460000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"16 Buku Folio 100 lembar 40 661.500,00 26.460.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Meja Lipat 120cm\", \"quantity\": 25, \"unit_price\": 1561000.0, \"amount\": 39025000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"17 Meja Lipat 120cm 25 1.561.000,00 39.025.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Beras Premium 5kg\", \"quantity\": 2, \"unit_price\": 1436500.0, \"amount\": 2873000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"18 Beras Premium 5kg 2 1.436.500,00 2.873.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Amplop Putih Panjang\", \"quantity\": 40, \"unit_price\": 1301500.0, \"amount\": 52060000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"19 Amplop Putih Panjang 40 1.301.500,00 52.060.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Mouse Wireless\", \"quantity\": 4, \"unit_price\": 1661500.0, \"amount\": 6646000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"20 Mouse Wireless 4 1.661.500,00 6.646.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Binder Clip 155\", \"quantity\": 2, \"unit_price\": 1300000.0, \"amount\": 2600000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"21 Binder Clip 155 2 1.300.000,00 2.600.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Hand Sanitizer 500ml\", \"quantity\": 25, \"unit_price\": 692500.0, \"amount\": 17312500.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"22 Hand Sanitizer 500ml 25 692.500,00 17.312.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Rompi Proyek Oranye\", \"quantity\": 28, \"unit_price\": 2500.0, \"amount\": 70000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"23 Rompi Proyek Oranye 28 2.500,00 70.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Spidol Permanent Merah\", \"quantity\": 19, \"unit_price\": 1791000.0, \"amount\": 34029000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"24 Spidol Permanent Merah 19 1.791.000,00 34.029.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Amplop Coklat A4\", \"quantity\": 38, \"unit_price\": 1513000.0, \"amount\": 57494000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"25 Amplop Coklat A4 38 1.513.000,00 57.494.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Papan Tulis 60x90\", \"quantity\": 39, \"unit_price\": 254500.0, \"amount\": 9925500.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"26 Papan Tulis 60x90 39 254.500,00 9.925.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Susu Kental Manis 370gr\", \"quantity\": 24, \"unit_price\": 1751500.0, \"amount\": 42036000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"27 Susu Kental Manis 370gr 24 1.751.500,00 42.036.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Rak Arsip 4 Susun\", \"quantity\": 35, \"unit_price\": 1612500.0, \"amount\": 56437500.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"28 Rak Arsip 4 Susun 35 1.612.500,00 56.437.500,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Flashdisk 32GB\", \"quantity\": 12, \"unit_price\": 19000.0, \"amount\": 228000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"29 Flashdisk 32GB 12 19.000,00 228.000,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Staples No.10\", \"quantity\": 22, \"unit_price\": 719500.0, \"amount\": 15829000.0, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"30 Staples No.10 22 719.500,00 15.829.000,00\", \"page\": 1, \"reasons\": []}]}",
+  "parsed": {
+    "vendor_name": {
+      "value": "CV Karya Mandiri Jaya",
+      "confidence": 0.98,
+      "status": "extracted",
+      "evidence": "CV Karya Mandiri Jaya",
+      "page": 1,
+      "reasons": []
+    },
+    "vendor_address": {
+      "value": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "page": 1,
+      "reasons": []
+    },
+    "vendor_tax_id": {
+      "value": "32.723.399.8-880.000",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "NPWP: 32.723.399.8-880.000",
+      "page": 1,
+      "reasons": []
+    },
+    "buyer_name": {
+      "value": "Koperasi Karyawan Harapan",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Kepada Yth:\nKoperasi Karyawan Harapan",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": "INV/2024/2360",
+      "confidence": 0.98,
+      "status": "extracted",
+      "evidence": "No. : INV/2024/2360",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": "2024-03-23",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Tanggal : 23 Maret 2024",
+      "page": 1,
+      "reasons": []
+    },
+    "due_date": {
+      "value": "2024-04-22",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Jatuh Tempo : 22 April 2024",
+      "page": 1,
+      "reasons": []
+    },
+    "currency": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No currency symbol or code (e.g. Rp/IDR) is printed anywhere on the page; amounts appear only as bare numbers such as 1.205.500,00."
+      ]
+    },
+    "payment_method": {
+      "value": "Transfer Bank BCA",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Pembayaran : Transfer Bank BCA",
+      "page": 1,
+      "reasons": []
+    },
+    "line_items": [
+      {
+        "description": "Bateral AA Alkaline (4)",
+        "quantity": "32",
+        "unit_price": "1205500.0",
+        "amount": "38576000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "1 Bateral AA Alkaline (4) 32 1.205.500,00 38.576.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Air Mineral 600ml (dus)",
+        "quantity": "25",
+        "unit_price": "25000.0",
+        "amount": "625000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "2 Air Mineral 600ml (dus) 25 25.000,00 625.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Refill Staples 10",
+        "quantity": "18",
+        "unit_price": "1664000.0",
+        "amount": "29952000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "3 Refill Staples 10 18 1.664.000,00 29.952.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Termos Air 2L",
+        "quantity": "39",
+        "unit_price": "1586500.0",
+        "amount": "61873500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "4 Termos Air 2L 39 1.586.500,00 61.873.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Toner Hitam 12A",
+        "quantity": "12",
+        "unit_price": "349500.0",
+        "amount": "4194000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "5 Toner Hitam 12A 12 349.500,00 4.194.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Lakban Coklat 48mm",
+        "quantity": "24",
+        "unit_price": "1466000.0",
+        "amount": "35184000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "6 Lakban Coklat 48mm 24 1.466.000,00 35.184.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Teh Celup Isi 25",
+        "quantity": "20",
+        "unit_price": "43500.0",
+        "amount": "870000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "7 Teh Celup Isi 25 20 43.500,00 870.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Map Snelhecter Folio",
+        "quantity": "34",
+        "unit_price": "1306000.0",
+        "amount": "44404000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "8 Map Snelhecter Folio 34 1.306.000,00 44.404.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Pulpen Gel Hitam 0.5",
+        "quantity": "14",
+        "unit_price": "1005500.0",
+        "amount": "14077000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "9 Pulpen Gel Hitam 0.5 14 1.005.500,00 14.077.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Rice Cooker 1.8L",
+        "quantity": "40",
+        "unit_price": "926000.0",
+        "amount": "37040000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "10 Rice Cooker 1.8L 40 926.000,00 37.040.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Tas Ransel 20L",
+        "quantity": "21",
+        "unit_price": "1962000.0",
+        "amount": "41202000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "11 Tas Ransel 20L 21 1.962.000,00 41.202.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Klip Kertas Warna",
+        "quantity": "37",
+        "unit_price": "1931500.0",
+        "amount": "71465500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "12 Klip Kertas Warna 37 1.931.500,00 71.465.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Tinta Printer Warna 003",
+        "quantity": "32",
+        "unit_price": "92000.0",
+        "amount": "2944000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "13 Tinta Printer Warna 003 32 92.000,00 2.944.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Keyboard Standar USB",
+        "quantity": "12",
+        "unit_price": "903000.0",
+        "amount": "10836000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "14 Keyboard Standar USB 12 903.000,00 10.836.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Minyak Goreng 2L",
+        "quantity": "16",
+        "unit_price": "710500.0",
+        "amount": "11368000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "15 Minyak Goreng 2L 16 710.500,00 11.368.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Buku Folio 100 lembar",
+        "quantity": "40",
+        "unit_price": "661500.0",
+        "amount": "26460000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "16 Buku Folio 100 lembar 40 661.500,00 26.460.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Meja Lipat 120cm",
+        "quantity": "25",
+        "unit_price": "1561000.0",
+        "amount": "39025000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "17 Meja Lipat 120cm 25 1.561.000,00 39.025.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Beras Premium 5kg",
+        "quantity": "2",
+        "unit_price": "1436500.0",
+        "amount": "2873000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "18 Beras Premium 5kg 2 1.436.500,00 2.873.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Amplop Putih Panjang",
+        "quantity": "40",
+        "unit_price": "1301500.0",
+        "amount": "52060000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "19 Amplop Putih Panjang 40 1.301.500,00 52.060.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Mouse Wireless",
+        "quantity": "4",
+        "unit_price": "1661500.0",
+        "amount": "6646000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "20 Mouse Wireless 4 1.661.500,00 6.646.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Binder Clip 155",
+        "quantity": "2",
+        "unit_price": "1300000.0",
+        "amount": "2600000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "21 Binder Clip 155 2 1.300.000,00 2.600.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Hand Sanitizer 500ml",
+        "quantity": "25",
+        "unit_price": "692500.0",
+        "amount": "17312500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "22 Hand Sanitizer 500ml 25 692.500,00 17.312.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Rompi Proyek Oranye",
+        "quantity": "28",
+        "unit_price": "2500.0",
+        "amount": "70000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "23 Rompi Proyek Oranye 28 2.500,00 70.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Spidol Permanent Merah",
+        "quantity": "19",
+        "unit_price": "1791000.0",
+        "amount": "34029000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "24 Spidol Permanent Merah 19 1.791.000,00 34.029.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Amplop Coklat A4",
+        "quantity": "38",
+        "unit_price": "1513000.0",
+        "amount": "57494000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "25 Amplop Coklat A4 38 1.513.000,00 57.494.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Papan Tulis 60x90",
+        "quantity": "39",
+        "unit_price": "254500.0",
+        "amount": "9925500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "26 Papan Tulis 60x90 39 254.500,00 9.925.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Susu Kental Manis 370gr",
+        "quantity": "24",
+        "unit_price": "1751500.0",
+        "amount": "42036000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "27 Susu Kental Manis 370gr 24 1.751.500,00 42.036.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Rak Arsip 4 Susun",
+        "quantity": "35",
+        "unit_price": "1612500.0",
+        "amount": "56437500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "28 Rak Arsip 4 Susun 35 1.612.500,00 56.437.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Flashdisk 32GB",
+        "quantity": "12",
+        "unit_price": "19000.0",
+        "amount": "228000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "29 Flashdisk 32GB 12 19.000,00 228.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Staples No.10",
+        "quantity": "22",
+        "unit_price": "719500.0",
+        "amount": "15829000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "30 Staples No.10 22 719.500,00 15.829.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only page 1 of 2 was provided; the item table continues and any subtotal, if printed, would be on the missing page 2."
+      ]
+    },
+    "tax": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only page 1 of 2 was provided; a tax line, if printed, would be on the missing page 2."
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only page 1 of 2 was provided; a discount line, if printed, would be on the missing page 2."
+      ]
+    },
+    "total": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only page 1 of 2 was provided; the grand total, if printed, would be on the missing page 2."
+      ]
+    }
+  },
+  "validated": {
+    "vendor_name": {
+      "value": "CV Karya Mandiri Jaya",
+      "confidence": 0.98,
+      "status": "extracted",
+      "evidence": "CV Karya Mandiri Jaya",
+      "page": 1,
+      "reasons": []
+    },
+    "vendor_address": {
+      "value": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "page": 1,
+      "reasons": []
+    },
+    "vendor_tax_id": {
+      "value": "32.723.399.8-880.000",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "NPWP: 32.723.399.8-880.000",
+      "page": 1,
+      "reasons": []
+    },
+    "buyer_name": {
+      "value": "Koperasi Karyawan Harapan",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Kepada Yth:\nKoperasi Karyawan Harapan",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": "INV/2024/2360",
+      "confidence": 0.98,
+      "status": "extracted",
+      "evidence": "No. : INV/2024/2360",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": "2024-03-23",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Tanggal : 23 Maret 2024",
+      "page": 1,
+      "reasons": []
+    },
+    "due_date": {
+      "value": "2024-04-22",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "Jatuh Tempo : 22 April 2024",
+      "page": 1,
+      "reasons": []
+    },
+    "currency": {
+      "value": null,
+      "confidence": 0.8,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No currency symbol or code (e.g. Rp/IDR) is printed anywhere on the page; amounts appear only as bare numbers such as 1.205.500,00."
+      ]
+    },
+    "payment_method": {
+      "value": "Transfer Bank BCA",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Pembayaran : Transfer Bank BCA",
+      "page": 1,
+      "reasons": []
+    },
+    "line_items": [
+      {
+        "description": "Bateral AA Alkaline (4)",
+        "quantity": "32",
+        "unit_price": "1205500.0",
+        "amount": "38576000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "1 Bateral AA Alkaline (4) 32 1.205.500,00 38.576.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Air Mineral 600ml (dus)",
+        "quantity": "25",
+        "unit_price": "25000.0",
+        "amount": "625000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "2 Air Mineral 600ml (dus) 25 25.000,00 625.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Refill Staples 10",
+        "quantity": "18",
+        "unit_price": "1664000.0",
+        "amount": "29952000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "3 Refill Staples 10 18 1.664.000,00 29.952.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Termos Air 2L",
+        "quantity": "39",
+        "unit_price": "1586500.0",
+        "amount": "61873500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "4 Termos Air 2L 39 1.586.500,00 61.873.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Toner Hitam 12A",
+        "quantity": "12",
+        "unit_price": "349500.0",
+        "amount": "4194000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "5 Toner Hitam 12A 12 349.500,00 4.194.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Lakban Coklat 48mm",
+        "quantity": "24",
+        "unit_price": "1466000.0",
+        "amount": "35184000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "6 Lakban Coklat 48mm 24 1.466.000,00 35.184.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Teh Celup Isi 25",
+        "quantity": "20",
+        "unit_price": "43500.0",
+        "amount": "870000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "7 Teh Celup Isi 25 20 43.500,00 870.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Map Snelhecter Folio",
+        "quantity": "34",
+        "unit_price": "1306000.0",
+        "amount": "44404000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "8 Map Snelhecter Folio 34 1.306.000,00 44.404.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Pulpen Gel Hitam 0.5",
+        "quantity": "14",
+        "unit_price": "1005500.0",
+        "amount": "14077000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "9 Pulpen Gel Hitam 0.5 14 1.005.500,00 14.077.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Rice Cooker 1.8L",
+        "quantity": "40",
+        "unit_price": "926000.0",
+        "amount": "37040000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "10 Rice Cooker 1.8L 40 926.000,00 37.040.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Tas Ransel 20L",
+        "quantity": "21",
+        "unit_price": "1962000.0",
+        "amount": "41202000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "11 Tas Ransel 20L 21 1.962.000,00 41.202.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Klip Kertas Warna",
+        "quantity": "37",
+        "unit_price": "1931500.0",
+        "amount": "71465500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "12 Klip Kertas Warna 37 1.931.500,00 71.465.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Tinta Printer Warna 003",
+        "quantity": "32",
+        "unit_price": "92000.0",
+        "amount": "2944000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "13 Tinta Printer Warna 003 32 92.000,00 2.944.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Keyboard Standar USB",
+        "quantity": "12",
+        "unit_price": "903000.0",
+        "amount": "10836000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "14 Keyboard Standar USB 12 903.000,00 10.836.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Minyak Goreng 2L",
+        "quantity": "16",
+        "unit_price": "710500.0",
+        "amount": "11368000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "15 Minyak Goreng 2L 16 710.500,00 11.368.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Buku Folio 100 lembar",
+        "quantity": "40",
+        "unit_price": "661500.0",
+        "amount": "26460000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "16 Buku Folio 100 lembar 40 661.500,00 26.460.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Meja Lipat 120cm",
+        "quantity": "25",
+        "unit_price": "1561000.0",
+        "amount": "39025000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "17 Meja Lipat 120cm 25 1.561.000,00 39.025.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Beras Premium 5kg",
+        "quantity": "2",
+        "unit_price": "1436500.0",
+        "amount": "2873000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "18 Beras Premium 5kg 2 1.436.500,00 2.873.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Amplop Putih Panjang",
+        "quantity": "40",
+        "unit_price": "1301500.0",
+        "amount": "52060000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "19 Amplop Putih Panjang 40 1.301.500,00 52.060.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Mouse Wireless",
+        "quantity": "4",
+        "unit_price": "1661500.0",
+        "amount": "6646000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "20 Mouse Wireless 4 1.661.500,00 6.646.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Binder Clip 155",
+        "quantity": "2",
+        "unit_price": "1300000.0",
+        "amount": "2600000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "21 Binder Clip 155 2 1.300.000,00 2.600.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Hand Sanitizer 500ml",
+        "quantity": "25",
+        "unit_price": "692500.0",
+        "amount": "17312500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "22 Hand Sanitizer 500ml 25 692.500,00 17.312.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Rompi Proyek Oranye",
+        "quantity": "28",
+        "unit_price": "2500.0",
+        "amount": "70000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "23 Rompi Proyek Oranye 28 2.500,00 70.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Spidol Permanent Merah",
+        "quantity": "19",
+        "unit_price": "1791000.0",
+        "amount": "34029000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "24 Spidol Permanent Merah 19 1.791.000,00 34.029.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Amplop Coklat A4",
+        "quantity": "38",
+        "unit_price": "1513000.0",
+        "amount": "57494000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "25 Amplop Coklat A4 38 1.513.000,00 57.494.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Papan Tulis 60x90",
+        "quantity": "39",
+        "unit_price": "254500.0",
+        "amount": "9925500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "26 Papan Tulis 60x90 39 254.500,00 9.925.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Susu Kental Manis 370gr",
+        "quantity": "24",
+        "unit_price": "1751500.0",
+        "amount": "42036000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "27 Susu Kental Manis 370gr 24 1.751.500,00 42.036.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Rak Arsip 4 Susun",
+        "quantity": "35",
+        "unit_price": "1612500.0",
+        "amount": "56437500.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "28 Rak Arsip 4 Susun 35 1.612.500,00 56.437.500,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Flashdisk 32GB",
+        "quantity": "12",
+        "unit_price": "19000.0",
+        "amount": "228000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "29 Flashdisk 32GB 12 19.000,00 228.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Staples No.10",
+        "quantity": "22",
+        "unit_price": "719500.0",
+        "amount": "15829000.0",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "30 Staples No.10 22 719.500,00 15.829.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only page 1 of 2 was provided; the item table continues and any subtotal, if printed, would be on the missing page 2."
+      ]
+    },
+    "tax": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only page 1 of 2 was provided; a tax line, if printed, would be on the missing page 2."
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only page 1 of 2 was provided; a discount line, if printed, would be on the missing page 2."
+      ]
+    },
+    "total": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only page 1 of 2 was provided; the grand total, if printed, would be on the missing page 2."
+      ]
+    }
+  },
+  "repairs": 0,
+  "repair_history": [],
+  "normalizations": [],
+  "usage": {
+    "input_tokens": 4559,
+    "output_tokens": 6086,
+    "reasoning_tokens": 2386,
+    "reasoning_outside_output": 0,
+    "total_tokens": 10645,
+    "reasoning_inferred": false,
+    "output_includes_reasoning": true,
+    "reported": true,
+    "billable_output_tokens": 6086
+  },
+  "cost_usd": "0.0086709",
+  "avoided_cost_usd": "0",
+  "cached_calls": 0,
+  "cache_hit": false,
+  "latency_ms": 20179.236600000877,
+  "attempts": 1,
+  "structured_mode_used": "json_object",
+  "finish_reason": "stop"
+}

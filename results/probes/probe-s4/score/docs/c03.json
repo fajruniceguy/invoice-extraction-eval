@@ -1,0 +1,169 @@
+{
+  "doc_id": "c03",
+  "errors": {},
+  "fields": [
+    {
+      "error_class": null,
+      "expected": "CV Karya Mandiri Jaya",
+      "how": "exact",
+      "name": "vendor_name",
+      "outcome": "correct",
+      "predicted": "CV Karya Mandiri Jaya",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "how": "exact",
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "72.551.623.1-533.000",
+      "how": "exact",
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": "72.551.623.1-533.000",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "CV Mitra Teknik Mandiri",
+      "how": "exact",
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": "CV Mitra Teknik Mandiri",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "4428/CJ/2024",
+      "how": "exact",
+      "name": "document_number",
+      "outcome": "correct",
+      "predicted": "4428/CJ/2024",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "2024-04-06",
+      "how": "date",
+      "name": "document_date",
+      "outcome": "correct",
+      "predicted": "2024-04-06",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "2024-05-06",
+      "how": "date",
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": "2024-05-06",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "IDR",
+      "how": "exact",
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": "IDR",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "Tunai",
+      "how": "exact",
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": "Tunai",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "628952500.00",
+      "how": "numeric",
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": "628952500.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "69131425.00",
+      "how": "numeric",
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": "69131425.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "485000.00",
+      "how": "numeric",
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": "485000.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "697598925.00",
+      "how": "numeric",
+      "name": "total",
+      "outcome": "correct",
+      "predicted": "697598925.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 0,
+    "abstention_rate": 0.0,
+    "accuracy": 1.0,
+    "answered": 13,
+    "correct": 13,
+    "coverage": 1.0,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 1.0,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 0
+  },
+  "owner": "c03",
+  "rows": {
+    "cell_accuracy": 1.0,
+    "cells_compared": 132,
+    "cells_correct": 132,
+    "errors": [],
+    "labeled": true,
+    "matched": 33,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 33,
+    "row_accuracy": 1.0,
+    "row_f1": 1.0,
+    "row_precision": 1.0,
+    "row_recall": 1.0,
+    "spurious": 0
+  },
+  "status": "ok"
+}

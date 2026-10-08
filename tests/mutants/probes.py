@@ -165,4 +165,11 @@ MUTANTS = [
         "            not_ok.append(probe_id)\n            continue",
         "        if False:\n            continue",
     ),
+    (
+        R,
+        T,
+        "the none sentence always shows",
+        "            if returned_x\n            else",
+        "            if False\n            else",
+    ),
 ]

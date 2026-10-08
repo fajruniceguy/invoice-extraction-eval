@@ -17,6 +17,7 @@ the scoring code that moves a committed number makes it fail, and the right answ
 | --- | --- |
 | `test-final` | the test split, first real run through the Docker API, grounding unfixed (the baseline) |
 | `test-g1` | the same raw model answers replayed from the cache with the G1 grounding fix: accuracy 0.793 -> 0.845, 17 fields improved, 0 regressed (`docs/eval/grounding_fix.md`) |
+| `probes/probe-s4` | the hallucination probe (S4): 12 documents of `data/probes`, not the dataset: 0 of 19 erased fields answered with a value. Its own manifest, so `check_results.py` does not cover it; re-score it with `score.py results/probes/probe-s4 --manifest data/probes/manifest.csv --pages-dir data/probes/pages --gt-dir data/probes/labels --out <dir>` |
 
 ## test-final: the test split through the Docker API
 

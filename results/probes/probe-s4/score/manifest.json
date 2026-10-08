@@ -1,0 +1,31 @@
+{
+  "comparators": {
+    "fuzzy_name_min": "0.9",
+    "numeric_abs_tol": "0.01",
+    "numeric_rel_tol": "0.005"
+  },
+  "dataset_hash": "623e4c891b2cf3db43c8d5e76c7a3f6146a12a4093ba80263d8966ad19f1a699",
+  "endpoint": "https://api.commandcode.ai/provider/v1",
+  "git_dirty": false,
+  "git_sha": "f8403ff66eea9600c73ff80626bff9b700bdc498",
+  "gt_hash": "10b03954d4b95f4377280f419089573c2e24bc2c895c5e9ff6ee60e235bca803",
+  "model": "deepseek/deepseek-v4-flash-vision-exp",
+  "prompt_sha256": "7ec75dbb29063cbb5146cb5ee5ce6fcbedda0140ec39971c8f018f404126390d",
+  "run_id": "probe-s4",
+  "schema_sha256": "ac240f4c138965b5",
+  "scored_at": "2026-10-08T22:36:54+00:00",
+  "selection": {
+    "split": "test"
+  },
+  "settings": {
+    "cache": "on",
+    "image_max_long_edge": null,
+    "max_pages": 15,
+    "max_repairs": 1,
+    "max_run_cost_usd": "0.50",
+    "reasoning_effort": "medium",
+    "structured_mode": "json_object",
+    "temperature": 0.0
+  },
+  "target": "validated"
+}
