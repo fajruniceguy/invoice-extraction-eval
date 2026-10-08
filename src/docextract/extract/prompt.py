@@ -50,8 +50,9 @@ without a printed grand total has total "absent").
 continues on the next page is one list). A service charge, delivery fee, admin fee or rounding \
 row is a line item; a discount printed as its own row is a line item with a negative amount. Each \
 row has ONE status, confidence, evidence, page and reasons for the whole row. An "extracted" row \
-has at least one non-null cell; a cell the row does not show is null. An empty list if the \
-document has no item table.
+has at least one non-null cell; a cell the row does not show is null. description is the item \
+name only: when the table has a separate column for an item code or SKU, the code is not part of \
+the description. An empty list if the document has no item table.
 """
 
 USER_PROMPT = "Extract the fields from this document ({pages}, in order)."

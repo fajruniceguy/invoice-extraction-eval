@@ -109,6 +109,11 @@ class TestPrompt:
         for phrase in ("the DPP", "the PPN", "nomor seri faktur", "seller's NPWP", "Harga Jual"):
             assert phrase in SYSTEM_PROMPT, phrase
 
+    def test_an_item_code_column_is_kept_out_of_the_description(self) -> None:
+        # dev runs differed on cons_003: the code ("BRG-001") was glued onto every description
+        assert "description is the item name only" in SYSTEM_PROMPT
+        assert "the code is not part of the description" in SYSTEM_PROMPT
+
     def test_the_prompt_hash_keeps_its_legacy_definition(self) -> None:
         legacy = hashlib.sha256(f"{SYSTEM_PROMPT}\x00{USER_PROMPT}".encode()).hexdigest()
         assert PROMPT_SHA256 == legacy == prompt_sha256(SYSTEM_PROMPT)
