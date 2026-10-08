@@ -11,7 +11,7 @@ A document extraction system for invoices/receipts plus a rigorous evaluation ha
 ## Layout
 ```
 src/docextract/{config.py, calllog.py, providers/, ingest/, extract/, validate/, confidence/, api/{app.py, uploads.py}}
-src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, perf.py, compare.py, sweep.py, failures.py, noise.py, calibration.py, groundtruth.py, gt_store.py, construct.py, construct_io.py, prelabel.py, printed.py, labeling.py, labeling_ui.py}
+src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, perf.py, compare.py, sweep.py, failures.py, noise.py, calibration.py, hallucinations.py, groundtruth.py, gt_store.py, construct.py, construct_io.py, prelabel.py, printed.py, labeling.py, labeling_ui.py}
 data/{manifest.csv, redactions.yaml, pages/, private/{raw,preview}}
 ground_truth/{, drafts/}
 outputs/
@@ -114,6 +114,7 @@ docs/
 ## Failure analysis, noise and calibration (`evalkit/failures.py`, `noise.py`, `calibration.py`; reports in `docs/eval/`)
 - `failures.collect` scores every labeled field twice with the scorer's own `score_field`: as returned (`validated`) and as the model said it (`parsed`). That is how "the guard withheld a correct value" is told from "the model was wrong". `noise.measure` compares N runs of ONE setting; `calibration.analyse` pools runs into reliability, risk-coverage and the threshold chosen by a rule fixed in code (lowest threshold with selective accuracy >= 0.95). Each script prints a data report and appends an optional hand-written `--notes` file as "Reading".
 - **Noise rule.** Runs of the same setting differ (dev: accuracy up to 3.3 pts, 2-12 of 122 fields flip, output tokens +39%). A difference smaller than that is not a finding, and a p95 from one run of 10 documents is the single slowest call: quote medians and ranges. `docs/eval/noise.md` has the numbers.
+- `hallucinations.collect` takes the scorer's `hallucinated_value` apart (scalar fields and row cells, with denominators so it is a rate) and audits documents that share a label through `gt_from`: copies of one page should read alike, and a copy whose exact-match rate is 0.5 or more below its owner's is flagged `suspect` for a human to look at the pages (it flags, it never relabels). `docs/eval/hallucinations.md`: on `test-g1` 11 of the 12 scalar cases sit on doc_016 and its three photos doc_032..034, which the audit flags; the verdict (wrong label or invented receipts) is the owner's.
 - Grounding flaw found by S1 (`docs/eval/failure_analysis.md`) and fixed by G1 (`docs/eval/grounding_fix.md`): a value whose quote prints an *ambiguous* number (`208,179`, `84.000`) was hard-abstained even when it was one of the two candidates. Now that is the soft code `evidence_ambiguous` (capped at 0.7, value kept, never rewritten); a value matching neither candidate, and every ambiguous DATE, stays hard. Replayed on the test split from the cache: 256 -> 273 of 323 correct, 17 fields improved, 0 regressed (`results/test-final` is the baseline, `results/test-g1` the fixed run).
 
 ## Dataset and ingestion (`src/docextract/ingest/`)
@@ -185,6 +186,7 @@ python -m uv run python scripts/sweep.py --baseline-run outputs/runs/<run_id> --
 python -m uv run python scripts/analyze_failures.py outputs/runs/<run_id> [--out F] [--notes F]   # what was withheld and why, wrong fields, row misses per document (offline)
 python -m uv run python scripts/noise_report.py RUN RUN [RUN ...] [--price-in X --price-out Y]   # spread between runs of ONE setting (offline); make the repeats with extract.py --cache refresh
 python -m uv run python scripts/calibrate.py RUN [RUN ...] [--out F] [--svg-dir D]   # reliability, risk-coverage, the threshold the rule picks (offline)
+python -m uv run python scripts/analyze_hallucinations.py RUN [--out F] [--review F] [--notes F]   # hallucinated_value by level/document/label owner/confidence + the shared-label audit (offline); --review (quotes, outputs/ only) is the list for a human
 python tools/secret_scan.py (--staged | --worktree | --history | --env-values)   # secrets in what a commit adds / the whole history / the real .env values (names only); exit 1 = found; stdlib only
 python -m uv run python tools/mutation_check.py tests/mutants/<topic>.py   # mutation pass on an isolated copy; exit 1 = a mutant survived
 python -m uv run uvicorn --factory docextract.api.app:create_app --port 8000   # the API: GET /health, POST /extract, POST /extract/batch (see HTTP API); calls the configured model, so it costs money unless cached
