@@ -1,0 +1,49 @@
+{
+  "doc_id": "doc_024",
+  "label_mode": "prelabel",
+  "vendor_name": "Bahagia Bersama Coffee",
+  "vendor_address": "Jln Adi Sucipto no 4 Manahan, Solo, Kota Surakarta",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "CS/31/260926/0166",
+  "document_date": "2026-09-26",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "Tunai",
+  "subtotal": "__unlabeled__",
+  "tax": null,
+  "discount": null,
+  "total": "__unlabeled__",
+  "line_items": [
+    {
+      "description": "1 Bahagia Funky",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "1 Hint Of Peach",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "1 French Fries",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "1 Kopi Susu Mona",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    }
+  ],
+  "field_notes": {
+    "subtotal": "ambiguous number: printed '93,000' ('93,000' could be 93000 (thousands) or 93.000 (decimal): no currency context)",
+    "total": "ambiguous number: printed '93,000' ('93,000' could be 93000 (thousands) or 93.000 (decimal): no currency context)",
+    "line_items": "row 1 amount: ambiguous '25,000' ('25,000' could be 25000 (thousands) or 25.000 (decimal): no currency context); row 2 amount: ambiguous '26,000' ('26,000' could be 26000 (thousands) or 26.000 (decimal): no currency context); row 3 amount: ambiguous '22,000' ('22,000' could be 22000 (thousands) or 22.000 (decimal): no currency context); row 4 amount: ambiguous '20,000' ('20,000' could be 20000 (thousands) or 20.000 (decimal): no currency context)"
+  },
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Receipt shows Kasir: TRAINING, Jenis Order: Free Table, Nama Order: Malik H1 Od. Subtotal line reads 'Subtotal 4 Produk' with amount 93,000; Total 93,000. Tunai (cash) paid 100,000, Total Bayar 100,000, Kembalian (change) 7,000. Currency not printed. Date printed as '26 Sep 26' (year as printed). Photo is slightly blurred at the top edge of the receipt."
+}

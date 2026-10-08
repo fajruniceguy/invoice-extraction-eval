@@ -1,0 +1,38 @@
+{
+  "doc_id": "doc_023",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-08T14:59:04.744877Z",
+  "vendor_name": "MART SUNSET BASANGK / SUNSET BASANGKASA [SUNK]",
+  "vendor_address": "ALFA TOWER LT.12, ALAM SUTERA, TANGERANG; JALAN SUNSET ROAD KUTA",
+  "vendor_tax_id": "01.336.238.9-054.000",
+  "buyer_name": null,
+  "document_number": "Q650-107-2108UHD8",
+  "document_date": "2025-08-21",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "QRIS",
+  "subtotal": "51171",
+  "tax": "5628",
+  "discount": null,
+  "total": "56800",
+  "line_items": [
+    {
+      "description": "...KP JDL 160Z",
+      "quantity": "2",
+      "unit_price": "15000",
+      "amount": "30000"
+    },
+    {
+      "description": "...E SCRML160Z",
+      "quantity": "1",
+      "unit_price": "15000",
+      "amount": "15000"
+    },
+    {
+      "description": "PUPPIE MIGRG80G",
+      "quantity": "2",
+      "unit_price": "5900",
+      "amount": "11800"
+    }
+  ]
+}

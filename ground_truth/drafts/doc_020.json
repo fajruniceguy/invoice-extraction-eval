@@ -1,0 +1,38 @@
+{
+  "doc_id": "doc_020",
+  "label_mode": "prelabel",
+  "vendor_name": "Heavenly Chocolate Dewi Sri",
+  "vendor_address": "Jl. Dewi Sri No. 23, Legian, 80361",
+  "vendor_tax_id": "43.254.518.4-905.000",
+  "buyer_name": "Kak Rida>",
+  "document_number": "POS-250825-49",
+  "document_date": "2025-08-25",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "QR Mandiri",
+  "subtotal": "__unlabeled__",
+  "tax": "__unlabeled__",
+  "discount": null,
+  "total": "__unlabeled__",
+  "line_items": [
+    {
+      "description": "Extra Dark 70% (Pisah Bubuk)",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Matcha",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    }
+  ],
+  "field_notes": {
+    "subtotal": "ambiguous number: printed '676.000' ('676.000' could be 676000 (thousands) or 676.000 (decimal): no currency context)",
+    "tax": "ambiguous number: printed '74.360' ('74.360' could be 74360 (thousands) or 74.360 (decimal): no currency context)",
+    "total": "ambiguous number: printed '750.360' ('750.360' could be 750360 (thousands) or 750.360 (decimal): no currency context)",
+    "line_items": "row 1 unit_price: ambiguous '169.000' ('169.000' could be 169000 (thousands) or 169.000 (decimal): no currency context); row 1 amount: ambiguous '338.000' ('338.000' could be 338000 (thousands) or 338.000 (decimal): no currency context); row 2 unit_price: ambiguous '169.000' ('169.000' could be 169000 (thousands) or 169.000 (decimal): no currency context); row 2 amount: ambiguous '338.000' ('338.000' could be 338000 (thousands) or 338.000 (decimal): no currency context)"
+  },
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Receipt is creased and stained. The printed values sit one row off their labels: 676.000 appears beside 'Tax', 74.360 beside 'Total', and 750.360 beside 'Tender'; the 'Subtotal' row has no visible value. I read them as subtotal 676.000, tax 74.360, total 750.360 from the amounts. The item layout is ambiguous: the first 338.000 sits beside 'Matcha' and the second line repeats 2x 169.000 with 338.000, so the two line items are inferred. The 'Total Item 4' line matches 2+2 units. Change is partly obscured (reads about 750.000 with a trailing 0). The NPWP is partly stained. Customer name is printed as 'Kak Rida>' with a stray character. No currency symbol is printed."
+}

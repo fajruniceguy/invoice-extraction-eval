@@ -1,0 +1,32 @@
+{
+  "doc_id": "doc_026",
+  "label_mode": "blind",
+  "labeled_at": "2026-10-08T14:36:55.740209Z",
+  "vendor_name": "Kasir Naoki Klojen",
+  "vendor_address": null,
+  "vendor_tax_id": null,
+  "buyer_name": "Rian",
+  "document_number": "CS/97/251030/0034",
+  "document_date": "2025-10-30",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": "Transfer",
+  "subtotal": "40000",
+  "tax": "4000",
+  "discount": "3000",
+  "total": "44000",
+  "line_items": [
+    {
+      "description": "Chicken Rice Large Dine In",
+      "quantity": "1",
+      "unit_price": "25000",
+      "amount": "25000"
+    },
+    {
+      "description": "Gyoza (Chicken)",
+      "quantity": "1",
+      "unit_price": "18000",
+      "amount": "18000"
+    }
+  ]
+}

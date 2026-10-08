@@ -1,0 +1,26 @@
+{
+  "doc_id": "doc_012",
+  "label_mode": "blind",
+  "labeled_at": "2026-10-08T13:23:17.973924Z",
+  "vendor_name": "Ady Homestay",
+  "vendor_address": "Jalan Pantai Pandawa, Jimbaran, Uluwatu, Bali, Indonesia, 80364",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "1114978509",
+  "document_date": null,
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": null,
+  "subtotal": null,
+  "tax": "33843",
+  "discount": null,
+  "total": "195000",
+  "line_items": [
+    {
+      "description": "Deluxe Double Room",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": null
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "doc_id": "doc_016",
+  "label_mode": "blind",
+  "labeled_at": "2026-10-08T14:44:40.418530Z",
+  "vendor_name": null,
+  "vendor_address": null,
+  "vendor_tax_id": null,
+  "buyer_name": "MASJID AS SALAM",
+  "document_number": "IVR/20250926/XXV/IX/2765416827",
+  "document_date": null,
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": null,
+  "subtotal": null,
+  "tax": "45455",
+  "discount": null,
+  "total": "503100",
+  "line_items": [
+    {
+      "description": "RP STROOM/TOKEN",
+      "quantity": "__unlabeled__",
+      "unit_price": "__unlabeled__",
+      "amount": "500000"
+    }
+  ]
+}

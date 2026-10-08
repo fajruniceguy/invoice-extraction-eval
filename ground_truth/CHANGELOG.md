@@ -33,3 +33,43 @@ Format: `YYYY-MM-DD | file | field | old -> new | reason`
 2026-10-08 | doc_017 | (row removed) | excluded from the dataset | a copy of doc_004, which was excluded
 
 2026-10-08 | doc_010 | (draft removed) | excluded from the dataset | a 20-page bundle of many companies, not one document
+
+2026-10-08 | doc_005.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_006.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_007.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_012.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_018.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_019.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_021.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_026.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_027.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_016.json | (new file) | - -> label_mode=blind | labeled by hand
+
+2026-10-08 | doc_002.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_003.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_009.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_014.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_031.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_020.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_023.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_024.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_029.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_035.json | (new file) | - -> label_mode=prelabel | labeled by hand

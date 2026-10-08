@@ -1,6 +1,6 @@
 # secrets
 .env
-
+.commandcode/
 # python
 .venv/
 __pycache__/

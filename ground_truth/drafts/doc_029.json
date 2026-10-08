@@ -1,0 +1,49 @@
+{
+  "doc_id": "doc_029",
+  "label_mode": "prelabel",
+  "vendor_name": "Hotways Chicken (Malang Begawan)",
+  "vendor_address": null,
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "HCMT202505110136",
+  "document_date": "__unlabeled__",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "BCA",
+  "subtotal": null,
+  "tax": null,
+  "discount": null,
+  "total": "__unlabeled__",
+  "line_items": [
+    {
+      "description": "BURGER COMBO A (Original Chicken Burger; Sayap Nashville; Slow (Level 1); Tea)",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "MaruDeal F Crispy (Paha Atas Crispy; Nasi; Tea; Add Booster)",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "MaruDeal F Crispy (Dada Crispy; Nasi; Tea; Add Booster)",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "MaruDeals D Spicy/Chili (Dada Spicy; Nasi; Big Iced Tea)",
+      "quantity": "2",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    }
+  ],
+  "field_notes": {
+    "document_date": "ambiguous date: printed '11-05-2025 13:34' ('11-05-2025 13:34' could be day-first or month-first and day_first is not known)",
+    "total": "ambiguous number: printed '121.000' ('121.000' could be 121000 (thousands) or 121.000 (decimal): no currency context)",
+    "line_items": "row 1 amount: ambiguous '35.000' ('35.000' could be 35000 (thousands) or 35.000 (decimal): no currency context); row 2 amount: ambiguous '20.000' ('20.000' could be 20000 (thousands) or 20.000 (decimal): no currency context); row 3 amount: ambiguous '20.000' ('20.000' could be 20000 (thousands) or 20.000 (decimal): no currency context); row 4 amount: ambiguous '46.000' ('46.000' could be 46000 (thousands) or 46.000 (decimal): no currency context)"
+  },
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Grand Total 121.000 and BCA payment 121.000 are printed. No currency symbol is printed. Sub-items under each menu line show quantities with a printed amount of 0, so they are folded into the description of their parent row. Printed footer says \"5 items\". Sales No SHCMT174694517524, Table 9, Cashier Nafis. No address or tax ID is printed."
+}

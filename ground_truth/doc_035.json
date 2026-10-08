@@ -1,0 +1,56 @@
+{
+  "doc_id": "doc_035",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-08T15:04:42.479409Z",
+  "vendor_name": "Onix Fragrance Indonesia",
+  "vendor_address": null,
+  "vendor_tax_id": null,
+  "buyer_name": "Fajru Rahman",
+  "document_number": "585195354237077331",
+  "document_date": "2026-07-25",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": null,
+  "subtotal": "518000",
+  "tax": null,
+  "discount": null,
+  "total": "357096",
+  "line_items": [
+    {
+      "description": "[LIMITED CREATOR PICK] ONIX Fragrance FWB Extrait De Parfum 50ml - 50ML (Berat 100 gr)",
+      "quantity": "1",
+      "unit_price": "259000",
+      "amount": "259000"
+    },
+    {
+      "description": "ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML | Fruity Floral Oriental Perfume Unisex - 50ml (Berat 250 gr)",
+      "quantity": "1",
+      "unit_price": "259000",
+      "amount": "259000"
+    },
+    {
+      "description": "Total ongkos kirim",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "22000"
+    },
+    {
+      "description": "Voucher ongkir platform",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "22000"
+    },
+    {
+      "description": "Biaya jasa aplikasi",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "1000"
+    },
+    {
+      "description": null,
+      "quantity": null,
+      "unit_price": null,
+      "amount": null
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "doc_id": "doc_035",
+  "label_mode": "prelabel",
+  "vendor_name": "Onix Fragrance Indonesia",
+  "vendor_address": null,
+  "vendor_tax_id": null,
+  "buyer_name": "Fajru Rahman",
+  "document_number": "56519535423707731",
+  "document_date": "2026-07-25",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": null,
+  "subtotal": "518000",
+  "tax": null,
+  "discount": null,
+  "total": "357096",
+  "line_items": [
+    {
+      "description": "[LIMITED CREATOR PICK] ONIX Fragrance FWB Extrait De Parfum 50ml - 50ML (Berat 100 gr)",
+      "quantity": "1",
+      "unit_price": "259000",
+      "amount": "259000"
+    },
+    {
+      "description": "ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML | Fruity Floral Oriental Perfume Unisex - 50ml (Berat 250 gr)",
+      "quantity": "1",
+      "unit_price": "259000",
+      "amount": "259000"
+    },
+    {
+      "description": "Total ongkos kirim",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "22000"
+    },
+    {
+      "description": "Voucher ongkir platform",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "22000"
+    },
+    {
+      "description": "Biaya jasa aplikasi",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "1000"
+    }
+  ],
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Photo of a laptop screen showing a 2-page Tokopedia order receipt; only page 1 of 2 is visible and the image is blurry and angled. Document number, order date, discount rows and total are hard to read: document number read as 56519535423707731 (uncertain); date read as 25 Juli 2026 (uncertain); discount rows read as Diskon produk dari penjual Rp88.700, Voucher dari platform Rp13.204, Voucher dari penjual Rp10.000, Voucher ongkir platform Rp22.000 (not itemised as line items, only the shipping and app-fee rows are listed); total belanja and total tagihan both read as approximately Rp357.09x, the last digit is unclear and should be verified against the original PDF. Payment method, vendor address and tax ID are not printed in the visible area. Buyer address is partly shown as 'Fajru ()'."
+}

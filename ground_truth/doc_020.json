@@ -1,0 +1,32 @@
+{
+  "doc_id": "doc_020",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-08T14:56:01.796305Z",
+  "vendor_name": "Heavenly Chocolate Dewi Sri",
+  "vendor_address": "Jl. Dewi Sri No. 23, Legian, 80361",
+  "vendor_tax_id": "43.254.518.4-905.000",
+  "buyer_name": "Kak Rida>",
+  "document_number": "POS-250825-49",
+  "document_date": "2025-08-25",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "QR Mandiri",
+  "subtotal": "676000",
+  "tax": "74360",
+  "discount": null,
+  "total": "750360",
+  "line_items": [
+    {
+      "description": "Extra Dark 70% (Pisah Bubuk)",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Matcha",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    }
+  ]
+}

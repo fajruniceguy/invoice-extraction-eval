@@ -1,0 +1,44 @@
+{
+  "doc_id": "doc_024",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-08T15:01:15.242245Z",
+  "vendor_name": "Bahagia Bersama Coffee",
+  "vendor_address": "Jln Adi Sucipto no 4 Manahan, Solo, Kota Surakarta",
+  "vendor_tax_id": null,
+  "buyer_name": "Malik H1 Od",
+  "document_number": "CS/31/260926/0166",
+  "document_date": "2026-09-26",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "Tunai",
+  "subtotal": "93000",
+  "tax": null,
+  "discount": null,
+  "total": "93000",
+  "line_items": [
+    {
+      "description": "1 Bahagia Funky",
+      "quantity": "1",
+      "unit_price": "25000",
+      "amount": "25000"
+    },
+    {
+      "description": "1 Hint Of Peach",
+      "quantity": "1",
+      "unit_price": "26000",
+      "amount": "26000"
+    },
+    {
+      "description": "1 French Fries",
+      "quantity": "1",
+      "unit_price": "22000",
+      "amount": "22000"
+    },
+    {
+      "description": "1 Kopi Susu Mona",
+      "quantity": "1",
+      "unit_price": "20000",
+      "amount": "20000"
+    }
+  ]
+}

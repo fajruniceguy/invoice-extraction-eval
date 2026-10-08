@@ -1,0 +1,50 @@
+{
+  "doc_id": "doc_029",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-08T15:03:07.112558Z",
+  "vendor_name": "Hotways Chicken (Malang Begawan)",
+  "vendor_address": null,
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "HCMT202505110136",
+  "document_date": "__unlabeled__",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "BCA",
+  "subtotal": null,
+  "tax": null,
+  "discount": null,
+  "total": "121000",
+  "line_items": [
+    {
+      "description": "BURGER COMBO A (Original Chicken Burger; Sayap Nashville; Slow (Level 1); Tea)",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "35000"
+    },
+    {
+      "description": "MaruDeal F Crispy (Paha Atas Crispy; Nasi; Tea; Add Booster)",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "20000"
+    },
+    {
+      "description": "MaruDeal F Crispy (Dada Crispy; Nasi; Tea; Add Booster)",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "20000"
+    },
+    {
+      "description": "MaruDeals D Spicy/Chili (Dada Spicy; Nasi; Big Iced Tea)",
+      "quantity": "2",
+      "unit_price": null,
+      "amount": "46000"
+    },
+    {
+      "description": null,
+      "quantity": null,
+      "unit_price": null,
+      "amount": null
+    }
+  ]
+}

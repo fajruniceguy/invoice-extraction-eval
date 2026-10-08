@@ -1,0 +1,62 @@
+{
+  "doc_id": "doc_027",
+  "label_mode": "blind",
+  "labeled_at": "2026-10-08T14:41:32.716074Z",
+  "vendor_name": "Warkop Agam Dinoyo",
+  "vendor_address": "T Haryono, Ruko Istana Dinoyo Kav A-3",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "#CF5D25122100024635",
+  "document_date": "2025-12-21",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": "QRIS",
+  "subtotal": null,
+  "tax": null,
+  "discount": null,
+  "total": "118000",
+  "line_items": [
+    {
+      "description": "AIR MINERAL",
+      "quantity": "1",
+      "unit_price": "5000",
+      "amount": "5000"
+    },
+    {
+      "description": "ADEM SARI",
+      "quantity": "1",
+      "unit_price": "7000",
+      "amount": "7000"
+    },
+    {
+      "description": "MADU LEMON (ICE/HOT)",
+      "quantity": "1",
+      "unit_price": "15000",
+      "amount": "15000"
+    },
+    {
+      "description": "Indomie Kuah Kari Biasa",
+      "quantity": "1",
+      "unit_price": "15000",
+      "amount": "15000"
+    },
+    {
+      "description": "INDOMIE BANGLADESH JUMBO + PUDING TELUR AYAM KAMPUNG",
+      "quantity": "1",
+      "unit_price": "38000",
+      "amount": "38000"
+    },
+    {
+      "description": "INDOMIE PAKISTAN JUMBO",
+      "quantity": "1",
+      "unit_price": "23000",
+      "amount": "23000"
+    },
+    {
+      "description": "INDOMIE GORENG ALOK BIASA",
+      "quantity": "1",
+      "unit_price": "15000",
+      "amount": "15000"
+    }
+  ]
+}

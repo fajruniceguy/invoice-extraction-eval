@@ -1,0 +1,19 @@
+{
+  "doc_id": "doc_021",
+  "label_mode": "blind",
+  "labeled_at": "2026-10-08T14:33:13.887671Z",
+  "vendor_name": "SAMBAL BAKAR INDONESIA",
+  "vendor_address": "Jl. Sunset Road No. 106, Seminyak, Kec. Kuta Utara, Kabupaten Badung, Bali 80361",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "SBISR202508210056",
+  "document_date": "2025-08-21",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "EDC BRI QRIS",
+  "subtotal": "304092",
+  "tax": "30409",
+  "discount": null,
+  "total": "334500",
+  "line_items": "__unlabeled__"
+}

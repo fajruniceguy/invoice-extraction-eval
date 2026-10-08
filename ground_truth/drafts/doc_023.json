@@ -1,0 +1,44 @@
+{
+  "doc_id": "doc_023",
+  "label_mode": "prelabel",
+  "vendor_name": "...MART SUNSET BASANGK / SUNSET BASANGKASA [SUNK]",
+  "vendor_address": "ALAM TOWER LT.12, ALAM SUTERA, TANGERANG; JALAN SUNSET ROAD KUTA",
+  "vendor_tax_id": "01.336.238.9-054.000",
+  "buyer_name": null,
+  "document_number": "Q650-107-2108UHD8",
+  "document_date": "2025-08-21",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "QRIS",
+  "subtotal": "__unlabeled__",
+  "tax": "__unlabeled__",
+  "discount": null,
+  "total": "__unlabeled__",
+  "line_items": [
+    {
+      "description": "...KP JDL 160Z",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "...E SCRML160Z",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "PUPPIE MIGRG80G",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    }
+  ],
+  "field_notes": {
+    "subtotal": "ambiguous number: printed '51.171' ('51.171' could be 51171 (thousands) or 51.171 (decimal): no currency context)",
+    "tax": "ambiguous number: printed '5.628' ('5.628' could be 5628 (thousands) or 5.628 (decimal): no currency context)",
+    "total": "ambiguous number: printed '56.800' ('56.800' could be 56800 (thousands) or 56.800 (decimal): no currency context)",
+    "line_items": "row 1 unit_price: ambiguous '15.000' ('15.000' could be 15000 (thousands) or 15.000 (decimal): no currency context); row 1 amount: ambiguous '30.000' ('30.000' could be 30000 (thousands) or 30.000 (decimal): no currency context); row 2 unit_price: ambiguous '15.000' ('15.000' could be 15000 (thousands) or 15.000 (decimal): no currency context); row 2 amount: ambiguous '15.000' ('15.000' could be 15000 (thousands) or 15.000 (decimal): no currency context); row 3 unit_price: ambiguous '5.900' ('5.900' could be 5900 (thousands) or 5.900 (decimal): no currency context); row 3 amount: ambiguous '11.800' ('11.800' could be 11800 (thousands) or 11.800 (decimal): no currency context)"
+  },
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Store name, vendor name and some item descriptions are partly obscured/cut off by the fold and the fingers; the leading characters are reconstructed from visible fragments and may be inaccurate. Header phone 08111064088 (partly cut off at top) and 'Total Item 3' are printed. Printed 'Kembalian' (change) shows 0. Total 56.800 is the printed total row (also shown as the QRIS payment amount). Store header number 03612091099 is printed after the store name. Footer shows 'KRITIK&SARAN:1500959' and a further cut-off line. Currency is not printed; amounts use Indonesian dot-thousands format."
+}

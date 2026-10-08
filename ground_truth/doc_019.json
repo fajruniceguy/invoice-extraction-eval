@@ -1,0 +1,56 @@
+{
+  "doc_id": "doc_019",
+  "label_mode": "blind",
+  "labeled_at": "2026-10-08T13:41:22.320942Z",
+  "vendor_name": "Onix Fragrance Indonesia",
+  "vendor_address": null,
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "585195354237077331",
+  "document_date": "2026-07-25",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": "Saldo Tokopedia",
+  "subtotal": "518000",
+  "tax": null,
+  "discount": "85209",
+  "total": "357091",
+  "line_items": [
+    {
+      "description": "[LIMITED CREATOR PICK] ONIX Fragrance FWB\nExtrait De Parfum 50ml - 50ML",
+      "quantity": "1",
+      "unit_price": "259000",
+      "amount": "259000"
+    },
+    {
+      "description": "ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML\n| Fruity Floral Oriental Perfume Unisex - 50ml",
+      "quantity": "1",
+      "unit_price": "259000",
+      "amount": "259000"
+    },
+    {
+      "description": null,
+      "quantity": null,
+      "unit_price": null,
+      "amount": null
+    },
+    {
+      "description": null,
+      "quantity": null,
+      "unit_price": null,
+      "amount": null
+    },
+    {
+      "description": null,
+      "quantity": null,
+      "unit_price": null,
+      "amount": null
+    },
+    {
+      "description": null,
+      "quantity": null,
+      "unit_price": null,
+      "amount": null
+    }
+  ]
+}
