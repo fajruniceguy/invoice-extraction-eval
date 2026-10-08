@@ -3,7 +3,13 @@ from decimal import Decimal
 from typing import Any
 
 from docextract.extract.schema import DocumentExtraction, Field, LineItem
-from docextract.validate.codes import DESCRIPTION_NOT_VERBATIM, EVIDENCE_NOT_GROUNDED
+from docextract.validate.codes import (
+    DESCRIPTION_NOT_VERBATIM,
+    EVIDENCE_AMBIGUOUS,
+    EVIDENCE_NOT_GROUNDED,
+    HARD_CODES,
+    REASON_CODES,
+)
 from docextract.validate.grounding import validate_grounding
 
 D = Decimal
@@ -85,9 +91,7 @@ def make_doc(
 
 class TestNumbers:
     def test_a_printed_rupiah_amount_grounds_the_decimal(self) -> None:
-        result = validate_grounding(
-            make_doc(subtotal=scalar(D("1250000.00"), "Rp 1.250.000,00"))
-        )
+        result = validate_grounding(make_doc(subtotal=scalar(D("1250000.00"), "Rp 1.250.000,00")))
         assert result.subtotal.reasons == []
 
     def test_a_plain_amount_grounds(self) -> None:
@@ -110,12 +114,59 @@ class TestNumbers:
         result = validate_grounding(make_doc(subtotal=scalar(D("9.50"), "Subtotal 9.00")))
         assert result.subtotal.reasons == [EVIDENCE_NOT_GROUNDED]
 
-    def test_an_ambiguous_span_is_not_grounding(self) -> None:
-        # "1.250" alone is 1250 or 1.25; with no currency context it confirms neither
+    def test_an_ambiguous_span_that_contains_the_value_is_soft_not_grounding(self) -> None:
+        # "1.250" alone is 1250 or 1.25; with no currency context it confirms neither, but it does
+        # not contradict the model's 1250 either: the value is kept, flagged, never hard
         result = validate_grounding(
             make_doc(currency=Field.absent(0.9), subtotal=scalar(D("1250"), "1.250"))
         )
+        assert result.subtotal.reasons == [EVIDENCE_AMBIGUOUS]
+        assert result.subtotal.status == "extracted"
+        assert result.subtotal.value == D("1250")  # never rewritten
+
+    def test_either_reading_of_an_ambiguous_span_is_consistent(self) -> None:
+        for value in (D("1250"), D("1.25")):
+            result = validate_grounding(
+                make_doc(currency=Field.absent(0.9), subtotal=scalar(value, "1.250"))
+            )
+            assert result.subtotal.reasons == [EVIDENCE_AMBIGUOUS], value
+
+    def test_an_ambiguous_span_that_does_not_contain_the_value_is_still_hard(self) -> None:
+        # "1.250" is 1250 or 1.25; 12.50 is neither (and 125 is neither)
+        for value in (D("12.50"), D("125"), D("1250000")):
+            result = validate_grounding(
+                make_doc(currency=Field.absent(0.9), subtotal=scalar(value, "1.250"))
+            )
+            assert result.subtotal.reasons == [EVIDENCE_NOT_GROUNDED], value
+
+    def test_a_value_near_a_reading_is_not_that_reading(self) -> None:
+        # exact decimal equality: one cent or one unit off a candidate is a contradiction
+        for value in (D("1.26"), D("1.24"), D("1249"), D("1251")):
+            result = validate_grounding(
+                make_doc(currency=Field.absent(0.9), subtotal=scalar(value, "1.250"))
+            )
+            assert result.subtotal.reasons == [EVIDENCE_NOT_GROUNDED], value
+
+    def test_a_money_value_that_is_not_a_number_grounds_nothing(self) -> None:
+        document = make_doc(subtotal=scalar(D("9.00"), "Subtotal 9.00"))
+        object.__setattr__(document.subtotal, "value", "9.00")  # bypass the model's own typing
+        result = validate_grounding(document)
         assert result.subtotal.reasons == [EVIDENCE_NOT_GROUNDED]
+
+    def test_a_confirming_span_beats_an_ambiguous_one_in_the_same_quote(self) -> None:
+        result = validate_grounding(
+            make_doc(
+                currency=Field.absent(0.9),
+                subtotal=scalar(D("1250"), "Harga 1.250 (seribu 1250)"),
+            )
+        )
+        assert result.subtotal.reasons == []
+
+    def test_an_ambiguous_total_is_soft_in_a_document_with_no_currency(self) -> None:
+        result = validate_grounding(
+            make_doc(currency=Field.absent(0.9), total=scalar(D("208179"), "TOTAL 208,179"))
+        )
+        assert result.total.reasons == [EVIDENCE_AMBIGUOUS]
 
     def test_an_ambiguous_span_grounds_with_the_currency_context(self) -> None:
         result = validate_grounding(
@@ -124,9 +175,7 @@ class TestNumbers:
         assert result.subtotal.reasons == []
 
     def test_a_negative_amount_in_parentheses_grounds(self) -> None:
-        result = validate_grounding(
-            make_doc(discount=scalar(D("-9.00"), "Potongan Harga (9.00)"))
-        )
+        result = validate_grounding(make_doc(discount=scalar(D("-9.00"), "Potongan Harga (9.00)")))
         assert result.discount.reasons == []
 
     def test_no_evidence_grounds_nothing(self) -> None:
@@ -161,9 +210,7 @@ class TestDates:
         assert result.document_date.reasons == [EVIDENCE_NOT_GROUNDED]
 
     def test_a_money_amount_does_not_ground_a_date(self) -> None:
-        result = validate_grounding(
-            make_doc(document_date=scalar(date(2024, 3, 5), "9.99"))
-        )
+        result = validate_grounding(make_doc(document_date=scalar(date(2024, 3, 5), "9.99")))
         assert result.document_date.reasons == [EVIDENCE_NOT_GROUNDED]
 
 
@@ -182,16 +229,12 @@ class TestStrings:
 
     def test_a_tax_id_compares_on_digits(self) -> None:
         result = validate_grounding(
-            make_doc(
-                vendor_tax_id=scalar("012345678901000", "NPWP 01.234.567.8-901.000")
-            )
+            make_doc(vendor_tax_id=scalar("012345678901000", "NPWP 01.234.567.8-901.000"))
         )
         assert result.vendor_tax_id.reasons == []
 
     def test_a_document_number_grounds_with_other_formatting(self) -> None:
-        result = validate_grounding(
-            make_doc(document_number=scalar("INV123", "No. INV/123"))
-        )
+        result = validate_grounding(make_doc(document_number=scalar("INV123", "No. INV/123")))
         assert result.document_number.reasons == []
 
     def test_an_absent_or_abstained_field_is_skipped(self) -> None:
@@ -215,6 +258,45 @@ class TestRows:
         result = validate_grounding(make_doc(rows=[row(amount="9.50")]))
         assert result.line_items[0].reasons == [EVIDENCE_NOT_GROUNDED]
         assert result.line_items[0].flagged_cells == ["amount"]
+
+    def test_an_ambiguous_amount_is_a_soft_row_code_and_the_row_stays(self) -> None:
+        result = validate_grounding(
+            make_doc(
+                currency=Field.absent(0.9),
+                rows=[
+                    row(
+                        description="Kopi",
+                        quantity="1",
+                        unit_price="1250",
+                        amount="1250",
+                        evidence="Kopi 1 x 1.250 1.250",
+                    )
+                ],
+            )
+        )
+        item = result.line_items[0]
+        assert item.reasons == [EVIDENCE_AMBIGUOUS]
+        assert item.flagged_cells == ["unit_price", "amount"]
+        assert item.status == "extracted"
+
+    def test_an_ungrounded_cell_beats_an_ambiguous_one_in_the_same_row(self) -> None:
+        result = validate_grounding(
+            make_doc(
+                currency=Field.absent(0.9),
+                rows=[
+                    row(
+                        description="Kopi",
+                        quantity="1",
+                        unit_price="1250",
+                        amount="9999",
+                        evidence="Kopi 1 x 1.250 1.250",
+                    )
+                ],
+            )
+        )
+        item = result.line_items[0]
+        assert item.reasons == [EVIDENCE_NOT_GROUNDED]
+        assert item.flagged_cells == ["amount"]
 
     def test_an_ungrounded_quantity_and_price_are_flagged(self) -> None:
         result = validate_grounding(
@@ -286,6 +368,13 @@ class TestCurrencyField:
         assert result.currency.reasons == [EVIDENCE_NOT_GROUNDED]
 
 
+class TestTheNewCode:
+    def test_it_is_a_soft_reason_code(self) -> None:
+        assert EVIDENCE_AMBIGUOUS in REASON_CODES
+        assert EVIDENCE_AMBIGUOUS not in HARD_CODES
+        assert EVIDENCE_NOT_GROUNDED in HARD_CODES
+
+
 class TestIdempotenceAndCopies:
     def test_twice_is_once(self) -> None:
         document = make_doc(
@@ -293,6 +382,25 @@ class TestIdempotenceAndCopies:
             rows=[row(amount="9.50"), row(description="Paper", evidence="2 x 4.50 = 9.00")],
         )
         once = validate_grounding(document)
+        assert validate_grounding(once) == once
+
+    def test_twice_is_once_for_the_ambiguous_code_too(self) -> None:
+        document = make_doc(
+            currency=Field.absent(0.9),
+            subtotal=scalar(D("1250"), "1.250"),
+            rows=[
+                row(
+                    description="Kopi",
+                    amount="1250",
+                    unit_price="1250",
+                    quantity="1",
+                    evidence="Kopi 1 x 1.250 1.250",
+                )
+            ],
+        )
+        once = validate_grounding(document)
+        assert once.subtotal.reasons == [EVIDENCE_AMBIGUOUS]
+        assert once.line_items[0].reasons == [EVIDENCE_AMBIGUOUS]
         assert validate_grounding(once) == once
 
     def test_the_input_is_never_mutated(self) -> None:

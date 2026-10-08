@@ -25,6 +25,7 @@ from docextract.validate.codes import (
     DESCRIPTION_NOT_VERBATIM,
     DOCUMENT_DATE_IN_FUTURE,
     DUE_DATE_BEFORE_DOCUMENT_DATE,
+    EVIDENCE_AMBIGUOUS,
     EVIDENCE_NOT_GROUNDED,
     LINES_NE_SUBTOTAL,
     QTY_X_PRICE_NE_AMOUNT,
@@ -36,7 +37,8 @@ from docextract.validate.codes import (
 # evidence. Same ceiling as the row arithmetic check has always applied.
 ARITHMETIC_CAP = MISMATCH_CONFIDENCE_CAP
 # A single-field shape or plausibility finding (a tax id of an unusual length, a currency we
-# cannot read, a description that is not verbatim, a future document date).
+# cannot read, a description that is not verbatim, a future document date, a number whose own
+# quote is ambiguous and contains the value).
 SHAPE_CAP = 0.7
 # A value the normalizer had to rewrite: the model did not follow the format contract.
 NORMALIZED_CAP = 0.85
@@ -46,6 +48,7 @@ CAP_BY_CODE: dict[str, float] = {
     LINES_NE_SUBTOTAL: ARITHMETIC_CAP,
     COMPONENTS_NE_TOTAL: ARITHMETIC_CAP,
     EVIDENCE_NOT_GROUNDED: ARITHMETIC_CAP,
+    EVIDENCE_AMBIGUOUS: SHAPE_CAP,
     DUE_DATE_BEFORE_DOCUMENT_DATE: ARITHMETIC_CAP,
     DOCUMENT_DATE_IN_FUTURE: SHAPE_CAP,
     CURRENCY_UNKNOWN: SHAPE_CAP,

@@ -8,6 +8,7 @@ from docextract.validate.codes import (
     COMPONENTS_NE_TOTAL,
     CONFIDENCE_BELOW_THRESHOLD,
     DOCUMENT_DATE_IN_FUTURE,
+    EVIDENCE_AMBIGUOUS,
     EVIDENCE_NOT_GROUNDED,
     LINES_NE_SUBTOTAL,
     QTY_X_PRICE_NE_AMOUNT,
@@ -138,6 +139,38 @@ class TestTheChain:
         assert all(getattr(item, cell) is None for cell in CELL_NAMES)
         assert item.flagged_cells == ["amount"]
         assert EVIDENCE_NOT_GROUNDED in item.reasons
+
+    def test_an_ambiguous_quote_keeps_the_value_with_a_capped_confidence(self) -> None:
+        # no currency anywhere, so "9.990" is 9990 or 9.99: the model's 9.99 is one of them
+        document = make_doc(
+            currency=Field.absent(0.9), total=scalar(D("9.99"), "TOTAL 9.990", confidence=0.95)
+        )
+        result = validate_document(document, abstain_below=0.3, today=TODAY)
+        assert result.total.status == "extracted"
+        assert result.total.value == D("9.99")  # the validators never rewrite a value
+        assert result.total.reasons == [EVIDENCE_AMBIGUOUS]
+        assert result.total.confidence == 0.7
+        assert result.total.evidence == "TOTAL 9.990"
+
+    def test_an_ambiguous_quote_for_another_number_is_still_abstained(self) -> None:
+        document = make_doc(
+            currency=Field.absent(0.9), total=scalar(D("19.99"), "TOTAL 9.990", confidence=0.95)
+        )
+        result = validate_document(document, abstain_below=0.3, today=TODAY)
+        assert result.total.status == "abstained"
+        assert EVIDENCE_NOT_GROUNDED in result.total.reasons
+
+    def test_an_ambiguous_row_is_kept_capped_and_flagged(self) -> None:
+        document = make_doc(
+            currency=Field.absent(0.9),
+            line_items=[row(description="Widget", evidence="Widget 2 x 4.500 = 9.000")],
+        )
+        result = validate_document(document, abstain_below=0.3, today=TODAY)
+        item = result.line_items[0]
+        assert item.status == "extracted"
+        assert item.reasons == [EVIDENCE_AMBIGUOUS]
+        assert item.confidence == 0.7
+        assert item.flagged_cells == ["unit_price", "amount"]
 
     def test_a_normalized_value_is_capped(self) -> None:
         document = make_doc(total=scalar(D("9.99"), "Rp 9,99"))

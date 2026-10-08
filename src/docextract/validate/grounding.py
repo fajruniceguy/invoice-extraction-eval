@@ -6,8 +6,9 @@ This module checks the stronger claim that the quote actually supports the value
 
   - money, quantities and dates: some span of the quote parses, with the shared normalizer and
     the document's own currency / day-first context, to exactly the value. "Rp 1.250.000,00"
-    grounds 1250000.00, "5 Maret 2024" grounds 2024-03-05. An ambiguous span is NOT grounding:
-    a reading the normalizer refused to make cannot confirm a value.
+    grounds 1250000.00, "5 Maret 2024" grounds 2024-03-05. An ambiguous DATE is not grounding:
+    a reading the normalizer refused to make cannot confirm a value. An ambiguous NUMBER is
+    in between (see below).
   - strings (names, addresses, payment methods, document numbers, tax ids): the value must be
     contained in the quote once case, punctuation and whitespace are ignored (its letters and
     digits, in order), so a name printed in capitals or a number formatted differently still
@@ -18,6 +19,12 @@ A value that is not traceable is contradicted by its own evidence, so it is reco
 except a row `description`, which is recorded as `description_not_verbatim` (soft): a reworded
 description must not kill an otherwise grounded row, only cap it.
 
+A number the quote prints ambiguously ("208,179" with no currency: 208179 or 208.179) is not
+contradicted by it: when the value is one of the candidates the normalizer offered, the quote
+CONSISTS with the value without confirming it, so the code is `evidence_ambiguous` (soft: the
+confidence is capped, the value is kept). The normalizer still never picks a reading and nothing
+here rewrites the value; a value that is neither candidate stays `evidence_not_grounded`.
+
 What this cannot catch: a quote AND a value the model invented together. That needs the
 against-page grounding of a later milestone (OCR or a text sidecar), not this one.
 
@@ -27,17 +34,23 @@ Copies only, never mutates the input; re-running is idempotent.
 import re
 from datetime import date
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 
 from docextract.extract.preprocess import DATE_FIELDS, MONEY_FIELDS
 from docextract.extract.schema import SCALAR_FIELD_NAMES, DocumentExtraction
 from docextract.normalize import currency_marker, parse_date, parse_number
-from docextract.validate.codes import DESCRIPTION_NOT_VERBATIM, EVIDENCE_NOT_GROUNDED
+from docextract.validate.codes import (
+    DESCRIPTION_NOT_VERBATIM,
+    EVIDENCE_AMBIGUOUS,
+    EVIDENCE_NOT_GROUNDED,
+)
 from docextract.validate.reasons import with_document_reason, with_row, with_row_reason
 
 _NUMERIC_CELLS: tuple[str, ...] = ("quantity", "unit_price", "amount")
 _ALNUM = re.compile(r"[^\W_]+")  # unicode letters and digits, no underscore
 _DATE_WINDOW = 4  # tokens: "5 Maret 2024", "05 Mar 2024 14:30"
+
+Grounding = Literal["grounded", "ambiguous", "ungrounded"]
 
 
 def _compact(text: str) -> str:
@@ -64,14 +77,20 @@ def _number_candidates(text: str) -> list[str]:
     return candidates
 
 
-def _number_grounded(quote: str, value: Decimal, currency: str | None) -> bool:
+def _number_grounding(quote: str, value: Decimal, currency: str | None) -> Grounding:
+    """`grounded`: some span of the quote parses to exactly `value`. `ambiguous`: none does, but
+    some span is ambiguous and `value` is one of its candidates (the quote consists with the value
+    without confirming it). `ungrounded`: neither."""
+    ambiguous = False
     for token in _number_candidates(quote):
         if not any(character.isdigit() for character in token):
             continue
         result = parse_number(token, currency=currency)
         if result.ok and result.value == value:
-            return True
-    return False
+            return "grounded"
+        if result.status == "ambiguous" and value in result.candidates:
+            ambiguous = True
+    return "ambiguous" if ambiguous else "ungrounded"
 
 
 def _quoted_currency(quote: str) -> str | None:
@@ -95,20 +114,24 @@ def _date_grounded(quote: str, value: date, day_first: bool | None) -> bool:
     return False
 
 
-def _scalar_grounded(
+def _scalar_grounding(
     name: str, value: Any, quote: str, *, currency: str | None, day_first: bool | None
-) -> bool:
+) -> Grounding:
     if name in MONEY_FIELDS:
-        return isinstance(value, Decimal) and _number_grounded(quote, value, currency)
+        if not isinstance(value, Decimal):
+            return "ungrounded"
+        return _number_grounding(quote, value, currency)
     if name in DATE_FIELDS:
-        return isinstance(value, date) and _date_grounded(quote, value, day_first)
-    if name == "currency":
+        grounded = isinstance(value, date) and _date_grounded(quote, value, day_first)
+    elif name == "currency":
         # the value is the ISO code the normalizer reads a printed marker as ("Rp" -> IDR),
         # so the quote grounds it through the marker, or by naming the code itself
-        return isinstance(value, str) and (
+        grounded = isinstance(value, str) and (
             _quoted_currency(quote) == value.strip().upper() or _string_grounded(quote, value)
         )
-    return isinstance(value, str) and _string_grounded(quote, value)
+    else:
+        grounded = isinstance(value, str) and _string_grounded(quote, value)
+    return "grounded" if grounded else "ungrounded"
 
 
 def _flag_cells(document: DocumentExtraction, index: int, cells: list[str]) -> DocumentExtraction:
@@ -124,9 +147,7 @@ def _flag_cells(document: DocumentExtraction, index: int, cells: list[str]) -> D
 def validate_grounding(document: DocumentExtraction) -> DocumentExtraction:
     """Flag every extracted scalar and row cell whose own evidence quote does not support it."""
     currency_field = document.currency
-    currency = (
-        currency_field.value if currency_field.status == "extracted" else None
-    )
+    currency = currency_field.value if currency_field.status == "extracted" else None
     day_first = True if (currency or "").strip().upper() == "IDR" else None
 
     result = document
@@ -134,26 +155,33 @@ def validate_grounding(document: DocumentExtraction) -> DocumentExtraction:
         field = getattr(result, name)
         if field.status != "extracted" or field.value is None:
             continue
-        if not _scalar_grounded(
+        grounding = _scalar_grounding(
             name, field.value, field.evidence or "", currency=currency, day_first=day_first
-        ):
+        )
+        if grounding == "ungrounded":
             result = with_document_reason(result, name, EVIDENCE_NOT_GROUNDED)
+        elif grounding == "ambiguous":
+            result = with_document_reason(result, name, EVIDENCE_AMBIGUOUS)
 
     for index in range(len(result.line_items)):
         row = result.line_items[index]
         if row.status != "extracted":
             continue
         quote = row.evidence or ""
-        ungrounded = [
-            cell
+        grounding = {
+            cell: _number_grounding(quote, getattr(row, cell), currency)
             for cell in _NUMERIC_CELLS
             if getattr(row, cell) is not None
-            and not _number_grounded(quote, getattr(row, cell), currency)
-        ]
+        }
+        ungrounded = [cell for cell, state in grounding.items() if state == "ungrounded"]
+        ambiguous = [cell for cell, state in grounding.items() if state == "ambiguous"]
         if row.description is not None and not _string_grounded(quote, row.description):
             result = _flag_cells(result, index, ["description"])
             result = with_row_reason(result, index, DESCRIPTION_NOT_VERBATIM)
         if ungrounded:
             result = _flag_cells(result, index, ungrounded)
             result = with_row_reason(result, index, EVIDENCE_NOT_GROUNDED)
+        elif ambiguous:
+            result = _flag_cells(result, index, ambiguous)
+            result = with_row_reason(result, index, EVIDENCE_AMBIGUOUS)
     return result

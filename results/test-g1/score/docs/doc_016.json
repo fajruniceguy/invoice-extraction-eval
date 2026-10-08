@@ -1,0 +1,178 @@
+{
+  "doc_id": "doc_016",
+  "errors": {
+    "hallucinated_value": 1,
+    "row_spurious": 4,
+    "string_mismatch": 1
+  },
+  "fields": [
+    {
+      "error_class": "hallucinated_value",
+      "expected": null,
+      "how": null,
+      "name": "vendor_name",
+      "outcome": "should_be_absent",
+      "predicted": "Tokopedia",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "MASJID AS SALAM",
+      "how": "exact",
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": "MASJID AS SALAM",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": "string_mismatch",
+      "expected": "IVR/20250926/XXV/IX/2765416827",
+      "how": null,
+      "name": "document_number",
+      "outcome": "value_wrong",
+      "predicted": "IVR/20250926/XXVI/IX/2765416827",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "document_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "IDR",
+      "how": "exact",
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": "IDR",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "45455",
+      "how": "numeric",
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": "45455.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "503100",
+      "how": "numeric",
+      "name": "total",
+      "outcome": "correct",
+      "predicted": "503100",
+      "predicted_status": "extracted",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 0,
+    "abstention_rate": 0.0,
+    "accuracy": 0.8461538461538461,
+    "answered": 13,
+    "correct": 11,
+    "coverage": 1.0,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 0.8461538461538461,
+    "should_be_absent": 1,
+    "should_be_value": 0,
+    "value_wrong": 1
+  },
+  "owner": "doc_016",
+  "rows": {
+    "cell_accuracy": 1.0,
+    "cells_compared": 2,
+    "cells_correct": 2,
+    "errors": [
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious"
+    ],
+    "labeled": true,
+    "matched": 1,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 1,
+    "row_accuracy": 1.0,
+    "row_f1": 0.33333333333333337,
+    "row_precision": 0.2,
+    "row_recall": 1.0,
+    "spurious": 4
+  },
+  "status": "ok"
+}

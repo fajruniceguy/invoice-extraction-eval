@@ -11,6 +11,13 @@ byte for byte the same; CI runs it. A change to a label, the manifest, a stored 
 the scoring code that moves a committed number makes it fail, and the right answer is a NEW run
 (`scripts/promote_run.py`), not an edit.
 
+## Index
+
+| run | what it is |
+| --- | --- |
+| `test-final` | the test split, first real run through the Docker API, grounding unfixed (the baseline) |
+| `test-g1` | the same raw model answers replayed from the cache with the G1 grounding fix: accuracy 0.793 -> 0.845, 17 fields improved, 0 regressed (`docs/eval/grounding_fix.md`) |
+
 ## test-final: the test split through the Docker API
 
 | | |
@@ -29,7 +36,7 @@ How to read it:
 - **One sample of a noisy model.** Identical runs on the dev split differed by up to 3.3 accuracy points
   and 2-12 of 122 fields flipped between two of them (`docs/eval/noise.md`). A difference smaller
   than that between two runs is not a finding.
-- **The known grounding flaw is NOT fixed in this run** (`docs/eval/failure_analysis.md`): the validators
+- **The known grounding flaw is NOT fixed in this run (it is in `test-g1`)** (`docs/eval/failure_analysis.md`): the validators
   withhold a correct value when its evidence quote prints an ambiguous number. 23 of the 67 field errors
   are `abstained_on_value` (a value the model returned and the guard withheld); `total` is 0.52
   accurate but 0.81 when only answered fields count. This run is the baseline that a fix is compared

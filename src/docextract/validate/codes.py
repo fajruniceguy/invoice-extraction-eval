@@ -29,6 +29,7 @@ TAX_ID_UNUSUAL_SHAPE = "tax_id_unusual_shape"
 
 # Evidence grounding (validate.grounding): the value must be traceable in its own quote.
 EVIDENCE_NOT_GROUNDED = "evidence_not_grounded"
+EVIDENCE_AMBIGUOUS = "evidence_ambiguous"
 DESCRIPTION_NOT_VERBATIM = "description_not_verbatim"
 
 # Abstention (confidence.abstain): recorded when the policy flips a field itself.
@@ -45,6 +46,7 @@ REASON_CODES: tuple[str, ...] = (
     TAX_ID_IMPLAUSIBLE,
     TAX_ID_UNUSUAL_SHAPE,
     EVIDENCE_NOT_GROUNDED,
+    EVIDENCE_AMBIGUOUS,
     DESCRIPTION_NOT_VERBATIM,
     CONFIDENCE_BELOW_THRESHOLD,
 )
