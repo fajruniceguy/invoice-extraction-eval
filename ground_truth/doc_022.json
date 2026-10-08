@@ -1,0 +1,104 @@
+{
+  "doc_id": "doc_022",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-08T08:47:28.278318Z",
+  "vendor_name": "ALFAMART MEGATI",
+  "vendor_address": "ALFA TOWER LT.12. ALAM SUTERA,TANGERANG; JL. DENPASAR GILIMANUK LINGK. SELEMADEG",
+  "vendor_tax_id": "01.336.238.9-054.000",
+  "buyer_name": null,
+  "document_number": "Q462-705-2508KX26",
+  "document_date": "2025-08-25",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "OTHER CARDS-OTHER BANKS, Nomor Kartu 542875******8945",
+  "subtotal": "127207",
+  "tax": "13992",
+  "discount": "5900",
+  "total": "135400",
+  "line_items": [
+    {
+      "description": "LEMNRL AIR 1.5L",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Disc. (LEMNRL AIR 1.5L)",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "GODREX EXTRA 4",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "NZLR SGL GJ65G",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "TE SDP GRG 85G",
+      "quantity": "3",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "TE PM MIGRG80G",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "G SOS JPHOT55G",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Disc. (G SOS JPHOT55G)",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "KUSUKA BBQ 180G",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "REDBULL ERG250ML",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "AQUA AIR 1.1L",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Disc. (AQUA AIR 1.1L)",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "TE PM BSO 75G",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    }
+  ],
+  "field_notes": {
+    "subtotal": "ambiguous on decimal or thousand",
+    "tax": "ambiguous on decimal or thousand",
+    "discount": "ambiguous on decimal or thousand",
+    "total": "ambiguous on decimal or thousand"
+  }
+}

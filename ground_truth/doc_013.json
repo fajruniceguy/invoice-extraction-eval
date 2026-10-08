@@ -1,0 +1,26 @@
+{
+  "doc_id": "doc_013",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-08T08:36:53.336347Z",
+  "vendor_name": "Umah DiTebe Canggu",
+  "vendor_address": "Jalan Raya Batu Bolong No 6,, Canggu, Bali, Indonesia, 80361",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "1108736081",
+  "document_date": null,
+  "due_date": "__unlabeled__",
+  "currency": "IDR",
+  "payment_method": null,
+  "subtotal": "__unlabeled__",
+  "tax": "34711",
+  "discount": null,
+  "total": "__unlabeled__",
+  "line_items": [
+    {
+      "description": "Double Room with Patio",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": null
+    }
+  ]
+}

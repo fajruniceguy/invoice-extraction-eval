@@ -1,0 +1,92 @@
+{
+  "doc_id": "doc_030",
+  "label_mode": "prelabel",
+  "vendor_name": "Warkop Agam Dinoyo",
+  "vendor_address": "Jl. MT Haryono, Ruko Istana Dinoyo Kav A-3",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": null,
+  "document_date": "2026-05-16",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": "QRIS",
+  "subtotal": null,
+  "tax": null,
+  "discount": null,
+  "total": "284000",
+  "line_items": [
+    {
+      "description": "INDOMIE BANGLADESH BIASA",
+      "quantity": "1",
+      "unit_price": "15000",
+      "amount": "15000"
+    },
+    {
+      "description": "INDOMIE BANGLADESH JUMBO + PUDING TELUR AYAM KAMPUNG",
+      "quantity": "2",
+      "unit_price": "38000",
+      "amount": "76000"
+    },
+    {
+      "description": "INDOMIE PAKISTAN BIASA",
+      "quantity": "1",
+      "unit_price": "15000",
+      "amount": "15000"
+    },
+    {
+      "description": "INDOMIE PAKISTAN JUMBO",
+      "quantity": "1",
+      "unit_price": "23000",
+      "amount": "23000"
+    },
+    {
+      "description": "INDOMIE GORENG ALOK JUMBO",
+      "quantity": "1",
+      "unit_price": "23000",
+      "amount": "23000"
+    },
+    {
+      "description": "NASI GORENG ACEH",
+      "quantity": "2",
+      "unit_price": "15000",
+      "amount": "30000"
+    },
+    {
+      "description": "IFUMIE BANGLADESH BIASA",
+      "quantity": "1",
+      "unit_price": "15000",
+      "amount": "15000"
+    },
+    {
+      "description": "PUDING TELUR AYAM KAMPUNG 1 BUTIR",
+      "quantity": "3",
+      "unit_price": "8000",
+      "amount": "24000"
+    },
+    {
+      "description": "TEH TARIK (ICE/HOT)",
+      "quantity": "1",
+      "unit_price": "15000",
+      "amount": "15000"
+    },
+    {
+      "description": "AIR MINERAL",
+      "quantity": "1",
+      "unit_price": "5000",
+      "amount": "5000"
+    },
+    {
+      "description": "EXTRAJOSS SUSU",
+      "quantity": "1",
+      "unit_price": "13000",
+      "amount": "13000"
+    },
+    {
+      "description": "MADU LEMON (ICE/HOT)",
+      "quantity": "2",
+      "unit_price": "15000",
+      "amount": "30000"
+    }
+  ],
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Header reads 'Kasir : Kasir 2' and 'DINE-IN'; no document number, tax or subtotal printed. The QRIS line shows Rp 284.000 as payment. Item 2 and item 8 descriptions wrap across lines in print ('PUDIN G', '1 BUTI R'); joined here. 'IFUMIE BANGLADESH BIASA' is printed that way (likely a typo for INDOMIE). Receipt photo is slightly angled."
+}

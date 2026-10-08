@@ -1,0 +1,51 @@
+{
+  "doc_id": "doc_028",
+  "label_mode": "prelabel",
+  "vendor_name": "Labore Coffee Eatery",
+  "vendor_address": "Jl. Soekarno Hatta No. 25 Malang",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": null,
+  "document_date": "__unlabeled__",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "QRIS",
+  "subtotal": "__unlabeled__",
+  "tax": "__unlabeled__",
+  "discount": null,
+  "total": "__unlabeled__",
+  "line_items": [
+    {
+      "description": "Cocoa Cola Float",
+      "quantity": "2",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Fruity 25 Blend",
+      "quantity": "2",
+      "unit_price": null,
+      "amount": null
+    },
+    {
+      "description": "Choco Royale",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "SC",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    }
+  ],
+  "field_notes": {
+    "document_date": "ambiguous date: printed '07-03-2026' ('07-03-2026' could be day-first or month-first and day_first is not known)",
+    "subtotal": "ambiguous number: printed '84.000' ('84.000' could be 84000 (thousands) or 84.000 (decimal): no currency context)",
+    "tax": "ambiguous number: printed '8.610' ('8.610' could be 8610 (thousands) or 8.610 (decimal): no currency context)",
+    "total": "ambiguous number: printed '94.710' ('94.710' could be 94710 (thousands) or 94.710 (decimal): no currency context)",
+    "line_items": "row 1 amount: ambiguous '56.000' ('56.000' could be 56000 (thousands) or 56.000 (decimal): no currency context); row 3 amount: ambiguous '28.000' ('28.000' could be 28000 (thousands) or 28.000 (decimal): no currency context); row 4 amount: ambiguous '2.100' ('2.100' could be 2100 (thousands) or 2.100 (decimal): no currency context)"
+  },
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Printed mode 'Dine In', cashier 'Alfan'. The receipt has no printed currency symbol. No price is printed on the 'Fruity 25 Blend' row; the 56.000 sits on the Cocoa Cola Float row. The subtotal 84.000 equals 56.000 + 28.000, so the Fruity amount is not reflected in the printed figures. Tax is printed as 'PB1' and service charge as 'SC'. A hand covers part of the left edge, hiding the start of a word that shows as 'em' under the item block. Grand total and QRIS payment are both printed as 94.710."
+}

@@ -1,0 +1,44 @@
+{
+  "doc_id": "doc_011",
+  "label_mode": "prelabel",
+  "vendor_name": "Sports Direct Official Shop",
+  "vendor_address": "PT Shopee International Indonesia, Trinity Tower 21st Floor, Jalan H.R. Rasuna Said Kaveling C22, Blok IIB RT.000 RW.000, Karet Kuningan, Setiabudi, Kota Adm. Jakarta Selatan, DKI Jakarta.",
+  "vendor_tax_id": "0736666900031000",
+  "buyer_name": null,
+  "document_number": "260426S9QP7MPP",
+  "document_date": "2026-04-26",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": "QRIS",
+  "subtotal": "478800",
+  "tax": null,
+  "discount": "-79380",
+  "total": "403420",
+  "line_items": [
+    {
+      "description": "BUY 2 GET 30% OFF - Slazenger Men's Tennis Shoes - White/Navy (White,UK 9) - Slazenger Unisex Leisure Boot / Shoe Bags - Black (Black,One Size)",
+      "quantity": "1",
+      "unit_price": "478800",
+      "amount": "478800"
+    },
+    {
+      "description": "Biaya Layanan",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "4000"
+    },
+    {
+      "description": "Diskon Voucher Toko",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "-35000"
+    },
+    {
+      "description": "Diskon Voucher Shopee",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "-44380"
+    }
+  ],
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Discount total of -Rp79.380 is not printed as a single amount; it is the sum of the two printed voucher discounts (-Rp35.000 and -Rp44.380), shown here for convenience. Buyer name is redacted and the buyer address is obscured, so both are null. Tax is not printed as a separate amount; the receipt states only that fees include PPN. Biaya Layanan (Rp4.000) is listed as a line item in the summary section."
+}

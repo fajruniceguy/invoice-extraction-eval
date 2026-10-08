@@ -1,0 +1,47 @@
+{
+  "doc_id": "doc_028",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-08T08:54:46.858839Z",
+  "vendor_name": "Labore Coffee Eatery",
+  "vendor_address": "Jl. Soekarno Hatta No. 25 Malang",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "__unlabeled__",
+  "document_date": null,
+  "due_date": null,
+  "currency": null,
+  "payment_method": "QRIS",
+  "subtotal": "84000",
+  "tax": "8610",
+  "discount": null,
+  "total": "94710",
+  "line_items": [
+    {
+      "description": "Cocoa Cola Float",
+      "quantity": "2",
+      "unit_price": null,
+      "amount": "56000"
+    },
+    {
+      "description": "Fruity 25 Blend",
+      "quantity": "2",
+      "unit_price": null,
+      "amount": null
+    },
+    {
+      "description": "Choco Royale",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": "28000"
+    },
+    {
+      "description": "SC",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "2100"
+    }
+  ],
+  "field_notes": {
+    "document_number": "07-03-2026 ambiguous"
+  }
+}

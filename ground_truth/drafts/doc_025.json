@@ -1,0 +1,51 @@
+{
+  "doc_id": "doc_025",
+  "label_mode": "prelabel",
+  "vendor_name": "KFC Soekarno Hatta Malang",
+  "vendor_address": "JL.SOEKARNO HATTA, MOJOLANG, KEC.LOWOKWARU, Telp. 081119333721",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "02062026-67108",
+  "document_date": "__unlabeled__",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "EDC MANDIRI",
+  "subtotal": "__unlabeled__",
+  "tax": "__unlabeled__",
+  "discount": null,
+  "total": "__unlabeled__",
+  "line_items": [
+    {
+      "description": "Super Besar 1",
+      "quantity": "3",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "French Fries Reg",
+      "quantity": "2",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "New Super Komplit 1",
+      "quantity": "2",
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Pembulatan",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "3"
+    }
+  ],
+  "field_notes": {
+    "document_date": "ambiguous date: printed '02-06-2026 22:59.00' ('02-06-2026 22:59.00' could be day-first or month-first and day_first is not known)",
+    "subtotal": "ambiguous number: printed '208,179' ('208,179' could be 208179 (thousands) or 208.179 (decimal): no currency context)",
+    "tax": "ambiguous number: printed '20,818' ('20,818' could be 20818 (thousands) or 20.818 (decimal): no currency context)",
+    "total": "ambiguous number: printed '229,000' ('229,000' could be 229000 (thousands) or 229.000 (decimal): no currency context)",
+    "line_items": "row 1 amount: ambiguous '103,635' ('103,635' could be 103635 (thousands) or 103.635 (decimal): no currency context); row 2 amount: ambiguous '19,090' ('19,090' could be 19090 (thousands) or 19.090 (decimal): no currency context); row 3 amount: ambiguous '85,454' ('85,454' could be 85454 (thousands) or 85.454 (decimal): no currency context)"
+  },
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Receipt is marked *REPRINT*. Antrian 01108, Tipe Order EAT IN, Pos Code 001 - POS #001. The DPP line (Dasar Pengenaan Pajak) also shows 208,179. Tax row is labelled P.Rest 10%. The footer says '5 Items' while the quantities printed sum to 7. The total is printed twice (Total and EDC MANDIRI, both 229,000). No currency symbol is printed. Tax ID not printed; buyer not printed."
+}

@@ -1,0 +1,19 @@
+{
+  "doc_id": "doc_025",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-08T08:51:42.374377Z",
+  "vendor_name": "KFC Soekarno Hatta Malang",
+  "vendor_address": "JL.SOEKARNO HATTA, MOJOLANG, KEC.LOWOKWARU, Telp. 081119333721",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "02062026-67108",
+  "document_date": "__unlabeled__",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "EDC MANDIRI",
+  "subtotal": "208179",
+  "tax": "20818",
+  "discount": null,
+  "total": "229000",
+  "line_items": "__unlabeled__"
+}

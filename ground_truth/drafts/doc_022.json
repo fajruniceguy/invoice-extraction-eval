@@ -1,0 +1,105 @@
+{
+  "doc_id": "doc_022",
+  "label_mode": "prelabel",
+  "vendor_name": "ALFAMART MEGATI",
+  "vendor_address": "ALFA TOWER LT.12. ALAM SUTERA,TANGERANG; JL. DENPASAR GILIMANUK LINGK. SELEMADEG",
+  "vendor_tax_id": "01.336.238.9-054.000",
+  "buyer_name": null,
+  "document_number": "Q462-705-2508KX26",
+  "document_date": "2025-08-25",
+  "due_date": null,
+  "currency": null,
+  "payment_method": "OTHER CARDS-OTHER BANKS, Nomor Kartu 542875******8945",
+  "subtotal": "__unlabeled__",
+  "tax": "__unlabeled__",
+  "discount": "__unlabeled__",
+  "total": "__unlabeled__",
+  "line_items": [
+    {
+      "description": "LEMNRL AIR 1.5L",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Disc. (LEMNRL AIR 1.5L)",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "GODREX EXTRA 4",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "NZLR SGL GJ65G",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "TE SDP GRG 85G",
+      "quantity": "3",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "TE PM MIGRG80G",
+      "quantity": "2",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "G SOS JPHOT55G",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Disc. (G SOS JPHOT55G)",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "KUSUKA BBQ 180G",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "REDBULL ERG250ML",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "AQUA AIR 1.1L",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "Disc. (AQUA AIR 1.1L)",
+      "quantity": null,
+      "unit_price": null,
+      "amount": "__unlabeled__"
+    },
+    {
+      "description": "TE PM BSO 75G",
+      "quantity": "1",
+      "unit_price": "__unlabeled__",
+      "amount": "__unlabeled__"
+    }
+  ],
+  "field_notes": {
+    "subtotal": "ambiguous number: printed '127.207' ('127.207' could be 127207 (thousands) or 127.207 (decimal): no currency context)",
+    "tax": "ambiguous number: printed '13.992' ('13.992' could be 13992 (thousands) or 13.992 (decimal): no currency context)",
+    "discount": "ambiguous number: printed '5.900' ('5.900' could be 5900 (thousands) or 5.900 (decimal): no currency context)",
+    "total": "ambiguous number: printed '135.400' ('135.400' could be 135400 (thousands) or 135.400 (decimal): no currency context)",
+    "line_items": "row 1 unit_price: ambiguous '6.800' ('6.800' could be 6800 (thousands) or 6.800 (decimal): no currency context); row 1 amount: ambiguous '13.600' ('13.600' could be 13600 (thousands) or 13.600 (decimal): no currency context); row 2 amount: ambiguous '-1.300' ('-1.300' could be 1300 (thousands) or 1.300 (decimal): no currency context); row 3 unit_price: ambiguous '3.100' ('3.100' could be 3100 (thousands) or 3.100 (decimal): no currency context); row 3 amount: ambiguous '3.100' ('3.100' could be 3100 (thousands) or 3.100 (decimal): no currency context); row 4 unit_price: ambiguous '8.900' ('8.900' could be 8900 (thousands) or 8.900 (decimal): no currency context); row 4 amount: ambiguous '17.800' ('17.800' could be 17800 (thousands) or 17.800 (decimal): no currency context); row 5 unit_price: ambiguous '7.000' ('7.000' could be 7000 (thousands) or 7.000 (decimal): no currency context); row 5 amount: ambiguous '21.000' ('21.000' could be 21000 (thousands) or 21.000 (decimal): no currency context); row 6 unit_price: ambiguous '8.000' ('8.000' could be 8000 (thousands) or 8.000 (decimal): no currency context); row 6 amount: ambiguous '16.000' ('16.000' could be 16000 (thousands) or 16.000 (decimal): no currency context); row 7 unit_price: ambiguous '9.500' ('9.500' could be 9500 (thousands) or 9.500 (decimal): no currency context); row 7 amount: ambiguous '9.500' ('9.500' could be 9500 (thousands) or 9.500 (decimal): no currency context); row 8 amount: ambiguous '-3.600' ('-3.600' could be 3600 (thousands) or 3.600 (decimal): no currency context); row 9 unit_price: ambiguous '18.900' ('18.900' could be 18900 (thousands) or 18.900 (decimal): no currency context); row 9 amount: ambiguous '18.900' ('18.900' could be 18900 (thousands) or 18.900 (decimal): no currency context); row 10 unit_price: ambiguous '24.900' ('24.900' could be 24900 (thousands) or 24.900 (decimal): no currency context); row 10 amount: ambiguous '24.900' ('24.900' could be 24900 (thousands) or 24.900 (decimal): no currency context); row 11 unit_price: ambiguous '9.500' ('9.500' could be 9500 (thousands) or 9.500 (decimal): no currency context); row 11 amount: ambiguous '9.500' ('9.500' could be 9500 (thousands) or 9.500 (decimal): no currency context); row 12 amount: ambiguous '-1.000' ('-1.000' could be 1000 (thousands) or 1.000 (decimal): no currency context); row 13 unit_price: ambiguous '7.000' ('7.000' could be 7000 (thousands) or 7.000 (decimal): no currency context); row 13 amount: ambiguous '7.000' ('7.000' could be 7000 (thousands) or 7.000 (decimal): no currency context)"
+  },
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Receipt is cut off on the left edge, so some item names and the label before the transaction number are partly missing; item 1 name shown as printed in visible part. Subtotal and tax come from the printed DPP 127.207 and PPN 13.992 line. Total is the printed 'Total Belanja' (also the card payment amount). Date reads 25-08-2025 but the digits are partly obscured by a finger and the time is 18:50:20; please verify. The printed 'Total Item' is 10 with amount 141.300 before discounts. Discount rows are kept as line items with negative amounts. The top SMS/WA number (081110640888) is partly cut off and was not included."
+}

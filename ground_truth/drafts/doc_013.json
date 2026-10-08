@@ -1,0 +1,26 @@
+{
+  "doc_id": "doc_013",
+  "label_mode": "prelabel",
+  "vendor_name": "Umah DiTebe Canggu",
+  "vendor_address": "Jalan Raya Batu Bolong No 6,, Canggu, Bali, Indonesia, 80361",
+  "vendor_tax_id": null,
+  "buyer_name": null,
+  "document_number": "1108736081",
+  "document_date": null,
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": null,
+  "subtotal": null,
+  "tax": null,
+  "discount": null,
+  "total": null,
+  "line_items": [
+    {
+      "description": "Double Room with Patio",
+      "quantity": "1",
+      "unit_price": null,
+      "amount": null
+    }
+  ],
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Agoda booking confirmation, not a tax invoice. Booking ID 1108736081; Booking Reference No 4068884364 (used as document_number is the Booking ID). Client name is blank/hidden in the image. Arrival November 25, 2023; departure November 26, 2023. Payment not collected by Agoda; guest to pay property IDR 200,000 at check-in. Remarks state 'Included: Taxes and fees IDR 34711'. No document date printed. Number of adults 1, children 0, rooms 1, extra beds 0. Promotion field blank. Property contact +62-81236026757. Booking made in the name of Booking.com per property note."
+}
