@@ -82,6 +82,19 @@ def test_the_thresholds_are_flags(tmp_path: Path) -> None:
     assert strict.returncode == 0
 
 
+def test_max_flips_cuts_the_lists_in_the_text_and_the_markdown(tmp_path: Path) -> None:
+    scenario = many_documents(tmp_path, count=12, wrong=7)
+    done = compare(
+        scenario, scenario.baseline, scenario.candidate, tmp_path / "r", "--max-flips", "2"
+    )
+    assert "... and 5 more in comparison.json" in done.stdout
+    markdown = (tmp_path / "r" / "comparison.md").read_text(encoding="utf-8")
+    regressions = markdown.split("## Regressions")[1].split("## Improvements")[0]
+    assert sum(line.startswith("| doc_") for line in regressions.splitlines()) == 2
+    data = json.loads((tmp_path / "r" / "comparison.json").read_text(encoding="utf-8"))
+    assert len(data["flips"]["regression"]) == 7  # the JSON is never cut
+
+
 def test_the_report_is_byte_identical_on_a_second_run(tmp_path: Path) -> None:
     scenario = many_documents(tmp_path, count=12, wrong=7)
     for name in ("one", "two"):

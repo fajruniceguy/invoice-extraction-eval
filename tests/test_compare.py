@@ -22,6 +22,7 @@ from evalkit.compare import (
     mcnemar_exact,
     paired_bootstrap,
 )
+from evalkit.groundtruth import GTLineItem
 from test_scorecard import absent, abstained, dataset, document, extracted, label, run_dir
 
 # ------------------------------------------------------------------ McNemar
@@ -110,6 +111,16 @@ class TestBootstrap:
         assert result.delta == -0.5
         assert (result.low, result.high) == (-1.0, 0.0)
         assert result.clusters == 2 and result.resamples == 2000 and result.level == 0.95
+
+    def test_the_interval_is_the_central_part_not_the_extremes(self) -> None:
+        # one cluster in six differs; a resample draws it k ~ Binomial(6, 1/6) times, so
+        # P(k >= 4) = 0.9% < 2.5% < P(k >= 3) = 6.2%: the 2.5% / 97.5% points are at k = 3, not 6
+        lose_one = [cluster(1, 1, 0)] + [cluster(1, 1, 1)] * 5
+        result = paired_bootstrap(lose_one, seed=1)
+        assert (result.low, result.high) == (-0.5, 0.0)
+        gain_one = [cluster(1, 0, 1)] + [cluster(1, 1, 1)] * 5
+        result = paired_bootstrap(gain_one, seed=1)
+        assert (result.low, result.high) == (0.0, 0.5)
 
     def test_identical_clusters_give_a_zero_width_interval(self) -> None:
         result = paired_bootstrap([cluster(13, 13, 8)] * 4, seed=3, resamples=500)
@@ -362,8 +373,29 @@ class TestWhatDiffers:
             Difference("settings.image_max_long_edge", None, 1024),
         ]
 
+    def test_the_endpoint_and_the_schema_are_compared_too(self, scenario: Scenario) -> None:
+        retag(scenario.candidate, endpoint="http://other.invalid/v1", schema_sha256="t" * 64)
+        assert scenario.compare().differs == [
+            Difference("endpoint", "http://example.invalid/v1", "http://other.invalid/v1"),
+            Difference("schema_sha256", "s" * 64, "t" * 64),
+        ]
+
     def test_equal_runs_differ_in_nothing(self, scenario: Scenario) -> None:
         assert scenario.compare().differs == []
+
+    def test_a_document_with_no_pages_in_one_run_is_not_a_page_mismatch(
+        self, scenario: Scenario
+    ) -> None:
+        pages = [PageRef(file="p1.png", sha256="a" * 64)]
+        sent = run_dir(
+            scenario.tmp, [scenario.second.model_copy(update={"pages": pages})], name="sent"
+        )
+        refused = run_dir(
+            scenario.tmp,
+            [DocRecord(doc_id="doc_002", status="refused", error="not ingested")],
+            name="refused",
+        )
+        assert scenario.compare(sent, refused).pages_differ == []
 
     def test_different_stored_pages_are_reported(self, scenario: Scenario) -> None:
         def with_pages(digest: str) -> DocRecord:
@@ -381,21 +413,32 @@ class TestWhatDiffers:
 class TestPairing:
     def test_only_the_documents_scored_in_both_runs_are_compared(self, tmp_path: Path) -> None:
         rows = [manifest_row("doc_001"), manifest_row("doc_002"), manifest_row("doc_003")]
-        labels = [label(row.doc_id, total=Decimal("10")) for row in rows]
+        tea = [GTLineItem(description="Tea", amount=Decimal("1"))]
+        labels = [
+            label("doc_001", total=Decimal("10")),
+            label("doc_002", total=Decimal("10"), line_items=tea),
+            label("doc_003", total=Decimal("10"), line_items=tea),
+        ]
         manifest, labels_dir, pages_dir = dataset(tmp_path, rows, labels)
 
         def record(doc_id: str, total: str) -> DocRecord:
             return ok(doc_id, total=extracted(Decimal(total)))
 
-        baseline = run_dir(tmp_path, [record("doc_001", "10"), record("doc_002", "10")], name="a")
-        candidate = run_dir(tmp_path, [record("doc_001", "99"), record("doc_003", "10")], name="b")
+        # the documents scored in one run only are WRONG and miss their row: if they leaked into
+        # the metrics the errors and the missed rows below would not be zero
+        baseline = run_dir(tmp_path, [record("doc_001", "10"), record("doc_002", "99")], name="a")
+        candidate = run_dir(tmp_path, [record("doc_001", "99"), record("doc_003", "99")], name="b")
         result = compare_runs(
             baseline, candidate, manifest_path=manifest, labels_dir=labels_dir, pages_dir=pages_dir
         )
         assert result.documents == ["doc_001"]
         assert (result.only_in_baseline, result.only_in_candidate) == (["doc_002"], ["doc_003"])
         assert names(result.pairs) == [("doc_001", "total")]
-        assert result.baseline.labeled == 1  # doc_002 / doc_003 are not in either side's metrics
+        assert (result.baseline.labeled, result.baseline.correct) == (1, 1)
+        assert (result.candidate.labeled, result.candidate.correct) == (1, 0)
+        assert result.baseline_errors == {}
+        assert result.candidate_errors == {"numeric_mismatch": 1}
+        assert (result.baseline_rows.missed, result.candidate_rows.missed) == (0, 0)
         assert any("only in the baseline" in n and "doc_002" in n for n in result.notes)
         assert any("only in the candidate" in n and "doc_003" in n for n in result.notes)
 
@@ -433,6 +476,18 @@ class TestPairing:
             a, a, manifest_path=manifest, labels_dir=labels_dir, pages_dir=pages_dir
         )
         assert len(result.pairs) == 3 and result.bootstrap.clusters == 2
+
+    def test_a_blank_manifest_column_is_its_own_slice_value(self, tmp_path: Path) -> None:
+        rows = [manifest_row("doc_001", capture=None), manifest_row("doc_002")]
+        labels = [label(row.doc_id, total=Decimal("10")) for row in rows]
+        manifest, labels_dir, pages_dir = dataset(tmp_path, rows, labels)
+        records = [ok(row.doc_id, total=extracted(Decimal("10"))) for row in rows]
+        a = run_dir(tmp_path, records, name="a")
+        result = compare_runs(
+            a, a, manifest_path=manifest, labels_dir=labels_dir, pages_dir=pages_dir
+        )
+        captures = {s.value: s.baseline.labeled for s in result.slices if s.column == "capture"}
+        assert captures == {"(none)": 1, "born_digital": 1}
 
     @pytest.mark.parametrize(("documents", "caution"), [(9, True), (10, False)])
     def test_few_independent_documents_come_with_a_caution(
@@ -656,8 +711,12 @@ class TestReports:
         self, tmp_path: Path
     ) -> None:
         result = many_documents(tmp_path, count=12, wrong=7).compare()
-        assert "... and 5 more in comparison.json" in result.to_text(max_flips=2)
-        assert "... and 5 more in comparison.json" in result.to_markdown(max_flips=2)
+        text, markdown = result.to_text(max_flips=2), result.to_markdown(max_flips=2)
+        assert "... and 5 more in comparison.json" in text
+        assert "... and 5 more in comparison.json" in markdown
+        assert sum(line.startswith("  doc_") for line in text.splitlines()) == 2
+        regressions = markdown.split("## Regressions")[1].split("## Improvements")[0]
+        assert sum(line.startswith("| doc_") for line in regressions.splitlines()) == 2
         assert len(json.loads(result.to_json())["flips"]["regression"]) == 7
 
     def test_markdown_has_the_sections_and_the_flip_table(self, scenario: Scenario) -> None:
