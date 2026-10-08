@@ -11,7 +11,7 @@ A document extraction system for invoices/receipts plus a rigorous evaluation ha
 ## Layout
 ```
 src/docextract/{config.py, calllog.py, providers/, ingest/, extract/, validate/, confidence/, api/{app.py, uploads.py}}
-src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, perf.py, compare.py, groundtruth.py, gt_store.py, construct.py, construct_io.py, prelabel.py, printed.py, labeling.py, labeling_ui.py}
+src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, perf.py, compare.py, sweep.py, groundtruth.py, gt_store.py, construct.py, construct_io.py, prelabel.py, printed.py, labeling.py, labeling_ui.py}
 data/{manifest.csv, redactions.yaml, pages/, private/{raw,preview}}
 ground_truth/{, drafts/}
 outputs/
@@ -91,6 +91,11 @@ docs/
 - A regression needs BOTH the exact one-sided McNemar p <= `--alpha` (0.05) AND an accuracy drop >= `--max-drop` (0.02), compared as exact fractions. The document-level paired bootstrap (clusters = label owner) is reported, never gated; fewer than 10 independent documents carries a caution, because fields inside a document are not independent.
 - Exit codes: 0 no regression, 1 REGRESSION, 2 cannot compare. This differs from `score.py` (1 = unscorable) on purpose: a gate needs 1 to mean "regressed".
 
+## Sweep (`evalkit/sweep.py`, `scripts/sweep.py`)
+- Varies ONE setting at a time against an existing baseline run (resolution: `LLM_IMAGE_MAX_LONG_EDGE`; thinking budget: `LLM_REASONING_EFFORT`, since output-token caps break the JSON of a reasoning model), then optionally runs the winning combination. COSTS MONEY (one run of the split per point; `--dry-run` calls nothing); refuses zero prices; `--resume` skips finished points; a half-finished run folder is never overwritten.
+- The rule for the setting to keep is code, fixed before any result (`choose`): the cheapest variant with no failed document, accuracy within `--tolerance` (2 points) of the baseline AND no M6 regression verdict, strictly cheaper (or as cheap and faster) than the baseline; otherwise the baseline stays. A non-significant large drop is rejected: with ~10 documents "no significant loss" mostly means "cannot tell", and every report says how few independent documents back it.
+- `score.py RUN --baseline BASE` adds a "Before / after" section (accuracy, cost per document, latency, tokens, the paired McNemar test, the bootstrap interval) to that run's scorecard.
+
 ## Dataset and ingestion (`src/docextract/ingest/`)
 - **Privacy by location.** Real originals live in `data/private/raw/` and unredacted previews in `data/private/preview/`: that whole tree is gitignored and must never be committed. Only normalized, REDACTED pages (`data/pages/<doc_id>/p<N>.png|jpg`), `data/manifest.csv`, `data/redactions.yaml` and ground truth are committed. Do not read page content of real documents while building tooling: use synthetic fixtures (`tests/files.py`), and for real files only metadata, counts and sizes.
 - `data/manifest.csv` has one row per LOGICAL document (14 columns + optional `gt_from`, `variant`). `scripts/manifest_init.py` scans the raw folder and appends rows for unreferenced files only (merge-safe, neutral `doc_NNN` ids, only strong-evidence inference); the rest is filled by hand. A row is never overwritten.
@@ -156,6 +161,7 @@ python -m uv run python scripts/extract.py (--split dev|test | --doc ID ...) [--
 python -m uv run python scripts/check_run.py outputs/runs/<run_id>   # records vs the value/confidence/evidence/status/reasons contract (offline)
 python -m uv run python scripts/score.py outputs/runs/<run_id>   # scorecard (markdown + JSON) + per-doc results + run manifest -> <run_dir>/score/ (offline)
 python -m uv run python scripts/compare.py outputs/runs/<baseline> outputs/runs/<candidate>   # flips + exact McNemar + bootstrap + verdict -> outputs/compare/<b>__vs__<c>/ (offline); exit 1 = regression
+python -m uv run python scripts/sweep.py --baseline-run outputs/runs/<run_id> --sweep-id ID [--resolution 1024,1568] [--effort off,low] [--confirm] [--dry-run] [--resume]   # COSTS MONEY: one-setting-at-a-time sweep -> outputs/sweeps/ID/sweep.md
 python -m uv run uvicorn --factory docextract.api.app:create_app --port 8000   # the API: GET /health, POST /extract, POST /extract/batch (see HTTP API); calls the configured model, so it costs money unless cached
 python -m uv run streamlit run tools/label_app.py   # the labeling app
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
