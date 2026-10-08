@@ -23,7 +23,7 @@ def test_the_file_is_the_frozen_artifact() -> None:
 def test_it_lacks_what_the_edits_remove() -> None:
     removed = [
         "subtotal: the amount before tax as printed",  # E1 (swapped definitions)
-        "total: the grand total or amount to pay",
+        "amount to pay, ONLY if printed as such",
         '"Rp 1.250.000,00" is 1250000.00',  # E2 (thousands of rupiah)
         "Never guess, infer or compute a value that is not printed",  # E3 (best estimate)
     ]
