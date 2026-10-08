@@ -118,6 +118,32 @@ class TestHealth:
         assert body["calls"] == 0 and body["cached_calls"] == 0
         assert "sk-test-key" not in response.text and TOKEN not in response.text
 
+    async def test_it_reports_what_a_run_record_would_say_about_the_server(
+        self, fake_llm: FakeLLMServer
+    ) -> None:
+        from docextract.extract.prompt import prompt_sha256
+        from docextract.extract.schema import DocumentExtraction
+        from docextract.providers.cache import schema_hash
+
+        config = make_settings(
+            fake_llm, llm_reasoning_effort="low", llm_max_pages=7, **capped()
+        )
+        async with serve(config) as (http, _):
+            body = (await http.get("/health")).json()
+        assert body["endpoint"] == fake_llm.base_url
+        assert body["prompt_sha256"] == prompt_sha256(SYSTEM_PROMPT)
+        assert body["schema_sha256"] == schema_hash(DocumentExtraction)
+        assert body["settings"] == {
+            "structured_mode": config.llm_structured_mode,
+            "reasoning_effort": "low",
+            "image_max_long_edge": None,
+            "max_pages": 7,
+            "max_repairs": 1,
+            "cache": "off",
+            "max_run_cost_usd": "1.00",
+            "temperature": 0.0,
+        }
+
     async def test_it_needs_no_token_and_carries_a_request_id(
         self, fake_llm: FakeLLMServer
     ) -> None:

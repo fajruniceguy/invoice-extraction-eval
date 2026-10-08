@@ -37,8 +37,10 @@ from docextract.api.uploads import UploadError, pages_from_uploads
 from docextract.calllog import CallLog
 from docextract.config import Settings
 from docextract.extract.concurrent import run_bounded
-from docextract.extract.prompt import SYSTEM_PROMPT
+from docextract.extract.prompt import SYSTEM_PROMPT, prompt_sha256
 from docextract.extract.runner import DocRecord, extract_record, run_totals
+from docextract.extract.schema import DocumentExtraction
+from docextract.providers.cache import schema_hash
 from docextract.providers.openai_compat import OpenAICompatClient
 
 # error code -> HTTP status for /extract (the batch answers 200 whatever happens to a document)
@@ -87,6 +89,23 @@ class Outcome:
     record: DocRecord
     code: str | None  # None = ok
     hit_cap: bool = False
+
+
+def result_settings(cfg: Settings) -> dict[str, Any]:
+    """The settings that shape an answer, as `run.json` records them (the runner's own dict), so an
+    eval client can write a run record that describes what THIS server used. No secret in it."""
+    return {
+        "structured_mode": cfg.llm_structured_mode,
+        "reasoning_effort": cfg.llm_reasoning_effort,
+        "image_max_long_edge": cfg.llm_image_max_long_edge,
+        "max_pages": cfg.llm_max_pages,
+        "max_repairs": cfg.llm_max_repairs,
+        "cache": cfg.llm_cache,
+        "max_run_cost_usd": (
+            str(cfg.max_run_cost_usd) if cfg.max_run_cost_usd is not None else None
+        ),
+        "temperature": 0.0,
+    }
 
 
 def _state(request: Request) -> ApiState:
@@ -235,6 +254,10 @@ def create_app(
         return {
             "status": "ok",
             "model": state.settings.llm_model,
+            "endpoint": state.settings.llm_base_url,
+            "prompt_sha256": prompt_sha256(SYSTEM_PROMPT),
+            "schema_sha256": schema_hash(DocumentExtraction),
+            "settings": result_settings(state.settings),
             "concurrency": state.settings.api_concurrency,
             "max_batch": state.settings.api_max_batch,
             "budget": {
