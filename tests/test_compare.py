@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from docextract.extract.runner import DocRecord, PageRef, RunRecord
+from docextract.extract.schema import LineItem
 from docextract.ingest.manifest import ManifestRow
 from evalkit.compare import (
     Bootstrap,
@@ -769,3 +770,46 @@ class TestReports:
         result = scenario.compare()
         assert f"prompt_sha256: {'p' * 39}…" in result.to_text()
         assert "| prompt_sha256 |" in result.to_markdown()
+
+    def test_row_metrics_that_would_be_vacuous_read_n_a(self, tmp_path: Path) -> None:
+        # no row of the candidate matches: "cell accuracy 1.000" would be a ratio over nothing
+        tea = [
+            GTLineItem(
+                description="Tea", quantity=Decimal(2), unit_price=Decimal(5), amount=Decimal(10)
+            )
+        ]
+        manifest, labels_dir, pages_dir = dataset(
+            tmp_path,
+            [manifest_row("doc_001")],
+            [label("doc_001", total=Decimal("10"), line_items=tea)],
+        )
+
+        def row(description: str, quantity: str, price: str, amount: str) -> LineItem:
+            return LineItem(
+                description=description,
+                quantity=Decimal(quantity),
+                unit_price=Decimal(price),
+                amount=Decimal(amount),
+                status="extracted",
+                confidence=1.0,
+            )
+
+        def run(name: str, line: LineItem) -> Path:
+            record = ok("doc_001", total=extracted(Decimal("10")), line_items=[line])
+            return run_dir(tmp_path, [record], name=name)
+
+        result = compare_runs(
+            run("a", row("Tea", "2", "5", "10")),
+            run("b", row("Coffee", "7", "0.5", "0.01")),
+            manifest_path=manifest,
+            labels_dir=labels_dir,
+            pages_dir=pages_dir,
+        )
+        assert (result.baseline_rows.matched, result.candidate_rows.matched) == (1, 0)
+        assert result.candidate_rows.cells_compared == 0
+        assert "cell accuracy 1.000 -> n/a" in result.to_text()
+        markdown = result.to_markdown()
+        assert "| cell_accuracy | 1.000 | n/a | n/a |" in markdown
+        assert "| row_accuracy | 1.000 | n/a | n/a |" in markdown
+        assert "| matched | 1 | 0 | -1 |" in markdown
+        assert "| row_f1 | 1.000 | 0.000 | -1.000 |" in markdown

@@ -598,6 +598,16 @@ def _side(side: dict[str, Any]) -> str:
     return _cell(side["predicted"])
 
 
+def _row_metric(rows: RowsScore, name: str) -> str:
+    """A row metric for display. Where M5's "a ratio over nothing is 1.0" would read as a perfect
+    score (cell accuracy with no matched row, row accuracy with none matched) it is n/a."""
+    if (name == "cell_accuracy" and not rows.cells_compared) or (
+        name == "row_accuracy" and not rows.matched
+    ):
+        return "n/a"
+    return f"{getattr(rows, name):.3f}"
+
+
 def _points(value: float) -> str:
     return f"{value * 100:+.1f} pts"
 
@@ -743,8 +753,8 @@ class _Report:
         )
         lines.append(
             f"rows: F1 {c.baseline_rows.row_f1:.3f} -> {c.candidate_rows.row_f1:.3f}, "
-            f"cell accuracy {c.baseline_rows.cell_accuracy:.3f} -> "
-            f"{c.candidate_rows.cell_accuracy:.3f}"
+            f"cell accuracy {_row_metric(c.baseline_rows, 'cell_accuracy')} -> "
+            f"{_row_metric(c.candidate_rows, 'cell_accuracy')}"
         )
         lines.append(
             f"McNemar exact: {test.regressions} regression(s), {test.improvements} "
@@ -844,11 +854,14 @@ class _Report:
             "| metric | baseline | candidate | delta |",
             "| --- | --- | --- | --- |",
         ]
-        for name, values in data["rows"].items():
-            lines.append(
-                f"| {name} | {values['baseline']:.3f} | {values['candidate']:.3f} "
-                f"| {values['delta']:+.3f} |"
-            )
+        for name in ("matched", "missed", "spurious", "perfect"):
+            before, after = getattr(c.baseline_rows, name), getattr(c.candidate_rows, name)
+            lines.append(f"| {name} | {before} | {after} | {after - before:+d} |")
+        for name in ROW_METRICS:
+            before, after = _row_metric(c.baseline_rows, name), _row_metric(c.candidate_rows, name)
+            change = data["rows"][name]["delta"]
+            shown = "n/a" if "n/a" in (before, after) else f"{change:+.3f}"
+            lines.append(f"| {name} | {before} | {after} | {shown} |")
         lines += ["", "## Errors", ""]
         errors = error_mix(c.baseline_errors, c.candidate_errors)
         if errors:
