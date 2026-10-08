@@ -204,8 +204,20 @@ def money(value: Decimal | None, places: int = 4) -> str:
     return "n/a" if value is None else f"${value:.{places}f}"
 
 
+def rows_accuracy_text(rows: RowsScore) -> tuple[str, str]:
+    """Row accuracy and cell accuracy for display. With no matched row (or no compared cell)
+    M5's "a ratio over nothing is 1.0" would read as a perfect score: it is n/a."""
+    row = f"{rows.row_accuracy:.3f}" if rows.matched else "n/a"
+    cell = f"{rows.cell_accuracy:.3f}" if rows.cells_compared else "n/a"
+    return row, cell
+
+
 def seconds(milliseconds: float | None) -> str:
     return "n/a" if milliseconds is None else f"{milliseconds / 1000:.1f} s"
+
+
+def _dec(value: float | None) -> Decimal | None:
+    return None if value is None else Decimal(str(value))
 
 
 def perf_dict(stats: PerfStats) -> dict[str, Any]:
@@ -245,9 +257,11 @@ class Scorecard:
     unscored: list[str]
     perf: PerfStats = dataclass_field(default_factory=PerfStats)
     perf_slices: dict[str, dict[str, PerfStats]] = dataclass_field(default_factory=dict)
+    # set by `score.py --baseline RUN` (evalkit.sweep.before_after): this run against another
+    before_after: dict[str, Any] | None = None
 
     def payload(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "manifest": self.manifest,
             "overall": metrics_dict(self.overall),
             "fields": {name: metrics_dict(m) for name, m in self.fields.items()},
@@ -272,6 +286,9 @@ class Scorecard:
                 for column, groups in self.perf_slices.items()
             },
         }
+        if self.before_after is not None:
+            data["before_after"] = self.before_after
+        return data
 
     def to_json(self) -> str:
         return _dumps(self.payload())
@@ -317,8 +334,8 @@ class Scorecard:
                 f"- matched {self.rows.matched}, missed {self.rows.missed}, "
                 f"spurious {self.rows.spurious}, perfect {self.rows.perfect}",
                 f"- precision {self.rows.row_precision:.3f}, recall {self.rows.row_recall:.3f}, "
-                f"F1 {self.rows.row_f1:.3f}, row accuracy {self.rows.row_accuracy:.3f}, "
-                f"cell accuracy {self.rows.cell_accuracy:.3f}",
+                f"F1 {self.rows.row_f1:.3f}, row accuracy {rows_accuracy_text(self.rows)[0]}, "
+                f"cell accuracy {rows_accuracy_text(self.rows)[1]}",
                 "",
                 "## Errors",
                 "",
@@ -344,9 +361,83 @@ class Scorecard:
                     f"| {metrics.selective_accuracy:.3f} | {metrics.coverage:.3f} |"
                 )
         lines.extend(self._perf_markdown())
+        lines.extend(self._before_after_markdown())
         unscored = ", ".join(self.unscored) if self.unscored else "none"
         lines.extend(["", f"Unscored documents (no ground truth): {unscored}", ""])
         return "\n".join(lines)
+
+    def _before_after_markdown(self) -> list[str]:
+        """This run against a baseline run, when `score.py --baseline` supplied one."""
+        data = self.before_after
+        if data is None:
+            return []
+        m = data["metrics"]
+
+        def points(entry: dict[str, Any]) -> str:
+            return "n/a" if entry["delta"] is None else f"{entry['delta'] * 100 + 0.0:+.1f} pts"
+
+        def percent(entry: dict[str, Any]) -> str:
+            before, after = entry["before"], entry["after"]
+            if before in (None, 0) or after is None:
+                return "n/a"
+            return f"{(after - before) / before * 100 + 0.0:+.0f}%"
+
+        def ratio(entry: dict[str, Any]) -> tuple[str, str]:
+            return f"{entry['before']:.3f}", f"{entry['after']:.3f}"
+
+        rows = []
+        for label, key in (
+            ("accuracy", "accuracy"),
+            ("selective accuracy", "selective_accuracy"),
+            ("coverage", "coverage"),
+            ("row F1", "row_f1"),
+        ):
+            before, after = ratio(m[key])
+            rows.append(f"| {label} | {before} | {after} | {points(m[key])} |")
+        cost = m["list_cost_per_doc_usd"]
+        rows.append(
+            f"| cost per doc (list price) | {money(_dec(cost['before']))} "
+            f"| {money(_dec(cost['after']))} | {percent(cost)} |"
+        )
+        for label, key in (("latency p50", "latency_p50_ms"), ("latency p95", "latency_p95_ms")):
+            entry = m[key]
+            rows.append(
+                f"| {label} | {seconds(entry['before'])} | {seconds(entry['after'])} "
+                f"| {percent(entry)} |"
+            )
+        for label, key in (
+            ("input tokens per doc", "input_tokens_per_doc"),
+            ("output tokens per doc", "output_tokens_per_doc"),
+        ):
+            entry = m[key]
+            rows.append(
+                f"| {label} | {entry['before']:.0f} | {entry['after']:.0f} | {percent(entry)} |"
+            )
+        test, boot = data["mcnemar"], data["bootstrap"]
+        lines = [
+            "",
+            "## Before / after",
+            "",
+            f"Baseline `{data['baseline']}` against this run `{data['candidate']}`: "
+            f"{data['documents_paired']} paired document(s), "
+            f"{data['fields_paired']} labeled field(s).",
+            "",
+            "| metric | before | after | change |",
+            "| --- | --- | --- | --- |",
+            *rows,
+            "",
+            f"- McNemar (exact): {test['regressions']} regression(s), {test['improvements']} "
+            f"improvement(s), p_worse {test['p_worse']:.4f}; regression verdict: {data['verdict']}",
+            f"- paired bootstrap over {boot['documents']} document(s): accuracy change "
+            f"{boot['delta'] * 100 + 0.0:+.1f} pts, interval [{boot['low'] * 100 + 0.0:+.1f}, "
+            f"{boot['high'] * 100 + 0.0:+.1f}] pts",
+        ]
+        if data["differs"]:
+            lines.append("- what differs between the runs:")
+            lines.extend(
+                f"  - {d['key']}: {d['baseline']} -> {d['candidate']}" for d in data["differs"]
+            )
+        return lines
 
     def _perf_markdown(self) -> list[str]:
         """Cost and latency, overall and per slice (see evalkit/perf.py for what is counted)."""

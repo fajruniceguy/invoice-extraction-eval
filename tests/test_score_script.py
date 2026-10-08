@@ -1,6 +1,7 @@
 """scripts/score.py end to end: a run folder on disk, scored by the real CLI in a subprocess.
 Subprocesses, so this module is slow."""
 
+import json
 import subprocess
 import sys
 from decimal import Decimal
@@ -154,3 +155,89 @@ def test_the_summary_has_a_cost_and_latency_line(fixture: tuple[Path, Path, Path
     assert "latency p50 0.0 s / p95 0.0 s over 2 live call(s)" in done.stdout
     scorecard = (folder / "score" / "scorecard.md").read_text(encoding="utf-8")
     assert "## Cost and latency" in scorecard
+
+
+def other_run(tmp_path: Path) -> Path:
+    """The fixture's two documents again, both right (its own run misses one)."""
+    return run_dir(
+        tmp_path,
+        [
+            DocRecord(
+                doc_id="doc_001",
+                status="ok",
+                validated=document(total=extracted(Decimal("10")), vendor_name=extracted("Acme")),
+            ),
+            DocRecord(
+                doc_id="doc_002", status="ok", validated=document(total=extracted(Decimal("20")))
+            ),
+        ],
+        name="other",
+    )
+
+
+def test_baseline_adds_a_before_after_section_and_a_summary_line(
+    fixture: tuple[Path, Path, Path, Path], tmp_path: Path
+) -> None:
+    folder, manifest, labels_dir, pages_dir = fixture
+    baseline = other_run(tmp_path)
+    done = score(folder, manifest, labels_dir, pages_dir, "--baseline", str(baseline))
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "vs baseline other: accuracy 1.000 -> 0.667 (-33.3 pts)" in done.stdout
+    assert "McNemar p_worse" in done.stdout and "verdict" in done.stdout
+    card = (folder / "score" / "scorecard.md").read_text(encoding="utf-8")
+    assert "## Before / after" in card
+    assert "Baseline `other` against this run `test-run`: 2 paired document(s)" in card
+    payload = json.loads((folder / "score" / "scorecard.json").read_text(encoding="utf-8"))
+    assert payload["before_after"]["baseline"] == "other"
+    assert payload["before_after"]["metrics"]["accuracy"]["delta"] == pytest.approx(-1 / 3)
+
+
+def test_without_baseline_nothing_about_a_baseline_is_written(
+    fixture: tuple[Path, Path, Path, Path],
+) -> None:
+    folder, manifest, labels_dir, pages_dir = fixture
+    done = score(folder, manifest, labels_dir, pages_dir)
+    assert "vs baseline" not in done.stdout
+    assert "Before / after" not in (folder / "score" / "scorecard.md").read_text(encoding="utf-8")
+
+
+def test_a_baseline_that_cannot_be_read_exits_1_and_says_so(
+    fixture: tuple[Path, Path, Path, Path], tmp_path: Path
+) -> None:
+    folder, manifest, labels_dir, pages_dir = fixture
+    done = score(
+        folder, manifest, labels_dir, pages_dir, "--baseline", str(tmp_path / "no-such-run")
+    )
+    assert done.returncode == 1
+    assert "cannot compare with the baseline" in done.stderr
+
+
+def test_baseline_with_several_run_folders_is_a_usage_error(
+    fixture: tuple[Path, Path, Path, Path], tmp_path: Path
+) -> None:
+    folder, manifest, labels_dir, pages_dir = fixture
+    baseline = other_run(tmp_path)
+    done = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "score.py"),
+            str(folder),
+            str(baseline),
+            "--baseline",
+            str(baseline),
+            "--manifest",
+            str(manifest),
+            "--gt-dir",
+            str(labels_dir),
+            "--pages-dir",
+            str(pages_dir),
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=scrubbed(),
+        cwd=ROOT,
+        timeout=120,
+    )
+    assert done.returncode == 2
+    assert "--baseline takes a single run folder" in done.stderr

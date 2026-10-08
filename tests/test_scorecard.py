@@ -1,3 +1,4 @@
+import dataclasses
 import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -6,9 +7,9 @@ from pathlib import Path
 import pytest
 
 from docextract.extract.runner import DocRecord, RunRecord, RunTotals
-from docextract.extract.schema import SCALAR_FIELD_NAMES, DocumentExtraction, Field
+from docextract.extract.schema import SCALAR_FIELD_NAMES, DocumentExtraction, Field, LineItem
 from docextract.ingest.manifest import ManifestRow, write_manifest
-from evalkit.groundtruth import GroundTruth
+from evalkit.groundtruth import GroundTruth, GTLineItem
 from evalkit.gt_store import write_label
 from evalkit.scorecard import ScorecardError, score_run
 
@@ -645,3 +646,167 @@ class TestPerf:
             git_dirty=False,
         )
         assert first.to_json() == second.to_json() and first.to_markdown() == second.to_markdown()
+
+
+# ------------------------------------------------------------------ before / after
+
+
+def metric(before: object, after: object) -> dict[str, object]:
+    delta = None if before is None or after is None else after - before  # type: ignore[operator]
+    return {"before": before, "after": after, "delta": delta}
+
+
+def before_after_data(**overrides: object) -> dict[str, object]:
+    data: dict[str, object] = {
+        "baseline": "base",
+        "candidate": "cand",
+        "documents_paired": 10,
+        "fields_paired": 130,
+        "metrics": {
+            "accuracy": metric(0.9, 0.85),
+            "selective_accuracy": metric(0.95, 0.95),
+            "coverage": metric(0.9, 0.85),
+            "row_f1": metric(0.8, 0.8),
+            "list_cost_per_doc_usd": metric(0.1, 0.05),
+            "latency_p50_ms": metric(100_000.0, 50_000.0),
+            "latency_p95_ms": metric(150_000.0, 60_000.0),
+            "input_tokens_per_doc": metric(3000.0, 1500.0),
+            "output_tokens_per_doc": metric(8000.0, 4000.0),
+        },
+        "mcnemar": {"regressions": 6, "improvements": 1, "p_worse": 0.0625},
+        "bootstrap": {"delta": -0.05, "low": -0.09, "high": -0.01, "documents": 10},
+        "verdict": "ok",
+        "differs": [{"key": "settings.reasoning_effort", "baseline": None, "candidate": "low"}],
+    }
+    data.update(overrides)
+    return data
+
+
+class TestBeforeAfter:
+    def card(self, tmp_path: Path, **extra: object):  # noqa: ANN202
+        folder, manifest, labels_dir, pages_dir = two_document_fixture(tmp_path)
+        card = score_run(
+            folder,
+            manifest_path=manifest,
+            labels_dir=labels_dir,
+            pages_dir=pages_dir,
+            now=NOW,
+            git_sha="a" * 40,
+            git_dirty=False,
+        )
+        return dataclasses.replace(card, **extra)
+
+    def test_without_a_baseline_there_is_no_section_and_no_key(self, tmp_path: Path) -> None:
+        card = self.card(tmp_path)
+        assert "Before / after" not in card.to_markdown()
+        assert "before_after" not in json.loads(card.to_json())
+
+    def test_the_section_shows_before_after_and_the_change(self, tmp_path: Path) -> None:
+        text = self.card(tmp_path, before_after=before_after_data()).to_markdown()
+        assert "## Before / after" in text
+        assert "Baseline `base` against this run `cand`: 10 paired document(s), 130 labeled" in text
+        for line in (
+            "| accuracy | 0.900 | 0.850 | -5.0 pts |",
+            "| selective accuracy | 0.950 | 0.950 | +0.0 pts |",
+            "| coverage | 0.900 | 0.850 | -5.0 pts |",
+            "| cost per doc (list price) | $0.1000 | $0.0500 | -50% |",
+            "| latency p50 | 100.0 s | 50.0 s | -50% |",
+            "| latency p95 | 150.0 s | 60.0 s | -60% |",
+            "| input tokens per doc | 3000 | 1500 | -50% |",
+            "| output tokens per doc | 8000 | 4000 | -50% |",
+            "- McNemar (exact): 6 regression(s), 1 improvement(s), p_worse 0.0625; "
+            "regression verdict: ok",
+            "- paired bootstrap over 10 document(s): accuracy change -5.0 pts, "
+            "interval [-9.0, -1.0] pts",
+            "  - settings.reasoning_effort: None -> low",
+        ):
+            assert line in text, line
+
+    def test_the_section_sits_after_cost_and_latency_and_before_the_unscored_line(
+        self, tmp_path: Path
+    ) -> None:
+        text = self.card(tmp_path, before_after=before_after_data()).to_markdown()
+        assert (
+            text.index("## Cost and latency")
+            < text.index("## Before / after")
+            < text.index("Unscored documents")
+        )
+
+    def test_unknown_numbers_read_n_a_and_an_equal_run_has_no_differences(
+        self, tmp_path: Path
+    ) -> None:
+        metrics = before_after_data()["metrics"]
+        assert isinstance(metrics, dict)
+        metrics["list_cost_per_doc_usd"] = metric(None, None)
+        metrics["latency_p50_ms"] = metric(None, None)
+        text = self.card(
+            tmp_path, before_after=before_after_data(metrics=metrics, differs=[])
+        ).to_markdown()
+        assert "| cost per doc (list price) | n/a | n/a | n/a |" in text
+        assert "| latency p50 | n/a | n/a | n/a |" in text
+        assert "what differs" not in text
+
+    def test_a_before_cost_of_zero_has_no_percentage(self, tmp_path: Path) -> None:
+        metrics = before_after_data()["metrics"]
+        assert isinstance(metrics, dict)
+        metrics["list_cost_per_doc_usd"] = metric(0.0, 0.05)
+        text = self.card(tmp_path, before_after=before_after_data(metrics=metrics)).to_markdown()
+        assert "| cost per doc (list price) | $0.0000 | $0.0500 | n/a |" in text
+
+    def test_the_json_carries_the_data_as_given(self, tmp_path: Path) -> None:
+        data = before_after_data()
+        payload = json.loads(self.card(tmp_path, before_after=data).to_json())
+        assert payload["before_after"] == data
+
+    def test_row_accuracy_is_n_a_when_no_row_matched_and_a_number_when_some_did(
+        self, tmp_path: Path
+    ) -> None:
+        # the two-document fixture labels no rows: nothing matched, so no "perfect 1.000"
+        text = self.card(tmp_path).to_markdown()
+        assert "row accuracy n/a, cell accuracy n/a" in text
+
+        tea = GTLineItem(
+            description="Tea", quantity=Decimal(1), unit_price=Decimal(5), amount=Decimal(5)
+        )
+        rows = [
+            ManifestRow(
+                doc_id="doc_001",
+                raw_files=("doc_001.pdf",),
+                content_group="doc_001",
+                doc_type="invoice",
+                capture="born_digital",
+                split="dev",
+            )
+        ]
+        manifest, labels_dir, pages_dir = dataset(
+            tmp_path / "w", rows, [label("doc_001", total=Decimal("5"), line_items=[tea])]
+        )
+        predicted = LineItem(
+            description="Tea",
+            quantity=Decimal(1),
+            unit_price=Decimal(5),
+            amount=Decimal(5),
+            status="extracted",
+            confidence=1.0,
+        )
+        folder = run_dir(
+            tmp_path / "w",
+            [
+                DocRecord(
+                    doc_id="doc_001",
+                    status="ok",
+                    validated=document(total=extracted(Decimal("5")), line_items=[predicted]),
+                )
+            ],
+            name="rows-run",
+        )
+        card = score_run(
+            folder,
+            manifest_path=manifest,
+            labels_dir=labels_dir,
+            pages_dir=pages_dir,
+            now=NOW,
+            git_sha="a" * 40,
+            git_dirty=False,
+        )
+        assert "row accuracy 1.000, cell accuracy 1.000" in card.to_markdown()
