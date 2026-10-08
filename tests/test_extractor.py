@@ -1,5 +1,6 @@
 import base64
 import copy
+import hashlib
 import io
 import json
 import os
@@ -17,7 +18,13 @@ from docextract.extract.extractor import (
     build_messages,
     extract_pages,
 )
-from docextract.extract.prompt import SYSTEM_PROMPT, user_text
+from docextract.extract.prompt import (
+    PROMPT_SHA256,
+    SYSTEM_PROMPT,
+    USER_PROMPT,
+    prompt_sha256,
+    user_text,
+)
 from docextract.ingest.stored import stored_pages
 from docextract.providers.openai_compat import OpenAICompatClient, ResponseParseError
 from docextract.validate.codes import (
@@ -102,6 +109,14 @@ class TestPrompt:
         for phrase in ("the DPP", "the PPN", "nomor seri faktur", "seller's NPWP", "Harga Jual"):
             assert phrase in SYSTEM_PROMPT, phrase
 
+    def test_the_prompt_hash_keeps_its_legacy_definition(self) -> None:
+        legacy = hashlib.sha256(f"{SYSTEM_PROMPT}\x00{USER_PROMPT}".encode()).hexdigest()
+        assert PROMPT_SHA256 == legacy == prompt_sha256(SYSTEM_PROMPT)
+
+    def test_another_system_prompt_is_another_hash(self) -> None:
+        assert prompt_sha256(SYSTEM_PROMPT + " ") != PROMPT_SHA256
+        assert prompt_sha256("a") != prompt_sha256("b")
+
     def test_the_user_text_counts_the_pages(self) -> None:
         assert user_text(1) == "Extract the fields from this document (1 page, in order)."
         assert user_text(3) == "Extract the fields from this document (3 pages, in order)."
@@ -141,6 +156,25 @@ class TestOneCall:
         await run(fake_llm, three_pages, llm_image_max_long_edge=64)
         for data in sent_images(fake_llm.requests[0].body):
             assert max(Image.open(io.BytesIO(data)).size) <= 64
+
+    def test_the_default_system_prompt_is_the_production_one(self, three_pages: list[Path]) -> None:
+        config = Settings(_env_file=None, llm_base_url="http://x.test/v1", llm_model="m")
+        assert build_messages(three_pages, config) == build_messages(
+            three_pages, config, SYSTEM_PROMPT
+        )
+
+    async def test_another_system_prompt_replaces_only_the_system_message(
+        self, fake_llm: FakeLLMServer, three_pages: list[Path]
+    ) -> None:
+        config = make_settings(fake_llm)
+        async with OpenAICompatClient(config) as client:
+            await extract_pages(
+                three_pages, client=client, settings=config, system_prompt="Only the vendor."
+            )
+        body = fake_llm.requests[0].body
+        assert body["messages"][0] == {"role": "system", "content": "Only the vendor."}
+        assert body["messages"][1]["content"][0] == {"type": "text", "text": user_text(3)}
+        assert sent_images(body) == [page.read_bytes() for page in three_pages]
 
     def test_build_messages_matches_what_is_sent(self, three_pages: list[Path]) -> None:
         config = Settings(_env_file=None, llm_base_url="http://x.test/v1", llm_model="m")

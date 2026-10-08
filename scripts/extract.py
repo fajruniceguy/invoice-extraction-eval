@@ -1,7 +1,8 @@
 """Extract documents with the configured model into outputs/runs/<run_id>/.
 
 Usage: python -m uv run python scripts/extract.py (--split dev|test | --doc DOC_ID ...)
-           [--run-id ID] [--cache on|off|refresh] [--dry-run] [--env-file PATH]
+           [--run-id ID] [--cache on|off|refresh] [--system-prompt-file PATH] [--dry-run]
+           [--env-file PATH]
            [--manifest FILE] [--pages-dir DIR] [--ground-truth-dir DIR] [--runs-dir DIR]
 
 Calls LLM_BASE_URL / LLM_MODEL (see .env.example), so it costs money unless the answers come from
@@ -32,6 +33,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from docextract.config import Settings
+from docextract.extract.prompt import SYSTEM_PROMPT, prompt_sha256
 from docextract.extract.runner import (
     DocRecord,
     SelectionError,
@@ -86,6 +88,7 @@ async def run(
     settings: Settings,
     args: argparse.Namespace,
     run_dir: Path,
+    system_prompt: str,
 ) -> int:
     selection = {"split": args.split} if args.split else {"docs": list(args.doc)}
     async with OpenAICompatClient(settings) as client:
@@ -100,6 +103,7 @@ async def run(
             selection=selection,
             cache=args.cache,
             on_record=print_record,
+            system_prompt=system_prompt,
         )
     totals = record.totals
     print(
@@ -132,6 +136,12 @@ def main() -> int:
         choices=["on", "off", "refresh"],
         help="override LLM_CACHE for this run (refresh: ask again and overwrite)",
     )
+    parser.add_argument(
+        "--system-prompt-file",
+        type=Path,
+        help="send this text as the system prompt instead of the production one (the run "
+        "records its hash)",
+    )
     parser.add_argument("--dry-run", action="store_true", help="plan only, call nothing")
     parser.add_argument("--env-file", type=Path, default=root / ".env")
     parser.add_argument("--manifest", type=Path, default=paths.manifest)
@@ -150,6 +160,19 @@ def main() -> int:
     except SelectionError as exc:
         print(str(exc), file=sys.stderr)
         return 2
+    system_prompt = SYSTEM_PROMPT
+    if args.system_prompt_file is not None:
+        try:
+            system_prompt = args.system_prompt_file.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"--system-prompt-file {args.system_prompt_file}: {exc}", file=sys.stderr)
+            return 2
+        if not system_prompt.strip():
+            print(
+                f"--system-prompt-file {args.system_prompt_file}: the file is blank",
+                file=sys.stderr,
+            )
+            return 2
     if args.dry_run:
         return dry_run(selected, rows, args.pages_dir, args.ground_truth_dir)
 
@@ -166,11 +189,13 @@ def main() -> int:
     except ValidationError as exc:
         print(f"Configuration problem (see .env.example): {exc}", file=sys.stderr)
         return 2
+    source = f"from {args.system_prompt_file}" if args.system_prompt_file else "production"
     print(
         f"extract: {settings.llm_model} at {settings.llm_base_url}, "
-        f"{len(selected)} document(s) -> {run_dir}"
+        f"{len(selected)} document(s) -> {run_dir}\n"
+        f"  prompt: {prompt_sha256(system_prompt)[:12]} ({source})"
     )
-    return asyncio.run(run(selected, rows, settings, args, run_dir))
+    return asyncio.run(run(selected, rows, settings, args, run_dir, system_prompt))
 
 
 if __name__ == "__main__":

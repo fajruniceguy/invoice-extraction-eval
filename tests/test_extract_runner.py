@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 
 from docextract.config import Settings
-from docextract.extract.prompt import PROMPT_SHA256
+from docextract.extract.prompt import PROMPT_SHA256, SYSTEM_PROMPT, prompt_sha256
 from docextract.extract.runner import (
     DocRecord,
     RunRecord,
@@ -450,3 +450,38 @@ class TestSelectDocuments:
     def test_bad_selections_are_errors(self, kwargs: dict[str, Any], message: str) -> None:
         with pytest.raises(SelectionError, match=message):
             select_documents(self.rows, **kwargs)
+
+
+# ------------------------------------------------------------------ the system prompt
+
+
+class TestSystemPrompt:
+    async def test_a_run_without_an_override_records_the_production_prompt(
+        self, data: Dataset
+    ) -> None:
+        data.png("doc_a")
+        run = await data.run()
+        assert run.prompt_sha256 == PROMPT_SHA256
+        assert data.server.requests[0].body["messages"][0]["content"] == SYSTEM_PROMPT
+
+    async def test_an_override_is_sent_and_its_hash_is_recorded(self, data: Dataset) -> None:
+        data.png("doc_a")
+        data.png("doc_b")
+        config = data.settings()
+        async with OpenAICompatClient(config) as client:
+            run = await run_extraction(
+                data.rows,
+                rows=data.rows,
+                client=client,
+                settings=config,
+                pages_dir=data.env.pages,
+                labels_dir=data.labels,
+                run_dir=data.runs / "custom",
+                selection={"docs": ["doc_a", "doc_b"]},
+                system_prompt="Extract nothing clever.",
+            )
+        assert [r.body["messages"][0]["content"] for r in data.server.requests] == [
+            "Extract nothing clever."
+        ] * 2
+        assert run.prompt_sha256 == prompt_sha256("Extract nothing clever.") != PROMPT_SHA256
+        assert data.run_json("custom")["prompt_sha256"] == run.prompt_sha256

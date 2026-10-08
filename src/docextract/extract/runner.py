@@ -30,7 +30,7 @@ from pydantic import BaseModel, ConfigDict
 
 from docextract.config import CacheMode, Settings
 from docextract.extract.extractor import ExtractionRefused, extract_pages
-from docextract.extract.prompt import PROMPT_SHA256
+from docextract.extract.prompt import SYSTEM_PROMPT, prompt_sha256
 from docextract.extract.schema import DocumentExtraction
 from docextract.ingest.manifest import ManifestRow
 from docextract.ingest.pipeline import sha256_hex
@@ -214,6 +214,7 @@ async def _extract_one(
     pages_dir: Path,
     labels_dir: Path,
     cache: CacheMode | None,
+    system_prompt: str,
 ) -> tuple[DocRecord, bool]:
     """One document's record, and whether the cost cap stopped the run on it."""
     reason = blind_refusal(row, rows, labels_dir)
@@ -225,7 +226,9 @@ async def _extract_one(
         return DocRecord(doc_id=row.doc_id, status="refused", error=str(exc)), False
     refs = _page_refs(pages)
     try:
-        result = await extract_pages(pages, client=client, settings=settings, cache=cache)
+        result = await extract_pages(
+            pages, client=client, settings=settings, cache=cache, system_prompt=system_prompt
+        )
     except ExtractionRefused as exc:
         return DocRecord(doc_id=row.doc_id, status="refused", error=str(exc), pages=refs), False
     except BudgetExceededError as exc:
@@ -291,9 +294,11 @@ async def run_extraction(
     selection: dict[str, Any],
     cache: CacheMode | None = None,
     on_record: Callable[[DocRecord], None] | None = None,
+    system_prompt: str = SYSTEM_PROMPT,
 ) -> RunRecord:
     """Extract `selected` one at a time into `run_dir`. `rows` is the whole manifest (for the blind
-    rule); `settings` are the client's; `selection` is recorded as given."""
+    rule); `settings` are the client's; `selection` is recorded as given; `system_prompt` is the
+    prompt sent, and the run records its hash."""
     started = datetime.now(UTC).isoformat(timespec="seconds")
     records: list[DocRecord] = []
     stopped: Literal["cost_cap"] | None = None
@@ -311,6 +316,7 @@ async def run_extraction(
                 pages_dir=pages_dir,
                 labels_dir=labels_dir,
                 cache=cache,
+                system_prompt=system_prompt,
             )
             if hit_cap:
                 stopped = "cost_cap"
@@ -327,7 +333,7 @@ async def run_extraction(
         finished_at=datetime.now(UTC).isoformat(timespec="seconds"),
         model=settings.llm_model,
         endpoint=settings.llm_base_url,
-        prompt_sha256=PROMPT_SHA256,
+        prompt_sha256=prompt_sha256(system_prompt),
         schema_sha256=schema_hash(DocumentExtraction),
         settings={
             "structured_mode": settings.llm_structured_mode,

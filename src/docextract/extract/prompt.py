@@ -61,4 +61,9 @@ def user_text(pages: int) -> str:
     return USER_PROMPT.format(pages=f"{pages} page{'s' if pages != 1 else ''}")
 
 
-PROMPT_SHA256 = hashlib.sha256(f"{SYSTEM_PROMPT}\x00{USER_PROMPT}".encode()).hexdigest()
+def prompt_sha256(system_prompt: str) -> str:
+    """The identity of a prompt in a run record: the system text plus the user template."""
+    return hashlib.sha256(f"{system_prompt}\x00{USER_PROMPT}".encode()).hexdigest()
+
+
+PROMPT_SHA256 = prompt_sha256(SYSTEM_PROMPT)

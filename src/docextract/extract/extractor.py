@@ -40,9 +40,11 @@ class Extraction:
     pages: int
 
 
-def build_messages(pages: Sequence[Path], settings: Settings) -> list[Message]:
+def build_messages(
+    pages: Sequence[Path], settings: Settings, system_prompt: str = SYSTEM_PROMPT
+) -> list[Message]:
     return [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         build_image_message(
             user_text(len(pages)), list(pages), max_long_edge=settings.llm_image_max_long_edge
         ),
@@ -55,9 +57,11 @@ async def extract_pages(
     client: OpenAICompatClient,
     settings: Settings,
     cache: CacheMode | None = None,
+    system_prompt: str = SYSTEM_PROMPT,
 ) -> Extraction:
     """Extract one document from its pages (in order) in a single call. `settings` are the
-    client's; `cache` overrides LLM_CACHE for this call."""
+    client's; `cache` overrides LLM_CACHE for this call; `system_prompt` replaces the production
+    prompt (a run that does so records the hash of the prompt it used)."""
     if not pages:
         raise ExtractionRefused("no pages to extract from")
     if len(pages) > settings.llm_max_pages:
@@ -66,7 +70,7 @@ async def extract_pages(
             "split the bundle with page_range first"
         )
     response = await client.chat(
-        build_messages(pages, settings),
+        build_messages(pages, settings, system_prompt),
         DocumentExtraction,
         temperature=0.0,
         cache=cache,

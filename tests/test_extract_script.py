@@ -11,6 +11,7 @@ from typing import Any
 
 import pytest
 
+from docextract.extract.prompt import PROMPT_SHA256, prompt_sha256
 from docextract.ingest.manifest import ManifestRow
 from fakes.fake_llm import FakeLLMServer, canned_answer, chat_reply
 from files import A4, make_sized_pdf
@@ -259,3 +260,47 @@ def test_smoke_holds_the_single_image_to_page_1(fake_llm: FakeLLMServer, tmp_pat
         "page outside 1..1 (the document has 1 page): total"
         in (saved["repair_history"][0]["problem"])
     )
+
+
+def test_a_prompt_file_is_sent_and_its_hash_recorded(
+    ws: Workspace, fake_llm: FakeLLMServer, tmp_path: Path
+) -> None:
+    ws.add_png("doc_a")
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_bytes(b"Be brief.\r\nSecond line.\r\n")  # CRLF, as a Windows checkout
+    done = ws.extract(
+        fake_llm, "--doc", "doc_a", "--run-id", "p", "--system-prompt-file", str(prompt)
+    )
+    assert done.returncode == 0, done.stdout + done.stderr
+    text = "Be brief.\nSecond line.\n"
+    assert fake_llm.requests[0].body["messages"][0] == {"role": "system", "content": text}
+    run = json.loads((ws.runs / "p" / "run.json").read_text(encoding="utf-8"))
+    assert run["prompt_sha256"] == prompt_sha256(text)
+    assert f"prompt: {prompt_sha256(text)[:12]} (from {prompt})" in done.stdout
+
+
+def test_without_a_prompt_file_the_production_prompt_is_used(
+    ws: Workspace, fake_llm: FakeLLMServer
+) -> None:
+    ws.add_png("doc_a")
+    done = ws.extract(fake_llm, "--doc", "doc_a", "--run-id", "d")
+    assert done.returncode == 0, done.stdout + done.stderr
+    run = json.loads((ws.runs / "d" / "run.json").read_text(encoding="utf-8"))
+    assert run["prompt_sha256"] == PROMPT_SHA256
+    assert f"prompt: {PROMPT_SHA256[:12]} (production)" in done.stdout
+
+
+@pytest.mark.parametrize("content", [None, "", "  \n\t\n"], ids=["missing", "empty", "blank"])
+def test_a_missing_or_blank_prompt_file_exits_2_before_any_request(
+    ws: Workspace, fake_llm: FakeLLMServer, tmp_path: Path, content: str | None
+) -> None:
+    ws.add_png("doc_a")
+    prompt = tmp_path / "prompt.txt"
+    if content is not None:
+        prompt.write_text(content, encoding="utf-8")
+    done = ws.extract(
+        fake_llm, "--doc", "doc_a", "--run-id", "x", "--system-prompt-file", str(prompt)
+    )
+    assert done.returncode == 2
+    assert "--system-prompt-file" in done.stderr
+    assert fake_llm.requests == [] and not ws.runs.exists()
