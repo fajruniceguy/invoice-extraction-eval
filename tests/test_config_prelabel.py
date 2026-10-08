@@ -64,7 +64,8 @@ class TestPrelabelSettings:
     def test_pre_labeling_is_not_configured_by_default(self) -> None:
         s = make()
         assert (s.prelabel_base_url, s.prelabel_model) == (None, None)
-        assert s.prelabel_structured_mode == "json_object"
+        assert s.prelabel_structured_mode == "prompt"
+        assert s.prelabel_send_temperature is True
         assert s.prelabel_image_max_long_edge == 1568
         assert (s.prelabel_max_pages, s.prelabel_max_tokens) == (15, 8000)
         assert s.prelabel_max_run_cost_usd is None
@@ -78,12 +79,25 @@ class TestPrelabelSettings:
         assert derived.llm_price_output_per_mtok == Decimal(5)
         assert derived.cost_usd(1_000_000, 1_000_000) == Decimal(6)
 
-    def test_it_pins_json_object_and_the_prelabel_image_size(self) -> None:
+    def test_it_pins_the_prompt_only_mode_and_the_prelabel_image_size(self) -> None:
         derived = prelabel(
             llm_structured_mode="json_schema", llm_image_max_long_edge=3000
         ).prelabel_settings()
-        assert derived.llm_structured_mode == "json_object"
+        assert derived.llm_structured_mode == "prompt"
         assert derived.llm_image_max_long_edge == 1568
+
+    def test_the_prelabel_temperature_switch_is_its_own_not_the_extractors(self) -> None:
+        assert prelabel().prelabel_settings().llm_send_temperature is True
+        derived = prelabel(prelabel_send_temperature=False).prelabel_settings()
+        assert derived.llm_send_temperature is False
+        # the extractor keeps sending it whatever the pre-labeler does
+        assert prelabel(prelabel_send_temperature=False).llm_send_temperature is True
+        assert prelabel(llm_send_temperature=False).prelabel_settings().llm_send_temperature is True
+
+    def test_the_structured_mode_can_be_any_tier_for_the_prelabeler(self) -> None:
+        for mode in ("json_object", "json_schema", "prompt"):
+            derived = prelabel(prelabel_structured_mode=mode).prelabel_settings()
+            assert derived.llm_structured_mode == mode
 
     def test_the_extractors_reasoning_effort_and_cost_cap_do_not_carry_over(self) -> None:
         derived = prelabel().prelabel_settings()

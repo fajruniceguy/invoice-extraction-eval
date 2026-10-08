@@ -316,6 +316,51 @@ async def test_pinned_json_schema_mode_does_not_fall_back() -> None:
     assert len(h.requests) == 1
 
 
+async def test_prompt_mode_sends_no_response_format_and_the_schema_in_the_text() -> None:
+    h = Harness([ok()], llm_structured_mode="prompt")
+    async with h.client as client:
+        result = await client.chat(USER, Receipt)
+    body = h.body()
+    assert "response_format" not in body
+    assert body["messages"][0]["role"] == "system" and '"vendor"' in body["messages"][0]["content"]
+    assert result.structured_mode_used == "prompt" and len(h.requests) == 1
+    assert result.parsed is not None
+
+
+async def test_prompt_mode_never_falls_back_or_negotiates() -> None:
+    h = Harness([httpx.Response(400, text="nope")], llm_structured_mode="prompt")
+    async with h.client as client:
+        with pytest.raises(ProviderError, match="HTTP 400"):
+            await client.chat(USER, Receipt)
+    assert len(h.requests) == 1
+
+
+async def test_repair_in_prompt_mode_keeps_the_schema_instruction_and_no_response_format() -> None:
+    h = Harness(
+        [ok(completion(BAD_JSON)), ok(completion(GOOD))],
+        llm_structured_mode="prompt",
+        llm_max_repairs=1,
+    )
+    async with h.client as client:
+        await client.chat(USER, Receipt)
+    for index in (0, 1):
+        assert "response_format" not in h.body(index)
+    assert '"vendor"' in h.body(1)["messages"][0]["content"]
+
+
+async def test_temperature_is_sent_by_default_and_can_be_left_out() -> None:
+    sent = Harness([ok()])
+    async with sent.client as client:
+        await client.chat(USER, temperature=0.3)
+    assert sent.body()["temperature"] == 0.3
+
+    left_out = Harness([ok()], llm_send_temperature=False)
+    async with left_out.client as client:
+        await client.chat(USER, Receipt, temperature=0.3)
+    assert "temperature" not in left_out.body()
+    assert left_out.body()["model"] == "test-model"  # nothing else about the body changed
+
+
 async def test_pinned_json_object_mode_goes_straight_to_json_object() -> None:
     h = Harness([ok()], llm_structured_mode="json_object")
     async with h.client as client:

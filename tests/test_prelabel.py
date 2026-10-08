@@ -490,7 +490,7 @@ class TestPrelabelDocument:
         assert request.headers["authorization"] == "Bearer sk-prelabel"  # not the extractor's key
         assert body["model"] == "claude-haiku-4-5"
         assert body["temperature"] == 0.0 and body["max_tokens"] == ps.prelabel_max_tokens
-        assert body["response_format"] == {"type": "json_object"}  # pinned, never json_schema
+        assert "response_format" not in body  # prompt-only: the endpoint rejects json_object
         assert "reasoning_effort" not in body  # the extractor's setting does not leak across
 
     async def test_the_schema_goes_into_the_prompt_because_the_endpoint_may_ignore_response_format(

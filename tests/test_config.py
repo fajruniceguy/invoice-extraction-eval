@@ -88,6 +88,12 @@ def test_rejects_blank_model() -> None:
         make(llm_model="   ")
 
 
+def test_temperature_is_sent_unless_switched_off() -> None:
+    assert make().llm_send_temperature is True
+    assert make(llm_send_temperature=False).llm_send_temperature is False
+    assert make(llm_structured_mode="prompt").llm_structured_mode == "prompt"
+
+
 def test_rejects_unknown_structured_mode() -> None:
     with pytest.raises(ValidationError):
         make(llm_structured_mode="xml")

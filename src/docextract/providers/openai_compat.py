@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 M = TypeVar("M", bound=BaseModel)
 Message = dict[str, Any]
-Tier = Literal["json_schema", "json_object", "none"]
+Tier = Literal["json_schema", "json_object", "prompt", "none"]
 
 _CHAT_PATH = "chat/completions"
 _FALLBACK_STATUSES = frozenset({400, 422})  # "this server does not like my response_format"
@@ -739,8 +739,9 @@ class OpenAICompatClient:
         body: dict[str, Any] = {
             "model": self._settings.llm_model,
             "messages": list(messages),
-            "temperature": temperature,
         }
+        if self._settings.llm_send_temperature:
+            body["temperature"] = temperature
         if max_tokens is not None:
             body["max_tokens"] = max_tokens
         if self._settings.llm_reasoning_effort:
@@ -752,8 +753,9 @@ class OpenAICompatClient:
                     "type": "json_schema",
                     "json_schema": {"name": response_model.__name__, "schema": schema},
                 }
-            else:
-                body["response_format"] = {"type": "json_object"}
+            else:  # json_object adds response_format; prompt sends the schema in the text only
+                if tier == "json_object":
+                    body["response_format"] = {"type": "json_object"}
                 body["messages"] = _with_schema_instruction(messages, schema)
         return body
 

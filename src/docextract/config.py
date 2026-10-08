@@ -13,7 +13,7 @@ from typing import Literal, Self
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-StructuredMode = Literal["auto", "json_schema", "json_object"]
+StructuredMode = Literal["auto", "json_schema", "json_object", "prompt"]
 # on: read and write the response cache; off: bypass it entirely;
 # refresh: skip reads but overwrite entries (re-ask the model, keep the cache current)
 CacheMode = Literal["on", "off", "refresh"]
@@ -45,8 +45,13 @@ class Settings(BaseSettings):
     # Re-asks when the model's output is not valid JSON / does not match the schema (0 = never).
     llm_max_repairs: int = Field(default=1, ge=0)
 
-    # auto: try json_schema, fall back to json_object. The others pin a single tier.
+    # auto: try json_schema, fall back to json_object. The others pin a single tier. `prompt`
+    # sends no `response_format` at all and spells the schema out in the prompt, for endpoints
+    # that reject json_object and accept only strict json_schema (Anthropic's, as of 2026-10).
     llm_structured_mode: StructuredMode = "auto"
+    # Send `temperature`. Turn it off for models that reject it (Claude 5.x: "temperature is
+    # deprecated for this model").
+    llm_send_temperature: bool = True
 
     # Content-hash cache of raw completions (see providers/cache.py). On by default; the live
     # smoke check and anything that must hit the real API turn it off.
@@ -80,10 +85,11 @@ class Settings(BaseSettings):
     prelabel_model: str | None = None
     prelabel_price_input_per_mtok: Decimal = Field(default=Decimal(0), ge=0)
     prelabel_price_output_per_mtok: Decimal = Field(default=Decimal(0), ge=0)
-    # json_object by default: some endpoints (Anthropic's OpenAI-compatible one) silently ignore
-    # `response_format`, so a json_schema request would send the model no schema at all. The
-    # schema is spelled out in the prompt instead.
-    prelabel_structured_mode: StructuredMode = "json_object"
+    # `prompt` by default: Anthropic's OpenAI-compatible endpoint first ignored `response_format`
+    # and now rejects json_object (it accepts only strict json_schema, whose limits our draft
+    # schema exceeds), so the schema is spelled out in the prompt and nothing else is sent.
+    prelabel_structured_mode: StructuredMode = "prompt"
+    prelabel_send_temperature: bool = True  # PRELABEL_SEND_TEMPERATURE=false for Claude 5.x
     # Anthropic downscales above ~1568 px anyway and refuses images over ~5 MB.
     prelabel_image_max_long_edge: int = Field(default=1568, ge=1)
     prelabel_max_pages: int = Field(default=15, ge=1)  # longer bundles must be split first
@@ -184,6 +190,7 @@ class Settings(BaseSettings):
                 "llm_price_input_per_mtok": self.prelabel_price_input_per_mtok,
                 "llm_price_output_per_mtok": self.prelabel_price_output_per_mtok,
                 "llm_structured_mode": self.prelabel_structured_mode,
+                "llm_send_temperature": self.prelabel_send_temperature,
                 "llm_reasoning_effort": None,
                 "llm_image_max_long_edge": self.prelabel_image_max_long_edge,
                 "max_run_cost_usd": self.prelabel_max_run_cost_usd,
