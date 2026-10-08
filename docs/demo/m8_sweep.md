@@ -6,8 +6,12 @@ was run together once. The rule for the setting to keep is code (`evalkit.sweep.
 before any result existed.
 
 Model `deepseek/deepseek-v4-flash-vision-exp` through Command Code, production prompt, `json_object`
-mode, 10 dev documents (9 real + `cons_003`), prices $0.22 / $0.66 per million tokens (from a
-third-party tracker, not verified against Command Code's own price page).
+mode, 10 dev documents (9 real + `cons_003`). The runs were costed at $0.22 / $0.66 per million tokens
+(input / output), a third-party tracker's figure. Command Code's own page (pricing-limits) says $0.15 /
+$0.60 off-peak and $0.30 / $1.20 at peak (01-04 and 06-10 UTC, Monday to Friday). Every point used the
+same prices, so the comparisons stand; absolute costs are about 15% too high against off-peak and about 40%
+too low against peak: the baseline is $0.0047 per document as recorded, about $0.0040 off-peak and
+$0.0081 at peak.
 
 ```
 python -m uv run python scripts/extract.py --split dev --run-id dev-baseline-ds --concurrency 3
@@ -54,6 +58,13 @@ faster at p50. Before / after for the chosen run (`score.py ... --baseline`):
   rule, covers scalar fields only. But row F1 also swings the other way across points (0.815 for
   `res-1568`, 0.813 for `effort-off`), so it is probably noisy as well, not a clean effect of the
   setting. It is a reason to doubt "free 23% saving", not proof of damage.
+- **Row accuracy (all cells of a row right) is dominated by one document.** It is 0.295 in the baseline
+  and 0.359 in `res-1568`, against 0.82-0.89 in the other four runs. All of that is `cons_003` (33 of
+  the 81 labeled rows): in those two runs every one of its 33 rows is matched but the description
+  carries the item code ("BRG-001 Map Plastik Biru"), so each row is a `name_near_miss` and 0 of 33 rows
+  are fully right; the other runs, and the GLM baseline, do not do that. Field accuracy and row F1
+  cannot see it, because rows are matched fuzzily. It is a prompt/format ambiguity (the schema has no
+  item-code field) that flips between samples, not an effect of resolution or effort.
 - **`effort-off` was rejected by half a point.** It is 2.4x cheaper and 2.5x faster (p95 13.4 s) at 3
   fewer correct fields out of 122, with p = 0.27. The 2-point tolerance was set before the results and
   was not moved afterwards; whether that trade is acceptable is a product decision, not a measured one.
