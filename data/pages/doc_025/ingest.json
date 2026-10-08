@@ -1,0 +1,31 @@
+{
+  "ingest_version": 1,
+  "inputs_hash": "18d19b27d0bd5f4a230323c681228a3999170d9dd1076ba64d0f90cd80283f5c",
+  "page_range": null,
+  "pages": [
+    {
+      "bytes": 229936,
+      "file": "p1.jpg",
+      "format": "jpeg",
+      "n": 1,
+      "sha256": "75afe93650d42f0fedfc8d932ed356937c17d792440162200158731ea75f72a7",
+      "size": [
+        900,
+        1600
+      ],
+      "source": {
+        "file": 0,
+        "page": 1
+      }
+    }
+  ],
+  "raw_sha256": [
+    "49789a9430a476e7e9348c19c80298df24c8079110512ae376ebeeacfcdc4da2"
+  ],
+  "redactions": {},
+  "settings": {
+    "dpi": 200,
+    "jpeg_quality": 92,
+    "max_long_edge": 2400
+  }
+}
