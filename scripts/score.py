@@ -14,7 +14,24 @@ from pathlib import Path
 
 from docextract.paths import DatasetPaths
 from evalkit.gt_store import GroundTruthError
-from evalkit.scorecard import Scorecard, ScorecardError, score_run
+from evalkit.perf import PerfStats
+from evalkit.scorecard import Scorecard, ScorecardError, money, score_run, seconds
+
+
+def format_perf(perf: PerfStats) -> str:
+    """One line: what the run cost (paid, and at list price) and how long a live call took."""
+    cost = (
+        f"{money(perf.cost_usd)} paid ({money(perf.list_cost_usd)} at list price, "
+        f"{money(perf.list_cost_per_doc)}/doc) over {perf.documents} document(s)"
+    )
+    if perf.live_calls:
+        latency = (
+            f"latency p50 {seconds(perf.latency_p50_ms)} / p95 {seconds(perf.latency_p95_ms)} "
+            f"over {perf.live_calls} live call(s)"
+        )
+    else:
+        latency = "latency n/a (no live calls: every answer came from the cache)"
+    return f"  cost: {cost}; {latency}"
 
 
 def format_report(card: Scorecard, out_dir: Path) -> str:
@@ -30,6 +47,7 @@ def format_report(card: Scorecard, out_dir: Path) -> str:
         f"F1 {rows.row_f1:.3f}, row accuracy {rows.row_accuracy:.3f}, "
         f"cell accuracy {rows.cell_accuracy:.3f}",
     ]
+    lines.append(format_perf(card.perf))
     if card.errors:
         counts = ", ".join(f"{name} {count}" for name, count in card.errors.items())
         lines.append(f"  errors: {counts}")

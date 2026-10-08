@@ -22,6 +22,7 @@ import json
 import subprocess
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -42,6 +43,7 @@ from evalkit.metrics import (
     RowsScore,
     score_document,
 )
+from evalkit.perf import PerfStats
 from evalkit.taxonomy import ErrorClass, FieldOutcome, count_errors
 
 SLICE_COLUMNS: tuple[str, ...] = ("split", "doc_type", "capture")
@@ -198,6 +200,36 @@ def _dumps(payload: Any) -> str:
     return json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 
+def money(value: Decimal | None, places: int = 4) -> str:
+    return "n/a" if value is None else f"${value:.{places}f}"
+
+
+def seconds(milliseconds: float | None) -> str:
+    return "n/a" if milliseconds is None else f"{milliseconds / 1000:.1f} s"
+
+
+def perf_dict(stats: PerfStats) -> dict[str, Any]:
+    return {
+        "documents": stats.documents,
+        "ok": stats.ok,
+        "failed": stats.failed,
+        "live_calls": stats.live_calls,
+        "cached_documents": stats.cached_documents,
+        "cost_usd": str(stats.cost_usd),
+        "list_cost_usd": str(stats.list_cost_usd),
+        "cost_per_doc": _json_value(stats.cost_per_doc),
+        "list_cost_per_doc": _json_value(stats.list_cost_per_doc),
+        "input_tokens": stats.input_tokens,
+        "output_tokens": stats.output_tokens,
+        "repairs": stats.repairs,
+        "latency_ms": {
+            "p50": stats.latency_p50_ms,
+            "p95": stats.latency_p95_ms,
+            "mean": stats.latency_mean_ms,
+        },
+    }
+
+
 # ---------------------------------------------------------------- the scorecard
 
 
@@ -211,6 +243,8 @@ class Scorecard:
     slices: dict[str, dict[str, FieldMetrics]]
     docs: list[DocumentScore]
     unscored: list[str]
+    perf: PerfStats = dataclass_field(default_factory=PerfStats)
+    perf_slices: dict[str, dict[str, PerfStats]] = dataclass_field(default_factory=dict)
 
     def payload(self) -> dict[str, Any]:
         return {
@@ -232,6 +266,11 @@ class Scorecard:
                 for score in self.docs
             },
             "unscored": self.unscored,
+            "perf": perf_dict(self.perf),
+            "perf_slices": {
+                column: {value: perf_dict(stats) for value, stats in groups.items()}
+                for column, groups in self.perf_slices.items()
+            },
         }
 
     def to_json(self) -> str:
@@ -304,9 +343,35 @@ class Scorecard:
                     f"| {value} | {metrics.labeled} | {metrics.accuracy:.3f} "
                     f"| {metrics.selective_accuracy:.3f} | {metrics.coverage:.3f} |"
                 )
+        lines.extend(self._perf_markdown())
         unscored = ", ".join(self.unscored) if self.unscored else "none"
         lines.extend(["", f"Unscored documents (no ground truth): {unscored}", ""])
         return "\n".join(lines)
+
+    def _perf_markdown(self) -> list[str]:
+        """Cost and latency, overall and per slice (see evalkit/perf.py for what is counted)."""
+        lines = [
+            "",
+            "## Cost and latency",
+            "",
+            "Documents attempted (ok or failed); latency is over live calls only, nearest-rank.",
+            "",
+            "| scope | docs | live | cached | paid | at list price | per doc (list) "
+            "| tokens in/out | latency p50 | p95 |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        ]
+        scopes = [("all", self.perf)]
+        for column, groups in self.perf_slices.items():
+            scopes.extend((f"{column}={value}", stats) for value, stats in groups.items())
+        for name, stats in scopes:
+            lines.append(
+                f"| {name} | {stats.documents} | {stats.live_calls} | {stats.cached_documents} "
+                f"| {money(stats.cost_usd)} | {money(stats.list_cost_usd)} "
+                f"| {money(stats.list_cost_per_doc)} "
+                f"| {stats.input_tokens}/{stats.output_tokens} "
+                f"| {seconds(stats.latency_p50_ms)} | {seconds(stats.latency_p95_ms)} |"
+            )
+        return lines
 
     def write(self, out_dir: Path) -> list[Path]:
         """Write the manifest, the scorecard (JSON + markdown) and one file per scored document."""
@@ -378,16 +443,21 @@ def score_run(
     all_errors: list[ErrorClass] = []
     owners: list[str] = []
     page_scope: list[tuple[str, bool]] = []
+    attempted: list[tuple[str, DocRecord]] = []  # ok or failed: a call was made
 
     for doc_id in run.statuses:
         resolved: ResolvedLabel | None = labels.get(doc_id)
         if resolved is None:
             unscored.append(doc_id)
+            if run.statuses[doc_id] in ("ok", "failed"):
+                attempted.append((doc_id, _read_record(run_dir, doc_id)))
             continue
         row = by_id.get(doc_id)
         if row is None:
             raise ScorecardError(f"{doc_id}: the run holds a document that is not in the manifest")
         record = _read_record(run_dir, doc_id)
+        if record.status in ("ok", "failed"):
+            attempted.append((doc_id, record))
         if record.status == "ok" and record.validated is None:
             raise ScorecardError(f"{run_dir / 'docs' / doc_id}.json: ok but holds no output")
         document = record.validated if record.status == "ok" else None
@@ -428,6 +498,12 @@ def score_run(
             "numeric_abs_tol": str(NUMERIC_ABS_TOL),
         },
     }
+    perf_groups: dict[str, dict[str, list[DocRecord]]] = {column: {} for column in SLICE_COLUMNS}
+    for doc_id, record in attempted:
+        row = by_id.get(doc_id)
+        for column in SLICE_COLUMNS:
+            value = (getattr(row, column) if row is not None else None) or NO_VALUE
+            perf_groups[column].setdefault(value, []).append(record)
     return Scorecard(
         manifest=manifest,
         overall=FieldMetrics.from_outcomes(
@@ -444,4 +520,9 @@ def score_run(
         },
         docs=docs,
         unscored=unscored,
+        perf=PerfStats.from_records(record for _, record in attempted),
+        perf_slices={
+            column: {value: PerfStats.from_records(records) for value, records in groups.items()}
+            for column, groups in perf_groups.items()
+        },
     )

@@ -142,3 +142,15 @@ def test_a_missing_run_folder_exits_2(
     done = score(tmp_path / "nope", manifest, labels_dir, pages_dir)
     assert done.returncode == 2
     assert "not a directory" in done.stderr
+
+
+def test_the_summary_has_a_cost_and_latency_line(fixture: tuple[Path, Path, Path, Path]) -> None:
+    folder, manifest, labels_dir, pages_dir = fixture
+    done = score(folder, manifest, labels_dir, pages_dir)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert (
+        "cost: $0.0000 paid ($0.0000 at list price, $0.0000/doc) over 2 document(s)" in done.stdout
+    )
+    assert "latency p50 0.0 s / p95 0.0 s over 2 live call(s)" in done.stdout
+    scorecard = (folder / "score" / "scorecard.md").read_text(encoding="utf-8")
+    assert "## Cost and latency" in scorecard

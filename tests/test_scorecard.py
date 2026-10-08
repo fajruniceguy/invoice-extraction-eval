@@ -509,3 +509,139 @@ class TestArtifacts:
                 now=NOW,
                 git_sha="a" * 40,
             )
+
+
+# ------------------------------------------------------------------ cost and latency
+
+
+class TestPerf:
+    """doc_001 (dev) 1000 ms and $0.10, doc_002 (test) 3000 ms and $0.20, doc_003 (not in the
+    manifest, no label) 5000 ms and $0.30, a refused doc_004 that must not count."""
+
+    def build(self, tmp_path: Path) -> tuple[Path, Path, Path, Path]:
+        folder, manifest, labels_dir, pages_dir = two_document_fixture(tmp_path)
+
+        def timed(doc_id: str, latency: float, cost: str, **extra: object) -> DocRecord:
+            base = {"cost_usd": Decimal(cost), "latency_ms": latency}
+            base.update(extra)
+            return DocRecord(
+                doc_id=doc_id,
+                status="ok",
+                validated=document(total=extracted(Decimal("10"))),
+                usage={"input_tokens": 100, "billable_output_tokens": 50},
+                **base,  # type: ignore[arg-type]
+            )
+
+        records = [
+            timed("doc_001", 1000.0, "0.10"),
+            timed("doc_002", 3000.0, "0.20"),
+            timed("doc_003", 5000.0, "0.30"),
+            DocRecord(
+                doc_id="doc_004", status="refused", error="not ingested", cost_usd=Decimal(9)
+            ),
+        ]
+        folder = run_dir(tmp_path, records, name="perf-run")
+        return folder, manifest, labels_dir, pages_dir
+
+    def score(self, tmp_path: Path):  # noqa: ANN202
+        folder, manifest, labels_dir, pages_dir = self.build(tmp_path)
+        return score_run(
+            folder,
+            manifest_path=manifest,
+            labels_dir=labels_dir,
+            pages_dir=pages_dir,
+            now=NOW,
+            git_sha="a" * 40,
+            git_dirty=False,
+        )
+
+    def test_every_attempted_document_counts_labeled_or_not_but_not_a_refused_one(
+        self, tmp_path: Path
+    ) -> None:
+        card = self.score(tmp_path)
+        assert card.unscored == ["doc_003", "doc_004"]  # no label
+        assert card.perf.documents == 3 and card.perf.cost_usd == Decimal("0.60")
+        assert (card.perf.latency_p50_ms, card.perf.latency_p95_ms) == (3000.0, 5000.0)
+        assert (card.perf.input_tokens, card.perf.output_tokens) == (300, 150)
+
+    def test_perf_by_slice_uses_the_manifest_columns(self, tmp_path: Path) -> None:
+        slices = self.score(tmp_path).perf_slices
+        assert slices["split"]["dev"].latency_p50_ms == 1000.0
+        assert slices["split"]["test"].cost_usd == Decimal("0.20")
+        assert slices["doc_type"]["faktur"].documents == 1
+        # doc_003 is not in the manifest: it lands in the "(none)" group, not in an error
+        assert slices["split"]["(none)"].cost_usd == Decimal("0.30")
+        assert sum(stats.documents for stats in slices["split"].values()) == 3
+
+    def test_the_json_carries_the_numbers(self, tmp_path: Path) -> None:
+        data = json.loads(self.score(tmp_path).to_json())
+        perf = data["perf"]
+        assert perf["documents"] == 3 and perf["cost_usd"] == "0.60"
+        assert perf["cost_per_doc"] == "0.200000" and perf["list_cost_per_doc"] == "0.200000"
+        assert perf["latency_ms"] == {"p50": 3000.0, "p95": 5000.0, "mean": 3000.0}
+        assert data["perf_slices"]["split"]["dev"]["latency_ms"]["p50"] == 1000.0
+
+    def test_the_markdown_has_a_cost_and_latency_section(self, tmp_path: Path) -> None:
+        markdown = self.score(tmp_path).to_markdown()
+        assert "## Cost and latency" in markdown
+        assert (
+            "| all | 3 | 3 | 0 | $0.6000 | $0.6000 | $0.2000 | 300/150 | 3.0 s | 5.0 s |"
+            in markdown
+        )
+        assert (
+            "| split=dev | 1 | 1 | 0 | $0.1000 | $0.1000 | $0.1000 | 100/50 | 1.0 s | 1.0 s |"
+            in (markdown)
+        )
+
+    def test_a_live_call_with_zero_latency_is_a_real_zero_not_n_a(self, tmp_path: Path) -> None:
+        folder, manifest, labels_dir, pages_dir = two_document_fixture(tmp_path)
+        card = score_run(
+            folder,
+            manifest_path=manifest,
+            labels_dir=labels_dir,
+            pages_dir=pages_dir,
+            now=NOW,
+            git_sha="a" * 40,
+            git_dirty=False,
+        )
+        assert card.perf.live_calls == 2 and card.perf.latency_p50_ms == 0.0
+
+    def test_a_run_answered_from_the_cache_has_no_latency_but_still_a_list_price(
+        self, tmp_path: Path
+    ) -> None:
+        folder, manifest, labels_dir, pages_dir = two_document_fixture(tmp_path)
+        for doc_id in ("doc_001", "doc_002"):
+            path = folder / "docs" / f"{doc_id}.json"
+            record = DocRecord.model_validate_json(path.read_text(encoding="utf-8"))
+            cached = record.model_copy(
+                update={"cache_hit": True, "avoided_cost_usd": Decimal("0.05")}
+            )
+            path.write_text(cached.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        card = score_run(
+            folder,
+            manifest_path=manifest,
+            labels_dir=labels_dir,
+            pages_dir=pages_dir,
+            now=NOW,
+            git_sha="a" * 40,
+            git_dirty=False,
+        )
+        assert card.perf.live_calls == 0 and card.perf.cached_documents == 2
+        assert card.perf.latency_p50_ms is None and card.perf.cost_usd == Decimal(0)
+        assert card.perf.list_cost_per_doc == Decimal("0.05")
+        assert "| all | 2 | 0 | 2 | $0.0000 | $0.1000 | $0.0500 | 0/0 | n/a | n/a |" in (
+            card.to_markdown()
+        )
+
+    def test_the_output_is_byte_identical_twice(self, tmp_path: Path) -> None:
+        first = self.score(tmp_path)
+        second = score_run(
+            tmp_path / "outputs" / "runs" / "perf-run",
+            manifest_path=tmp_path / "data" / "manifest.csv",
+            labels_dir=tmp_path / "ground_truth",
+            pages_dir=tmp_path / "data" / "pages",
+            now=NOW,
+            git_sha="a" * 40,
+            git_dirty=False,
+        )
+        assert first.to_json() == second.to_json() and first.to_markdown() == second.to_markdown()
