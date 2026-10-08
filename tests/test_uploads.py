@@ -1,8 +1,11 @@
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 from PIL import Image
 
+import docextract.api.uploads as uploads_module
 from docextract.api.uploads import (
     FileTooLarge,
     TooManyPages,
@@ -181,3 +184,105 @@ class TestOnDisk:
             "p1.png",
             "p2.png",
         ]
+
+
+# ------------------------------------------------------------------ PDFium is not thread-safe
+
+STRESS = """
+import hashlib, io, sys, tempfile
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from reportlab.pdfgen import canvas
+from docextract.api.uploads import pages_from_uploads
+
+def make_pdf(seed):
+    buffer = io.BytesIO()
+    page = canvas.Canvas(buffer)
+    for number in range(3):
+        for line in range(60):
+            text = f"doc {seed} page {number} line {line} " + "x" * (line % 40)
+            page.drawString(50, 800 - line * 12, text)
+        page.showPage()
+    page.save()
+    return buffer.getvalue()
+
+files = [make_pdf(i) for i in range(4)]
+
+def digest(i):
+    with tempfile.TemporaryDirectory() as tmp:
+        pages = pages_from_uploads([files[i]], Path(tmp), max_pages=20)
+        return [hashlib.sha256(p.read_bytes()).hexdigest() for p in pages]
+
+serial = [digest(i) for i in range(4)]
+bad = 0
+for _ in range(8):
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(digest, range(4)))
+    bad += sum(r != s for r, s in zip(results, serial))
+print("MISMATCHES", bad)
+sys.exit(1 if bad else 0)
+"""
+
+
+class TestPdfiumIsSerialized:
+    def test_every_pdfium_call_happens_under_the_lock(
+        self, env: Env, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        make_sized_pdf(env.raw / "a.pdf", [A4, A4])
+        real_open = uploads_module.pdfium.PdfDocument
+        real_load = uploads_module.load_pages
+        held: list[str] = []
+
+        def open_checked(*args: object, **kwargs: object) -> object:
+            held.append(f"open:{uploads_module._PDFIUM_LOCK.locked()}")
+            return real_open(*args, **kwargs)
+
+        def load_checked(*args: object, **kwargs: object) -> object:
+            held.append(f"render:{uploads_module._PDFIUM_LOCK.locked()}")
+            return real_load(*args, **kwargs)
+
+        monkeypatch.setattr(uploads_module.pdfium, "PdfDocument", open_checked)
+        monkeypatch.setattr(uploads_module, "load_pages", load_checked)
+        pages_from_uploads(
+            [(env.raw / "a.pdf").read_bytes()], tmp_path / "w", max_pages=5, settings=CONFIG
+        )
+        # the page count, the render and the render's own open: ALL under the lock
+        assert held[0] == "open:True" and "render:True" in held
+        assert all(entry.endswith(":True") for entry in held)
+        assert not uploads_module._PDFIUM_LOCK.locked()  # and released afterwards
+
+    def test_the_lock_is_released_when_a_pdf_cannot_be_opened(self, tmp_path: Path) -> None:
+        with pytest.raises(UnreadableUpload):
+            pages_from_uploads([b"%PDF-1.7 broken"], tmp_path / "w", max_pages=5)
+        assert not uploads_module._PDFIUM_LOCK.locked()
+
+    def test_images_do_not_take_the_lock(
+        self, env: Env, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        gray_png(env, "a.png")
+        real_load = uploads_module.load_pages
+        seen: list[bool] = []
+
+        def load_checked(*args: object, **kwargs: object) -> object:
+            seen.append(uploads_module._PDFIUM_LOCK.locked())
+            return real_load(*args, **kwargs)
+
+        monkeypatch.setattr(uploads_module, "load_pages", load_checked)
+        pages_from_uploads(
+            [(env.raw / "a.png").read_bytes()], tmp_path / "w", max_pages=5, settings=CONFIG
+        )
+        assert seen == [False]
+
+    @pytest.mark.slow
+    def test_concurrent_renders_of_real_pdfs_match_the_serial_ones(self, tmp_path: Path) -> None:
+        # In a subprocess: without the lock PDFium crashes the interpreter (access violation),
+        # which must not take the test run down with it.
+        done = subprocess.run(
+            [sys.executable, "-c", STRESS],
+            capture_output=True,
+            text=True,
+            cwd=tmp_path,
+            timeout=300,
+        )
+        assert done.returncode == 0, done.stdout + done.stderr[-2000:]
+        assert "MISMATCHES 0" in done.stdout

@@ -11,9 +11,14 @@ Uploads are not trusted:
   * a PDF is page-counted BEFORE it is rendered, so a 500-page upload costs one header read;
   * size is checked first; Pillow's decompression-bomb guard is left on.
 
-Everything is synchronous and CPU-bound: the API runs it in a thread.
+Everything is synchronous and CPU-bound: the API runs it in a thread. PDFium is NOT thread-safe
+(two threads rendering at once crashed the whole process with an access violation, and in the
+live demo silently gave different pixels for the same PDF), so every use of it here goes
+through one process-wide lock. Model calls, the slow part, stay concurrent.
 """
 
+import contextlib
+import threading
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -24,6 +29,10 @@ from docextract.ingest.manifest import parse_page_range
 from docextract.ingest.pages import PageLoadError, load_pages
 from docextract.ingest.pipeline import store_pages
 from docextract.ingest.probe import sniff_format
+
+# Held around EVERY PDFium call (page counting and rendering). A threading lock, because the API
+# runs this module in worker threads.
+_PDFIUM_LOCK = threading.Lock()
 
 
 class UploadError(Exception):
@@ -51,14 +60,15 @@ def _page_total(files: Sequence[bytes], page_range: str | None) -> int:
         if sniff_format(data[:16]) != "pdf":
             total += 1  # an image is one page (page_range on an image fails when it is loaded)
             continue
-        try:
-            document = pdfium.PdfDocument(data)
-        except pdfium.PdfiumError as exc:
-            raise UnreadableUpload(f"file {index}: cannot open the PDF: {exc}") from exc
-        try:
-            count = len(document)
-        finally:
-            document.close()
+        with _PDFIUM_LOCK:
+            try:
+                document = pdfium.PdfDocument(data)
+            except pdfium.PdfiumError as exc:
+                raise UnreadableUpload(f"file {index}: cannot open the PDF: {exc}") from exc
+            try:
+                count = len(document)
+            finally:
+                document.close()
         try:
             total += len(parse_page_range(page_range, count))
         except ValueError as exc:
@@ -94,10 +104,12 @@ def pages_from_uploads(
         path = raw / f"f{index}.bin"
         path.write_bytes(data)
         paths.append(path)
+    has_pdf = any(sniff_format(data[:16]) == "pdf" for data in files)
     try:
-        rendered = load_pages(
-            paths, page_range=page_range, dpi=config.dpi, max_long_edge=config.max_long_edge
-        )
+        with _PDFIUM_LOCK if has_pdf else contextlib.nullcontext():
+            rendered = load_pages(
+                paths, page_range=page_range, dpi=config.dpi, max_long_edge=config.max_long_edge
+            )
     except PageLoadError as exc:
         raise UnreadableUpload(str(exc)) from exc
     out = workdir / "pages"
