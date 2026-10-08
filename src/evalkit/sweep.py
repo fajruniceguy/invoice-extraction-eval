@@ -143,8 +143,10 @@ def _cheaper(row: SweepRow, base: SweepRow) -> bool:
     """Strictly cheaper at list price than the baseline, or as cheap and strictly faster."""
     if row.list_cost_per_doc is None or base.list_cost_per_doc is None:
         return False
-    if row.list_cost_per_doc != base.list_cost_per_doc:
-        return row.list_cost_per_doc < base.list_cost_per_doc
+    if row.list_cost_per_doc < base.list_cost_per_doc:
+        return True
+    if row.list_cost_per_doc > base.list_cost_per_doc:
+        return False
     if row.latency_p50_ms is None or base.latency_p50_ms is None:
         return False
     return row.latency_p50_ms < base.latency_p50_ms

@@ -163,6 +163,28 @@ class TestChoose:
         assert "Thin evidence" not in solid.why
 
 
+class TestReportCaveat:
+    def report(self, independent: int) -> str:
+        rows = [baseline_row(), row("a", cost="0.05", independent=independent)]
+        return to_markdown(rows, choose(rows), sweep_id="t", tolerance=DEFAULT_TOLERANCE)
+
+    def test_under_ten_independent_documents_the_report_carries_the_caveat(self) -> None:
+        assert "Caveat: the comparisons rest on as few as 9 independent documents" in self.report(9)
+
+    def test_at_ten_there_is_none(self) -> None:
+        assert "Caveat" not in self.report(10)
+
+    def test_the_caveat_names_the_smallest_sample(self) -> None:
+        rows = [baseline_row(), row("a", independent=12), row("b", independent=4)]
+        text = to_markdown(rows, choose(rows), sweep_id="t", tolerance=DEFAULT_TOLERANCE)
+        assert "as few as 4 independent documents" in text
+
+    def test_a_sweep_of_only_the_baseline_has_nothing_to_caveat(self) -> None:
+        rows = [baseline_row()]
+        text = to_markdown(rows, choose(rows), sweep_id="t", tolerance=DEFAULT_TOLERANCE)
+        assert "Caveat" not in text and "Chosen: **baseline**" in text
+
+
 # ------------------------------------------------------------------ built from real run folders
 
 

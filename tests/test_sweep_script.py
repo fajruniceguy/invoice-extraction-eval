@@ -196,6 +196,20 @@ def test_resume_runs_only_the_points_that_are_missing(
     assert more.stdout.count("already done, skipped (--resume)") == 1
 
 
+def test_a_failed_document_in_a_skipped_point_still_makes_the_exit_code_1(
+    ws: Workspace, fake_llm: FakeLLMServer
+) -> None:
+    baseline(ws, fake_llm)
+    fake_llm.enqueue(cheap(), Reply(500, {"error": {"message": "upstream exploded"}}), cheap())
+    args = ("--resolution", "1024", "--effort", "")
+    first = sweep(ws, fake_llm, *args)
+    assert first.returncode == 1, first.stdout + first.stderr
+    resumed = sweep(ws, fake_llm, *args, "--resume")
+    assert "already done, skipped (--resume)" in resumed.stdout
+    assert len(fake_llm.requests) == 3  # nothing new was asked
+    assert resumed.returncode == 1, resumed.stdout + resumed.stderr  # the failure is not forgotten
+
+
 def test_a_half_finished_run_folder_is_never_overwritten(
     ws: Workspace, fake_llm: FakeLLMServer
 ) -> None:
@@ -213,6 +227,19 @@ def test_zero_prices_are_refused_because_cost_is_an_axis(
     done = sweep(ws, fake_llm, LLM_PRICE_INPUT_PER_MTOK="0", LLM_PRICE_OUTPUT_PER_MTOK="0")
     assert done.returncode == 2 and "both 0" in done.stderr
     assert fake_llm.requests == []
+
+
+def test_the_cost_cap_stops_the_sweep_with_exit_3_and_no_report(
+    ws: Workspace, fake_llm: FakeLLMServer
+) -> None:
+    baseline(ws, fake_llm)
+    # every call costs $2.90 at these prices: the first one crosses a $1.00 cap
+    done = sweep(ws, fake_llm, "--resolution", "1024,1568", "--effort", "", MAX_RUN_COST_USD="1.00")
+    assert done.returncode == 3, done.stdout + done.stderr
+    assert len(fake_llm.requests) == 1  # the call that crossed the cap, then nothing
+    assert "not_run" in done.stdout
+    assert not (ws.runs / "sweep-t-res-1568").exists()  # the next point never started
+    assert not (ws.tmp / "sweeps" / "t").exists()  # no report from a stopped sweep
 
 
 def test_a_missing_baseline_is_refused(ws: Workspace, fake_llm: FakeLLMServer) -> None:
