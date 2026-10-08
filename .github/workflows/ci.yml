@@ -9,6 +9,10 @@ jobs:
     # windows-latest: the suite has only ever been run on Windows (long-path handling, PDFium)
     runs-on: windows-latest
     steps:
+      # LF checkouts: scorecards record hashes of the labels and the manifest as BYTES, so a
+      # CRLF checkout would not reproduce the committed ones
+      - name: Keep line endings as committed
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # the secret scan reads the whole history
@@ -25,4 +29,5 @@ jobs:
         run: python -m uv run ruff check
       - name: Tests (fast and slow)
         run: python -m uv run pytest -q -m "slow or not slow"
-      # The offline re-score of committed predictions joins this job with M9, when those exist.
+      - name: Re-score the committed results offline (no model, no key)
+        run: python -m uv run python scripts/check_results.py

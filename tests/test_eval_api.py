@@ -371,6 +371,21 @@ class TestMain:
         assert "cannot be reached" in capsys.readouterr().err
         assert not (data.runs / "r" / "run.json").exists()
 
+    def test_with_no_selection_it_evaluates_the_test_split(
+        self, data: Dataset, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        data.png("doc_a", split="dev")
+        data.png("doc_t", split="test")
+        assert eval_api.main(self.argv(data, "--dry-run")) == 0
+        out = capsys.readouterr().out
+        assert "would send   doc_t" in out and "doc_a" not in out
+
+    def test_a_split_and_a_doc_cannot_be_combined(self, data: Dataset) -> None:
+        data.png("doc_a")
+        with pytest.raises(SystemExit) as caught:
+            eval_api.main(self.argv(data, "--split", "dev", "--doc", "doc_a"))
+        assert caught.value.code == 2
+
     def test_an_unknown_document_exits_2(
         self, data: Dataset, capsys: pytest.CaptureFixture[str]
     ) -> None:

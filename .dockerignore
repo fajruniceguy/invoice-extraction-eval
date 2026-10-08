@@ -1,0 +1,18 @@
+# An ALLOW-LIST: nothing reaches the build unless it is named below, so a new secret file, the
+# unredacted originals (data/private), a run's outputs or the git history can never end up in
+# an image layer.
+*
+
+!pyproject.toml
+!uv.lock
+!.python-version
+!src
+!scripts
+!data/manifest.csv
+!data/pages
+!ground_truth
+
+# inside what is allowed
+**/__pycache__
+**/*.pyc
+ground_truth/drafts

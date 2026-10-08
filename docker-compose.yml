@@ -1,0 +1,42 @@
+# docker compose up                       -> the API on http://localhost:8000 (GET /health, POST /extract)
+# docker compose run --rm eval            -> scores the test split (the script's default) THROUGH
+#                                             that API into ./outputs/runs/
+# docker compose run --rm eval --split dev --run-id dev-1      (any scripts/eval_api.py option)
+#
+# Only .env needs filling in (copy .env.example). The model key goes to the `api` service; the
+# `eval` service never receives it. A clean clone has an empty response cache, so the first eval
+# run calls the model and costs money (bounded by MAX_RUN_COST_USD in .env).
+services:
+  api:
+    build: .
+    image: docextract:local
+    env_file: .env
+    environment:
+      CALL_LOG_PATH: /app/outputs/logs/calls.jsonl
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./outputs:/app/outputs
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  eval:
+    image: docextract:local
+    profiles: ["eval"] # not started by `docker compose up`; `run` starts it (and the api first)
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_URL: http://api:8000
+      API_TOKEN: ${API_TOKEN:-}
+    volumes:
+      - ./outputs:/app/outputs
+    entrypoint: ["python", "scripts/eval_api.py"]

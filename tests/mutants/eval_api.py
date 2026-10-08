@@ -125,4 +125,12 @@ MUTANTS = [
         '"endpoint": state.settings.llm_base_url',
         '"endpoint": ""',
     ),
+    (EVAL, T, "the default selection is dev", 'args.split = "test"', 'args.split = "dev"'),
+    (
+        EVAL,
+        T,
+        "no selection is an error again",
+        "if args.split is None and not args.doc:",
+        "if False:",
+    ),
 ]

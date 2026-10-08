@@ -1,13 +1,14 @@
 """Evaluate through the HTTP API: the same run folder `extract.py` writes, but every document goes
 through POST /extract of a running server, then it is scored.
 
-Usage: python -m uv run python scripts/eval_api.py (--split dev|test | --doc DOC_ID ...)
+Usage: python -m uv run python scripts/eval_api.py [--split dev|test | --doc DOC_ID ...]
            [--api-url URL] [--token T] [--run-id ID] [--concurrency N] [--timeout S]
            [--no-score] [--dry-run]
            [--manifest FILE] [--pages-dir DIR] [--ground-truth-dir DIR] [--runs-dir DIR]
 
-This is what `docker compose run --rm eval` runs. The client holds NO model key and never reads
-.env: the server (the `api` service) calls the model. It sends each document's stored (redacted)
+This is what `docker compose run --rm eval` runs (no selection = the whole test split). The client
+holds NO model key and never reads .env: the server (the `api` service) calls the model. It sends
+each document's stored (redacted)
 pages as the `files` of one request, in page order, so the server's answer is a `DocRecord` like
 the ones `extract.py` writes. A PNG page is read back by the server byte for byte; a JPEG page is
 decoded and encoded again at the same quality (upload goes through ingestion's own steps), so its
@@ -313,8 +314,10 @@ def main(argv: list[str] | None = None) -> int:
     paths = DatasetPaths.default()
     root = find_repo_root()
     parser = argparse.ArgumentParser(description="Evaluate documents through the HTTP API.")
-    which = parser.add_mutually_exclusive_group(required=True)
-    which.add_argument("--split", choices=["dev", "test"], help="every document of a split")
+    which = parser.add_mutually_exclusive_group()
+    which.add_argument(
+        "--split", choices=["dev", "test"], help="every document of a split (default: test)"
+    )
     which.add_argument("--doc", action="append", default=[], help="a doc_id (repeatable)")
     parser.add_argument(
         "--api-url", default=os.environ.get("API_URL", "http://127.0.0.1:8000"), help="the server"
@@ -334,6 +337,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ground-truth-dir", type=Path, default=paths.ground_truth_dir)
     parser.add_argument("--runs-dir", type=Path, default=root / "outputs" / "runs")
     args = parser.parse_args(argv)
+    if args.split is None and not args.doc:
+        args.split = "test"  # `docker compose run --rm eval` with no arguments
 
     try:
         rows = read_manifest(args.manifest)
