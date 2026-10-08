@@ -15,7 +15,9 @@ src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py,
 data/{manifest.csv, redactions.yaml, pages/, private/{raw,preview}}
 ground_truth/{, drafts/}
 outputs/
+results/
 scripts/
+Dockerfile, docker-compose.yml, .dockerignore
 tools/{label_app.py, secret_scan.py, mutation_check.py}
 .claude/{settings.json, hooks/pre_commit_secret_scan.py, skills/mutation-check/SKILL.md}
 .github/workflows/ci.yml
@@ -91,8 +93,13 @@ docs/
 ## HTTP API (`docextract/api/`, `calllog.py`, `extract/concurrent.py`)
 - `python -m uv run uvicorn --factory docextract.api.app:create_app` (config from the environment/`.env`, nothing at import). `GET /health`; `POST /extract` = ONE document from the uploaded `files` (pages or photos in order; optional `page_range`, `doc_id`, `?compact=true`); `POST /extract/batch` = one file per document, answered synchronously (200, `{"run": ..., "documents": [...]}`: a bad file is `refused`, a provider failure `failed`, after the cost cap the rest are `not_run`). Answers are `DocRecord`s, built by the runner's own `extract_record`, so an API answer has the shape of a run-folder entry.
 - One process-wide semaphore (`API_CONCURRENCY`) bounds documents in flight across all requests; `extract.py --concurrency N` uses the same `run_bounded` helper (default 1 = sequential). Calls already in flight finish after the cost cap is crossed, so spend can pass `MAX_RUN_COST_USD` by up to that many calls; parallel calls also spend a provider's per-minute/per-day quota faster.
-- Uploads: bytes only, never a file name as a path; the same `load_pages` + `store_pages` + `IngestSettings` as ingestion minus redaction, so pages are byte-identical to ingested ones (same response-cache keys); a temp dir per request, PDFs page-counted before rendering, `API_MAX_UPLOAD_MB`/`API_MAX_BATCH` limits, optional bearer `API_TOKEN`. Nothing is written under `data/`.
+- Uploads: bytes only, never a file name as a path; the same `load_pages` + `store_pages` + `IngestSettings` as ingestion minus redaction, so a PNG page is byte-identical to the ingested one (same response-cache key); a JPEG page is decoded and encoded again at q92, so it is NOT (slightly different pixels, other cache key); a temp dir per request, PDFs page-counted before rendering, `API_MAX_UPLOAD_MB`/`API_MAX_BATCH` limits, optional bearer `API_TOKEN`. Nothing is written under `data/`.
 - Every request leaves one JSON line (request id, route, tokens, cost paid/avoided, cache hit, latency, attempts, repairs; never a file name or content) on the `docextract.calls` logger and in `CALL_LOG_PATH` when set.
+
+## Docker, eval through the API, committed results (`Dockerfile`, `docker-compose.yml`, `scripts/eval_api.py`, `promote_run.py`, `check_results.py`, `results/`)
+- One image (python 3.11-slim, uv `--frozen`, runtime deps only, non-root) for two services. `.dockerignore` is an ALLOW-LIST (`*` then `!src`...), so `.env`, `data/private`, `outputs`, `.git`, `ground_truth/drafts` never reach a layer. `api` takes `env_file: .env` (the pre-labeler key rides along unused); `eval` (profile `eval`, so plain `up` does not start it) gets no `env_file`, no model key, only `API_URL`/`API_TOKEN`. `./outputs` is mounted on both (cache, call log, runs).
+- `eval_api.py` is the `extract.py` of the API: the same `docs/` + `run.json` folder and the same exit codes (0/1/2/3), every document POSTed to `/extract` with its stored pages, the blind rule enforced client-side, `run.json` filled from `GET /health` (model, endpoint, prompt/schema hashes, settings; `budget_spent_usd` = what the server's budget moved during the run). No selection = `--split test`; the default lives in the script because arguments to `docker compose run` REPLACE a compose `command`. The server's cost cap lasts as long as its process: `docker compose restart api` resets it.
+- `promote_run.py RUN` copies a finished, scored, complete run to `results/<run_id>/` (refuses unscored, stopped, incomplete, existing, or key-shaped content). `check_results.py` re-scores every `results/*` with the committed git SHA/time and requires `score/` to match byte for byte (CI runs it; checkouts must be LF: the scorecard hashes label and manifest BYTES). A result is evidence of one sample of a noisy model (`docs/eval/noise.md`), never edited by hand.
 
 ## Regression comparison (`evalkit/compare.py`, `scripts/compare.py`)
 - `compare` re-scores both runs against the labels as they are now (never a stored `score/`) and pairs the labeled scalar fields of the documents scored in BOTH; line items are compared in aggregate only.
@@ -181,6 +188,11 @@ python -m uv run python scripts/calibrate.py RUN [RUN ...] [--out F] [--svg-dir 
 python tools/secret_scan.py (--staged | --worktree | --history | --env-values)   # secrets in what a commit adds / the whole history / the real .env values (names only); exit 1 = found; stdlib only
 python -m uv run python tools/mutation_check.py tests/mutants/<topic>.py   # mutation pass on an isolated copy; exit 1 = a mutant survived
 python -m uv run uvicorn --factory docextract.api.app:create_app --port 8000   # the API: GET /health, POST /extract, POST /extract/batch (see HTTP API); calls the configured model, so it costs money unless cached
+docker compose up -d --wait                          # the API in a container (needs .env); GET /health, POST /extract
+docker compose run --rm eval [--split dev] [--doc ID] [--run-id ID]   # COSTS MONEY unless cached: eval through that API -> ./outputs/runs/<id>, scored
+python -m uv run python scripts/eval_api.py [--api-url URL] [--dry-run]   # the same client without Docker, against any running API
+python -m uv run python scripts/promote_run.py outputs/runs/<run_id>   # scored complete run -> results/<run_id>/ (committed evidence)
+python -m uv run python scripts/check_results.py   # re-score results/* offline; exit 1 = a committed scorecard does not reproduce
 python -m uv run streamlit run tools/label_app.py   # the labeling app
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json

@@ -1,0 +1,187 @@
+{
+  "doc_id": "doc_029",
+  "errors": {
+    "abstained_on_value": 1,
+    "numeric_mismatch": 4,
+    "row_spurious": 14,
+    "string_mismatch": 5
+  },
+  "fields": [
+    {
+      "error_class": "string_mismatch",
+      "expected": "Hotways Chicken (Malang Begawan)",
+      "how": null,
+      "name": "vendor_name",
+      "outcome": "value_wrong",
+      "predicted": "Hotway's",
+      "predicted_status": "extracted",
+      "similarity": 0.3684210526315789
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "HCMT202505110136",
+      "how": "exact",
+      "name": "document_number",
+      "outcome": "correct",
+      "predicted": "HCMT202505110136",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "BCA",
+      "how": "exact",
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": "BCA",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": "abstained_on_value",
+      "expected": "121000",
+      "how": null,
+      "name": "total",
+      "outcome": "abstained",
+      "predicted": null,
+      "predicted_status": "abstained",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 1,
+    "abstention_rate": 0.08333333333333333,
+    "accuracy": 0.8333333333333334,
+    "answered": 11,
+    "correct": 10,
+    "coverage": 0.9166666666666666,
+    "failure_rate": 0.0,
+    "labeled": 12,
+    "no_prediction": 0,
+    "selective_accuracy": 0.9090909090909091,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 1
+  },
+  "owner": "doc_029",
+  "rows": {
+    "cell_accuracy": 0.6,
+    "cells_compared": 20,
+    "cells_correct": 12,
+    "errors": [
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "string_mismatch",
+      "numeric_mismatch",
+      "string_mismatch",
+      "numeric_mismatch",
+      "string_mismatch",
+      "numeric_mismatch",
+      "string_mismatch",
+      "numeric_mismatch"
+    ],
+    "labeled": true,
+    "matched": 5,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 1,
+    "row_accuracy": 0.2,
+    "row_f1": 0.4166666666666667,
+    "row_precision": 0.2631578947368421,
+    "row_recall": 1.0,
+    "spurious": 14
+  },
+  "status": "ok"
+}

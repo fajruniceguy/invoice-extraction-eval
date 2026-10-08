@@ -1,0 +1,182 @@
+{
+  "doc_id": "doc_035",
+  "errors": {
+    "date_mismatch": 1,
+    "hallucinated_value": 2,
+    "numeric_mismatch": 3,
+    "row_spurious": 1,
+    "string_mismatch": 2
+  },
+  "fields": [
+    {
+      "error_class": null,
+      "expected": "Onix Fragrance Indonesia",
+      "how": "exact",
+      "name": "vendor_name",
+      "outcome": "correct",
+      "predicted": "Onix Fragrance Indonesia",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "Fajru Rahman",
+      "how": "exact",
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": "Fajru Rahman",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": "string_mismatch",
+      "expected": "585195354237077331",
+      "how": null,
+      "name": "document_number",
+      "outcome": "value_wrong",
+      "predicted": "505/165454327957233",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": "date_mismatch",
+      "expected": "2026-07-25",
+      "how": null,
+      "name": "document_date",
+      "outcome": "value_wrong",
+      "predicted": "2026-08-25",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "IDR",
+      "how": "exact",
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": "IDR",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "518000",
+      "how": "numeric",
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": "518000.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": "numeric_mismatch",
+      "expected": "357096",
+      "how": null,
+      "name": "total",
+      "outcome": "value_wrong",
+      "predicted": "487000.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 0,
+    "abstention_rate": 0.0,
+    "accuracy": 0.7692307692307693,
+    "answered": 13,
+    "correct": 10,
+    "coverage": 1.0,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 0.7692307692307693,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 3
+  },
+  "owner": "doc_035",
+  "rows": {
+    "cell_accuracy": 0.7916666666666666,
+    "cells_compared": 24,
+    "cells_correct": 19,
+    "errors": [
+      "row_spurious",
+      "string_mismatch",
+      "numeric_mismatch",
+      "numeric_mismatch",
+      "hallucinated_value",
+      "hallucinated_value"
+    ],
+    "labeled": true,
+    "matched": 6,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 3,
+    "row_accuracy": 0.5,
+    "row_f1": 0.923076923076923,
+    "row_precision": 0.8571428571428571,
+    "row_recall": 1.0,
+    "spurious": 1
+  },
+  "status": "ok"
+}

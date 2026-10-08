@@ -1,0 +1,178 @@
+{
+  "doc_id": "doc_020",
+  "errors": {
+    "abstained_on_value": 3,
+    "row_missed": 2,
+    "row_spurious": 2
+  },
+  "fields": [
+    {
+      "error_class": null,
+      "expected": "Heavenly Chocolate Dewi Sri",
+      "how": "exact",
+      "name": "vendor_name",
+      "outcome": "correct",
+      "predicted": "Heavenly Chocolate Dewi Sri",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "Jl. Dewi Sri No. 23, Legian, 80361",
+      "how": "exact",
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": "Jl. Dewi Sri No. 23, Legian, 80361",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "43.254.518.4-905.000",
+      "how": "exact",
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": "43.254.518.4-905.000",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "Kak Rida>",
+      "how": "normalized",
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": "Kak Rida",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "POS-250825-49",
+      "how": "exact",
+      "name": "document_number",
+      "outcome": "correct",
+      "predicted": "POS-250825-49",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "2025-08-25",
+      "how": "date",
+      "name": "document_date",
+      "outcome": "correct",
+      "predicted": "2025-08-25",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "QR Mandiri",
+      "how": "exact",
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": "QR Mandiri",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": "abstained_on_value",
+      "expected": "676000",
+      "how": null,
+      "name": "subtotal",
+      "outcome": "abstained",
+      "predicted": null,
+      "predicted_status": "abstained",
+      "similarity": null
+    },
+    {
+      "error_class": "abstained_on_value",
+      "expected": "74360",
+      "how": null,
+      "name": "tax",
+      "outcome": "abstained",
+      "predicted": null,
+      "predicted_status": "abstained",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": "abstained_on_value",
+      "expected": "750360",
+      "how": null,
+      "name": "total",
+      "outcome": "abstained",
+      "predicted": null,
+      "predicted_status": "abstained",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 3,
+    "abstention_rate": 0.23076923076923078,
+    "accuracy": 0.7692307692307693,
+    "answered": 10,
+    "correct": 10,
+    "coverage": 0.7692307692307693,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 1.0,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 0
+  },
+  "owner": "doc_020",
+  "rows": {
+    "cell_accuracy": 1.0,
+    "cells_compared": 0,
+    "cells_correct": 0,
+    "errors": [
+      "row_missed",
+      "row_missed",
+      "row_spurious",
+      "row_spurious"
+    ],
+    "labeled": true,
+    "matched": 0,
+    "missed": 2,
+    "no_itemization": false,
+    "perfect": 0,
+    "row_accuracy": 1.0,
+    "row_f1": 0.0,
+    "row_precision": 0.0,
+    "row_recall": 0.0,
+    "spurious": 2
+  },
+  "status": "ok"
+}

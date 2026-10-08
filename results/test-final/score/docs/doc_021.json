@@ -1,0 +1,171 @@
+{
+  "doc_id": "doc_021",
+  "errors": {
+    "abstained_on_value": 3
+  },
+  "fields": [
+    {
+      "error_class": null,
+      "expected": "SAMBAL BAKAR INDONESIA",
+      "how": "normalized",
+      "name": "vendor_name",
+      "outcome": "correct",
+      "predicted": "Sambal Bakar Indonesia",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "Jl. Sunset Road No. 106, Seminyak, Kec. Kuta Utara, Kabupaten Badung, Bali 80361",
+      "how": "normalized",
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": "Jl. Sunset Road No.106, Seminyak, Kec. Kuta Utara, Kabupaten Badung, Bali 80361",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "SBISR202508210056",
+      "how": "exact",
+      "name": "document_number",
+      "outcome": "correct",
+      "predicted": "SBISR202508210056",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "2025-08-21",
+      "how": "date",
+      "name": "document_date",
+      "outcome": "correct",
+      "predicted": "2025-08-21",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "EDC BRI QRIS",
+      "how": "exact",
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": "EDC BRI QRIS",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": "abstained_on_value",
+      "expected": "304092",
+      "how": null,
+      "name": "subtotal",
+      "outcome": "abstained",
+      "predicted": null,
+      "predicted_status": "abstained",
+      "similarity": null
+    },
+    {
+      "error_class": "abstained_on_value",
+      "expected": "30409",
+      "how": null,
+      "name": "tax",
+      "outcome": "abstained",
+      "predicted": null,
+      "predicted_status": "abstained",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": "abstained_on_value",
+      "expected": "334500",
+      "how": null,
+      "name": "total",
+      "outcome": "abstained",
+      "predicted": null,
+      "predicted_status": "abstained",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 3,
+    "abstention_rate": 0.23076923076923078,
+    "accuracy": 0.7692307692307693,
+    "answered": 10,
+    "correct": 10,
+    "coverage": 0.7692307692307693,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 1.0,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 0
+  },
+  "owner": "doc_021",
+  "rows": {
+    "cell_accuracy": 1.0,
+    "cells_compared": 0,
+    "cells_correct": 0,
+    "errors": [],
+    "labeled": false,
+    "matched": 0,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 0,
+    "row_accuracy": 1.0,
+    "row_f1": 1.0,
+    "row_precision": 1.0,
+    "row_recall": 1.0,
+    "spurious": 0
+  },
+  "status": "ok"
+}
