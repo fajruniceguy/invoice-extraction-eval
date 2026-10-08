@@ -13,6 +13,7 @@ interval over documents, and a verdict. The statistics are hand-written (no scip
     McNemar alone is optimistic about that.
 """
 
+import json
 import random
 from collections import defaultdict
 from collections.abc import Sequence
@@ -28,7 +29,14 @@ from docextract.extract.runner import DocRecord
 from docextract.extract.schema import SCALAR_FIELD_NAMES
 from docextract.ingest.manifest import read_manifest
 from evalkit.metrics import DocumentScore, FieldMetrics, FieldScore, RowsScore
-from evalkit.scorecard import NO_VALUE, SLICE_COLUMNS, Scorecard, score_run
+from evalkit.scorecard import (
+    NO_VALUE,
+    SLICE_COLUMNS,
+    Scorecard,
+    field_dict,
+    metrics_dict,
+    score_run,
+)
 from evalkit.taxonomy import ERROR_CLASSES, count_errors
 
 BOOTSTRAP_LEVEL = 0.95
@@ -196,6 +204,51 @@ def pair_fields(
     return pairs, sorted(left.keys() - right.keys()), sorted(right.keys() - left.keys())
 
 
+# ---------------------------------------------------------------- the verdict
+
+Verdict = Literal["regression", "ok"]
+
+
+@dataclass(frozen=True)
+class Thresholds:
+    """The gate: a regression needs BOTH statistical evidence (the one-sided exact McNemar p-value
+    at or below `alpha`) and a material drop (baseline accuracy minus candidate accuracy at or
+    above `max_drop`, a fraction: 0.02 is two points)."""
+
+    alpha: float = 0.05
+    max_drop: float = 0.02
+
+    def __post_init__(self) -> None:
+        if not 0 < self.alpha < 1:
+            raise ValueError(f"alpha must be between 0 and 1 (exclusive), got {self.alpha}")
+        if not 0 <= self.max_drop <= 1:
+            raise ValueError(f"max_drop must be between 0 and 1, got {self.max_drop}")
+
+
+@dataclass(frozen=True)
+class Decision:
+    verdict: Verdict
+    significant: bool  # p_worse <= alpha
+    material: bool  # drop >= max_drop
+    drop: Fraction  # baseline accuracy - candidate accuracy over the paired fields (exact)
+
+
+def decide(
+    test: McNemar,
+    *,
+    baseline_correct: int,
+    candidate_correct: int,
+    pairs: int,
+    thresholds: Thresholds,
+) -> Decision:
+    """Both comparisons are exact (Fractions): the boundary is the stated `<=` / `>=`, never float
+    noise. `Fraction(str(x))` reads 0.05 as 1/20, as a person means it."""
+    drop = Fraction(baseline_correct - candidate_correct, pairs)
+    significant = test.p_worse <= Fraction(str(thresholds.alpha))
+    material = drop >= Fraction(str(thresholds.max_drop))
+    return Decision("regression" if significant and material else "ok", significant, material, drop)
+
+
 # ---------------------------------------------------------------- the comparison
 
 
@@ -254,9 +307,34 @@ class Comparison:
     per_field: list[FieldDelta]
     slices: list[SliceDelta]
     notes: list[str]
+    thresholds: Thresholds
+    decision: Decision
 
     def flips(self, kind: Flip) -> list[FieldPair]:
         return [pair for pair in self.pairs if pair.flip == kind]
+
+    @property
+    def verdict_line(self) -> str:
+        decision, test, rule = self.decision, self.mcnemar, self.thresholds
+        name = "REGRESSION" if decision.verdict == "regression" else "OK"
+        return (
+            f"VERDICT: {name} (p_worse {float(test.p_worse):.4f} "
+            f"{'<=' if decision.significant else '>'} alpha {rule.alpha:g}; "
+            f"accuracy drop {float(decision.drop) * 100:.1f} pts "
+            f"{'>=' if decision.material else '<'} {rule.max_drop * 100:.1f})"
+        )
+
+    def to_json(self) -> str:
+        """Sorted keys and no timestamps: the same inputs always give the same bytes."""
+        payload = _Report(self).payload()
+        return json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+
+    def to_markdown(self, max_flips: int = 30) -> str:
+        return _Report(self).markdown(max_flips)
+
+    def to_text(self, max_flips: int = 30) -> str:
+        """What the CLI prints: the verdict line first."""
+        return _Report(self).text(max_flips)
 
 
 def differences(baseline: dict[str, Any], candidate: dict[str, Any]) -> list[Difference]:
@@ -349,6 +427,7 @@ def compare_runs(
     manifest_path: Path,
     labels_dir: Path,
     pages_dir: Path,
+    thresholds: Thresholds | None = None,
     seed: int = 1,
     resamples: int = 10_000,
 ) -> Comparison:
@@ -419,6 +498,8 @@ def compare_runs(
             "fields inside a document are not independent, so the McNemar p-value is optimistic "
             "and the bootstrap interval is only indicative"
         )
+    thresholds = thresholds or Thresholds()
+    test = mcnemar_exact(regressions, improvements)
     return Comparison(
         baseline_id=str(baseline.manifest["run_id"]),
         candidate_id=str(candidate.manifest["run_id"]),
@@ -431,7 +512,7 @@ def compare_runs(
         pairs=pairs,
         both_correct=both_correct,
         both_wrong=both_wrong,
-        mcnemar=mcnemar_exact(regressions, improvements),
+        mcnemar=test,
         bootstrap=bootstrap,
         baseline=FieldMetrics.from_outcomes(pair.baseline.outcome for pair in pairs),
         candidate=FieldMetrics.from_outcomes(pair.candidate.outcome for pair in pairs),
@@ -442,4 +523,379 @@ def compare_runs(
         per_field=_field_deltas(pairs),
         slices=_slice_deltas(pairs, manifest_path),
         notes=notes,
+        thresholds=thresholds,
+        decision=decide(
+            test,
+            baseline_correct=sum(pair.baseline.correct for pair in pairs),
+            candidate_correct=sum(pair.candidate.correct for pair in pairs),
+            pairs=len(pairs),
+            thresholds=thresholds,
+        ),
     )
+
+
+# ---------------------------------------------------------------- reports
+
+HEADLINE_METRICS: tuple[str, ...] = (
+    "accuracy",
+    "selective_accuracy",
+    "coverage",
+    "abstention_rate",
+    "failure_rate",
+)
+ROW_METRICS: tuple[str, ...] = (
+    "row_precision",
+    "row_recall",
+    "row_f1",
+    "row_accuracy",
+    "cell_accuracy",
+)
+VALUE_WIDTH = 40
+
+
+def _rows_values(rows: RowsScore) -> dict[str, float]:
+    return {name: getattr(rows, name) for name in ROW_METRICS}
+
+
+def _pair_side(score: FieldScore) -> dict[str, Any]:
+    shown = field_dict(score)
+    return {
+        "predicted": shown["predicted"],
+        "status": shown["predicted_status"],
+        "outcome": shown["outcome"],
+        "error_class": shown["error_class"],
+    }
+
+
+def _flip_entry(pair: FieldPair) -> dict[str, Any]:
+    return {
+        "doc_id": pair.doc_id,
+        "field": pair.name,
+        "flip": pair.flip,
+        "expected": field_dict(pair.baseline)["expected"],
+        "baseline": _pair_side(pair.baseline),
+        "candidate": _pair_side(pair.candidate),
+    }
+
+
+def _delta(before: float, after: float) -> dict[str, float]:
+    return {"baseline": before, "candidate": after, "delta": after - before}
+
+
+def _cell(value: Any) -> str:
+    text = "(none)" if value is None else str(value)
+    text = text.replace("|", "/").replace("\n", " ")
+    return text if len(text) <= VALUE_WIDTH else text[: VALUE_WIDTH - 1] + "…"
+
+
+def _side(side: dict[str, Any]) -> str:
+    """How one run answered a field, for a table or a line."""
+    status = side["status"]
+    if status is None:
+        return "(no prediction)"
+    if status in ("abstained", "absent"):
+        return f"({status})"
+    return _cell(side["predicted"])
+
+
+def _points(value: float) -> str:
+    return f"{value * 100:+.1f} pts"
+
+
+class _Report:
+    """The comparison as data, text and markdown."""
+
+    def __init__(self, comparison: Comparison) -> None:
+        self.c = comparison
+
+    # ------------------------------------------------------------ data
+
+    def payload(self) -> dict[str, Any]:
+        c = self.c
+        decision, test, boot = c.decision, c.mcnemar, c.bootstrap
+        headline = {
+            name: _delta(metrics_dict(c.baseline)[name], metrics_dict(c.candidate)[name])
+            for name in HEADLINE_METRICS
+        }
+        rows = {
+            name: _delta(_rows_values(c.baseline_rows)[name], _rows_values(c.candidate_rows)[name])
+            for name in ROW_METRICS
+        }
+        for name in ("matched", "missed", "spurious", "perfect"):
+            rows[name] = _delta(getattr(c.baseline_rows, name), getattr(c.candidate_rows, name))
+        return {
+            "baseline": c.baseline_id,
+            "candidate": c.candidate_id,
+            "verdict": decision.verdict,
+            "verdict_line": c.verdict_line,
+            "thresholds": {"alpha": c.thresholds.alpha, "max_drop": c.thresholds.max_drop},
+            "decision": {
+                "significant": decision.significant,
+                "material": decision.material,
+                "drop": float(decision.drop),
+            },
+            "differs": [
+                {"key": d.key, "baseline": d.baseline, "candidate": d.candidate} for d in c.differs
+            ],
+            "documents": {
+                "paired": c.documents,
+                "only_in_baseline": c.only_in_baseline,
+                "only_in_candidate": c.only_in_candidate,
+                "status_changes": [list(change) for change in c.status_changes],
+                "pages_differ": c.pages_differ,
+                "independent": boot.clusters,
+            },
+            "fields": {
+                "paired": len(c.pairs),
+                "both_correct": c.both_correct,
+                "regressions": test.regressions,
+                "improvements": test.improvements,
+                "both_wrong": c.both_wrong,
+            },
+            "mcnemar": {
+                "regressions": test.regressions,
+                "improvements": test.improvements,
+                "p_worse": float(test.p_worse),
+                "p_better": float(test.p_better),
+                "p_two_sided": float(test.p_two_sided),
+            },
+            "bootstrap": {
+                "delta": boot.delta,
+                "low": boot.low,
+                "high": boot.high,
+                "level": boot.level,
+                "resamples": boot.resamples,
+                "seed": boot.seed,
+                "clusters": boot.clusters,
+            },
+            "headline": headline,
+            "rows": rows,
+            "errors": [
+                {"class": name, **_delta(before, after)}
+                for name, before, after in error_mix(c.baseline_errors, c.candidate_errors)
+            ],
+            "per_field": [
+                {
+                    "field": d.name,
+                    "pairs": d.pairs,
+                    "baseline_correct": d.baseline_correct,
+                    "candidate_correct": d.candidate_correct,
+                    "regressions": d.regressions,
+                    "improvements": d.improvements,
+                }
+                for d in c.per_field
+            ],
+            "slices": [
+                {
+                    "column": s.column,
+                    "value": s.value,
+                    "labeled": s.baseline.labeled,
+                    "accuracy": _delta(s.baseline.accuracy, s.candidate.accuracy),
+                }
+                for s in c.slices
+            ],
+            "flips": {
+                kind: [_flip_entry(pair) for pair in c.flips(kind)]
+                for kind in ("regression", "improvement", "changed_wrong")
+            },
+            "notes": c.notes,
+        }
+
+    # ------------------------------------------------------------ text
+
+    def _flip_lines(self, kind: Flip, limit: int) -> list[str]:
+        flips = self.c.flips(kind)
+        lines = []
+        for pair in flips[:limit]:
+            entry = _flip_entry(pair)
+            lines.append(
+                f"  {pair.doc_id} {pair.name}: expected {_cell(entry['expected'])}; "
+                f"baseline {_side(entry['baseline'])} -> candidate {_side(entry['candidate'])}"
+                f" ({entry['candidate']['error_class'] or 'correct'})"
+            )
+        if len(flips) > limit:
+            lines.append(f"  ... and {len(flips) - limit} more in comparison.json")
+        return lines
+
+    def text(self, max_flips: int) -> str:
+        c = self.c
+        test, boot = c.mcnemar, c.bootstrap
+        lines = [
+            c.verdict_line,
+            f"compare: baseline {c.baseline_id}  vs  candidate {c.candidate_id}",
+        ]
+        if c.differs:
+            lines.append("differs:")
+            lines.extend(
+                f"  {d.key}: {_cell(d.baseline)} -> {_cell(d.candidate)}" for d in c.differs
+            )
+        else:
+            lines.append("differs: nothing (same model, prompt, schema and settings)")
+        lines.append(
+            f"paired: {len(c.documents)} document(s), {len(c.pairs)} labeled field(s), "
+            f"{boot.clusters} independent"
+        )
+        lines.append(
+            f"accuracy {c.baseline.accuracy:.3f} -> {c.candidate.accuracy:.3f}, "
+            f"selective {c.baseline.selective_accuracy:.3f} -> "
+            f"{c.candidate.selective_accuracy:.3f}, "
+            f"coverage {c.baseline.coverage:.3f} -> {c.candidate.coverage:.3f}"
+        )
+        lines.append(
+            f"rows: F1 {c.baseline_rows.row_f1:.3f} -> {c.candidate_rows.row_f1:.3f}, "
+            f"cell accuracy {c.baseline_rows.cell_accuracy:.3f} -> "
+            f"{c.candidate_rows.cell_accuracy:.3f}"
+        )
+        lines.append(
+            f"McNemar exact: {test.regressions} regression(s), {test.improvements} "
+            f"improvement(s); p_worse {float(test.p_worse):.4f}, "
+            f"p_better {float(test.p_better):.4f}, two-sided {float(test.p_two_sided):.4f}"
+        )
+        lines.append(
+            f"bootstrap ({boot.clusters} document(s), seed {boot.seed}, {boot.resamples} "
+            f"resamples): delta {_points(boot.delta)}, {boot.level:.0%} interval "
+            f"[{_points(boot.low)}, {_points(boot.high)}]"
+        )
+        lines.extend(f"note: {note}" for note in c.notes)
+        errors = error_mix(c.baseline_errors, c.candidate_errors)
+        if errors:
+            lines.append("errors: " + ", ".join(f"{n} {a} -> {b}" for n, a, b in errors))
+        for kind, title in (("regression", "regressions"), ("improvement", "improvements")):
+            flips = c.flips(kind)  # type: ignore[arg-type]
+            if flips:
+                lines.append(f"{title} ({len(flips)}):")
+                lines.extend(self._flip_lines(kind, max_flips))  # type: ignore[arg-type]
+        return "\n".join(lines) + "\n"
+
+    # ------------------------------------------------------------ markdown
+
+    def markdown(self, max_flips: int) -> str:
+        c = self.c
+        test, boot, t = c.mcnemar, c.bootstrap, c.thresholds
+        data = self.payload()
+        lines = [
+            f"# Comparison: `{c.baseline_id}` (baseline) vs `{c.candidate_id}` (candidate)",
+            "",
+            f"**{c.verdict_line}**",
+            "",
+            f"Rule: a regression needs the one-sided exact McNemar p-value <= {t.alpha:g} AND "
+            f"an accuracy drop >= {t.max_drop * 100:.1f} points over the paired fields.",
+            "",
+            "## What differs between the runs",
+            "",
+        ]
+        if c.differs:
+            lines += ["| setting | baseline | candidate |", "| --- | --- | --- |"]
+            lines += [
+                f"| {d.key} | {_cell(d.baseline)} | {_cell(d.candidate)} |" for d in c.differs
+            ]
+        else:
+            lines.append("Nothing: same model, endpoint, prompt, schema and settings.")
+        lines += [
+            "",
+            "## Documents",
+            "",
+            f"- paired: {len(c.documents)} ({boot.clusters} independent), "
+            f"{len(c.pairs)} labeled field(s)",
+        ]
+        lines += [f"- {note}" for note in c.notes]
+        lines += [
+            "",
+            "## Headline (paired fields)",
+            "",
+            "| metric | baseline | candidate | delta |",
+            "| --- | --- | --- | --- |",
+        ]
+        for name, values in data["headline"].items():
+            lines.append(
+                f"| {name} | {values['baseline']:.3f} | {values['candidate']:.3f} "
+                f"| {values['delta']:+.3f} |"
+            )
+        lines += [
+            "",
+            "## Paired test",
+            "",
+            "| | candidate correct | candidate not correct |",
+            "| --- | --- | --- |",
+            f"| baseline correct | {c.both_correct} | {test.regressions} (regressions) |",
+            f"| baseline not correct | {test.improvements} (improvements) | {c.both_wrong} |",
+            "",
+            f"- McNemar (exact): p_worse {float(test.p_worse):.4f}, p_better "
+            f"{float(test.p_better):.4f}, two-sided {float(test.p_two_sided):.4f}",
+            f"- paired bootstrap over {boot.clusters} document(s) (seed {boot.seed}, "
+            f"{boot.resamples} resamples): accuracy delta {_points(boot.delta)}, {boot.level:.0%} "
+            f"interval [{_points(boot.low)}, {_points(boot.high)}] "
+            "(reported, not part of the verdict)",
+            "",
+            "## By field",
+            "",
+            "| field | pairs | baseline correct | candidate correct | regressions | improvements |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ]
+        lines += [
+            f"| {d.name} | {d.pairs} | {d.baseline_correct} | {d.candidate_correct} "
+            f"| {d.regressions} | {d.improvements} |"
+            for d in c.per_field
+        ]
+        lines += [
+            "",
+            "## Line items (aggregate, paired documents)",
+            "",
+            "| metric | baseline | candidate | delta |",
+            "| --- | --- | --- | --- |",
+        ]
+        for name, values in data["rows"].items():
+            lines.append(
+                f"| {name} | {values['baseline']:.3f} | {values['candidate']:.3f} "
+                f"| {values['delta']:+.3f} |"
+            )
+        lines += ["", "## Errors", ""]
+        errors = error_mix(c.baseline_errors, c.candidate_errors)
+        if errors:
+            lines += ["| class | baseline | candidate |", "| --- | --- | --- |"]
+            lines += [f"| {name} | {before} | {after} |" for name, before, after in errors]
+        else:
+            lines.append("None in either run.")
+        for column in SLICE_COLUMNS:
+            members = [s for s in c.slices if s.column == column]
+            lines += [
+                "",
+                f"## Slice: {column}",
+                "",
+                "| value | labeled | baseline accuracy | candidate accuracy |",
+                "| --- | --- | --- | --- |",
+            ]
+            lines += [
+                f"| {s.value} | {s.baseline.labeled} | {s.baseline.accuracy:.3f} "
+                f"| {s.candidate.accuracy:.3f} |"
+                for s in members
+            ]
+        for kind, title in (
+            ("regression", "Regressions (correct -> not correct)"),
+            ("improvement", "Improvements (not correct -> correct)"),
+        ):
+            flips = c.flips(kind)  # type: ignore[arg-type]
+            lines += ["", f"## {title}: {len(flips)}", ""]
+            if not flips:
+                lines.append("None.")
+                continue
+            lines += [
+                "| document | field | expected | baseline | candidate | error class |",
+                "| --- | --- | --- | --- | --- | --- |",
+            ]
+            for pair in flips[:max_flips]:
+                entry = _flip_entry(pair)
+                lines.append(
+                    f"| {pair.doc_id} | {pair.name} | {_cell(entry['expected'])} "
+                    f"| {_side(entry['baseline'])} | {_side(entry['candidate'])} "
+                    f"| {entry['candidate']['error_class'] or 'correct'} |"
+                )
+            if len(flips) > max_flips:
+                lines += ["", f"... and {len(flips) - max_flips} more in comparison.json"]
+        changed = c.flips("changed_wrong")
+        lines += [
+            "",
+            f"Wrong in both runs but differently: {len(changed)} (see comparison.json).",
+            "",
+        ]
+        return "\n".join(lines)

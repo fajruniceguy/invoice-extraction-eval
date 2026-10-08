@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from fractions import Fraction
 from pathlib import Path
@@ -11,9 +12,12 @@ from evalkit.compare import (
     Cluster,
     CompareError,
     Comparison,
+    Decision,
     Difference,
     FieldPair,
+    Thresholds,
     compare_runs,
+    decide,
     error_mix,
     mcnemar_exact,
     paired_bootstrap,
@@ -444,3 +448,265 @@ class TestPairing:
         )
         assert result.bootstrap.clusters == documents
         assert any("independent document" in note for note in result.notes) is caution
+
+
+# ------------------------------------------------------------------ the verdict
+
+
+def gate(
+    regressions: int,
+    improvements: int,
+    *,
+    pairs: int,
+    baseline_correct: int,
+    candidate_correct: int,
+    alpha: float = 0.05,
+    max_drop: float = 0.02,
+) -> Decision:
+    return decide(
+        mcnemar_exact(regressions, improvements),
+        baseline_correct=baseline_correct,
+        candidate_correct=candidate_correct,
+        pairs=pairs,
+        thresholds=Thresholds(alpha=alpha, max_drop=max_drop),
+    )
+
+
+class TestDecide:
+    def test_a_significant_and_material_drop_is_a_regression(self) -> None:
+        decision = gate(5, 0, pairs=39, baseline_correct=39, candidate_correct=34)
+        assert decision.verdict == "regression"
+        assert (decision.significant, decision.material) == (True, True)
+        assert decision.drop == Fraction(5, 39)
+
+    def test_p_exactly_at_alpha_fires_just_above_does_not(self) -> None:
+        # p_worse(5, 0) is exactly 1/32 = 0.03125, which a float holds exactly
+        kwargs = {"pairs": 39, "baseline_correct": 39, "candidate_correct": 34}
+        assert gate(5, 0, alpha=0.03125, **kwargs).verdict == "regression"
+        assert gate(5, 0, alpha=0.03124, **kwargs).verdict == "ok"
+
+    def test_a_drop_exactly_at_max_drop_fires_just_below_does_not(self) -> None:
+        kwargs = {"pairs": 10, "baseline_correct": 10, "candidate_correct": 9}
+        # 1/10 is not exact in a float (1 - 0.9 is 0.09999999999999998): the gate must still fire
+        assert gate(6, 0, max_drop=0.1, **kwargs).verdict == "regression"
+        assert gate(6, 0, max_drop=0.11, **kwargs).verdict == "ok"
+
+    def test_significant_but_small_is_ok(self) -> None:
+        decision = gate(6, 0, pairs=1000, baseline_correct=1000, candidate_correct=994)
+        assert (decision.significant, decision.material, decision.verdict) == (True, False, "ok")
+
+    def test_large_but_not_significant_is_ok(self) -> None:
+        decision = gate(3, 0, pairs=39, baseline_correct=39, candidate_correct=36)
+        assert (decision.significant, decision.material, decision.verdict) == (False, True, "ok")
+
+    def test_an_improvement_is_ok(self) -> None:
+        decision = gate(0, 8, pairs=39, baseline_correct=30, candidate_correct=38)
+        assert decision.verdict == "ok" and decision.drop < 0
+
+    def test_no_drop_requirement_leaves_only_significance(self) -> None:
+        kwargs = {"pairs": 39, "baseline_correct": 39, "candidate_correct": 34}
+        assert gate(5, 0, max_drop=0.0, **kwargs).verdict == "regression"
+        assert gate(1, 0, max_drop=0.0, **kwargs).verdict == "ok"
+
+    @pytest.mark.parametrize("alpha", [0.0, 1.0, -0.1, 1.5])
+    def test_alpha_must_be_strictly_between_0_and_1(self, alpha: float) -> None:
+        with pytest.raises(ValueError, match="alpha"):
+            Thresholds(alpha=alpha)
+
+    @pytest.mark.parametrize("max_drop", [-0.01, 1.01])
+    def test_max_drop_must_be_a_fraction(self, max_drop: float) -> None:
+        with pytest.raises(ValueError, match="max_drop"):
+            Thresholds(max_drop=max_drop)
+
+    def test_the_defaults_are_five_percent_and_two_points(self) -> None:
+        assert (Thresholds().alpha, Thresholds().max_drop) == (0.05, 0.02)
+
+
+def many_documents(tmp_path: Path, count: int, wrong: int) -> Scenario:
+    """`count` one-field documents: the baseline gets all right, the candidate `wrong` of them."""
+    scenario = Scenario.__new__(Scenario)
+    rows = [manifest_row(f"doc_{i:03d}") for i in range(count)]
+    labels = [label(row.doc_id, total=Decimal("10")) for row in rows]
+    scenario.tmp = tmp_path
+    scenario.manifest, scenario.labels, scenario.pages = dataset(tmp_path, rows, labels)
+
+    def records(wrong_ids: int) -> list[DocRecord]:
+        return [
+            ok(row.doc_id, total=extracted(Decimal("99" if i < wrong_ids else "10")))
+            for i, row in enumerate(rows)
+        ]
+
+    scenario.baseline = run_dir(tmp_path, records(0), name="baseline")
+    scenario.candidate = run_dir(tmp_path, records(wrong), name="candidate")
+    return scenario
+
+
+class TestVerdictOnRuns:
+    def test_a_degraded_run_is_a_regression(self, tmp_path: Path) -> None:
+        result = many_documents(tmp_path, count=12, wrong=7).compare()
+        assert result.decision.verdict == "regression"
+        assert result.mcnemar.p_worse == Fraction(1, 128)
+        assert result.decision.drop == Fraction(7, 12)
+        assert result.verdict_line.startswith("VERDICT: REGRESSION (p_worse 0.0078 <= alpha 0.05;")
+
+    def test_the_scenario_has_too_few_flips_to_be_significant(self, scenario: Scenario) -> None:
+        result = scenario.compare()
+        assert result.decision.verdict == "ok" and not result.decision.significant
+        assert result.verdict_line == (
+            "VERDICT: OK (p_worse 0.3125 > alpha 0.05; accuracy drop 22.2 pts >= 2.0)"
+        )
+
+    def test_the_thresholds_are_passed_through(self, scenario: Scenario) -> None:
+        result = compare_runs(
+            scenario.baseline,
+            scenario.candidate,
+            manifest_path=scenario.manifest,
+            labels_dir=scenario.labels,
+            pages_dir=scenario.pages,
+            thresholds=Thresholds(alpha=0.5, max_drop=0.0),
+        )
+        assert result.decision.verdict == "regression"
+        assert result.thresholds == Thresholds(alpha=0.5, max_drop=0.0)
+
+    def test_swapping_the_runs_turns_a_regression_into_an_improvement(self, tmp_path: Path) -> None:
+        scenario = many_documents(tmp_path, count=12, wrong=7)
+        result = scenario.compare(scenario.candidate, scenario.baseline)
+        assert result.decision.verdict == "ok" and result.mcnemar.improvements == 7
+        assert result.mcnemar.p_better == Fraction(1, 128)
+
+
+# ------------------------------------------------------------------ the reports
+
+
+class TestReports:
+    def test_json_is_byte_identical_for_the_same_inputs(self, scenario: Scenario) -> None:
+        first, second = scenario.compare(), scenario.compare()
+        assert first.to_json() == second.to_json()
+        assert first.to_markdown() == second.to_markdown()
+        assert first.to_text() == second.to_text()
+
+    def test_json_holds_the_documented_sections(self, scenario: Scenario) -> None:
+        data = json.loads(scenario.compare().to_json())
+        assert list(data) == sorted(data)  # sorted keys
+        assert data["baseline"] == "baseline" and data["candidate"] == "candidate"
+        assert data["verdict"] == "ok" and data["thresholds"] == {"alpha": 0.05, "max_drop": 0.02}
+        assert data["fields"] == {
+            "paired": 9,
+            "both_correct": 3,
+            "regressions": 3,
+            "improvements": 1,
+            "both_wrong": 2,
+        }
+        assert data["mcnemar"]["p_worse"] == 0.3125
+        assert data["documents"]["paired"] == ["doc_001", "doc_002"]
+        assert data["bootstrap"]["clusters"] == 2 and data["bootstrap"]["seed"] == 1
+        assert data["headline"]["accuracy"] == {
+            "baseline": 6 / 9,
+            "candidate": 4 / 9,
+            "delta": 4 / 9 - 6 / 9,
+        }
+        assert {e["class"] for e in data["errors"]} >= {"hallucinated_value", "abstained_on_value"}
+
+    def test_each_flip_carries_what_was_expected_and_what_each_run_said(
+        self, scenario: Scenario
+    ) -> None:
+        flips = {
+            (f["doc_id"], f["field"]): f
+            for f in json.loads(scenario.compare().to_json())["flips"]["regression"]
+        }
+        assert flips[("doc_001", "vendor_name")] == {
+            "doc_id": "doc_001",
+            "field": "vendor_name",
+            "flip": "regression",
+            "expected": "Acme",
+            "baseline": {
+                "predicted": "Acme",
+                "status": "extracted",
+                "outcome": "correct",
+                "error_class": None,
+            },
+            "candidate": {
+                "predicted": "Zeta",
+                "status": "extracted",
+                "outcome": "value_wrong",
+                "error_class": "string_mismatch",
+            },
+        }
+        assert flips[("doc_001", "buyer_name")]["candidate"]["status"] == "abstained"
+        discount = flips[("doc_001", "discount")]
+        assert discount["expected"] is None
+        assert discount["candidate"]["predicted"] == "5"
+        assert discount["candidate"]["error_class"] == "hallucinated_value"
+
+    def test_the_text_starts_with_the_verdict_and_lists_the_regressions(
+        self, scenario: Scenario
+    ) -> None:
+        result = scenario.compare()
+        text = result.to_text()
+        assert text.splitlines()[0] == result.verdict_line
+        assert "regressions (3):" in text and "improvements (1):" in text
+        assert (
+            "doc_001 vendor_name: expected Acme; baseline Acme -> candidate Zeta (string_mismatch)"
+            in text
+        )
+        assert "baseline (absent) -> candidate 5 (hallucinated_value)" in text
+        assert "differs: nothing" in text
+
+    def test_long_flip_lists_are_cut_in_the_text_and_markdown_not_in_json(
+        self, tmp_path: Path
+    ) -> None:
+        result = many_documents(tmp_path, count=12, wrong=7).compare()
+        assert "... and 5 more in comparison.json" in result.to_text(max_flips=2)
+        assert "... and 5 more in comparison.json" in result.to_markdown(max_flips=2)
+        assert len(json.loads(result.to_json())["flips"]["regression"]) == 7
+
+    def test_markdown_has_the_sections_and_the_flip_table(self, scenario: Scenario) -> None:
+        markdown = scenario.compare().to_markdown()
+        for heading in (
+            "# Comparison: `baseline` (baseline) vs `candidate` (candidate)",
+            "## What differs between the runs",
+            "## Headline (paired fields)",
+            "## Paired test",
+            "## By field",
+            "## Line items (aggregate, paired documents)",
+            "## Errors",
+            "## Slice: split",
+            "## Regressions (correct -> not correct): 3",
+            "## Improvements (not correct -> correct): 1",
+        ):
+            assert heading in markdown, heading
+        assert (
+            "| doc_001 | buyer_name | Beta | Beta | (abstained) | abstained_on_value |" in markdown
+        )
+        assert "| baseline correct | 3 | 3 (regressions) |" in markdown
+
+    def test_a_pipe_in_a_value_cannot_break_the_table(self, scenario: Scenario) -> None:
+        piped = run_dir(
+            scenario.tmp,
+            [
+                ok(
+                    "doc_001",
+                    vendor_name=extracted("Zeta | Ltd\nBranch"),
+                    buyer_name=extracted("Beta"),
+                ),
+                scenario.second,
+            ],
+            name="piped",
+        )
+        markdown = scenario.compare(scenario.baseline, piped).to_markdown()
+        assert "| doc_001 | vendor_name | Acme | Acme | Zeta / Ltd Branch |" in markdown
+
+    def test_a_failed_document_reads_as_no_prediction(self, scenario: Scenario) -> None:
+        failed = run_dir(
+            scenario.tmp,
+            [scenario.second, DocRecord(doc_id="doc_001", status="failed", error="x")],
+            name="failing",
+        )
+        text = scenario.compare(scenario.baseline, failed).to_text()
+        assert "candidate (no prediction) (no_prediction)" in text
+
+    def test_what_differs_is_shown(self, scenario: Scenario) -> None:
+        retag(scenario.candidate, prompt_sha256="q" * 64)
+        result = scenario.compare()
+        assert f"prompt_sha256: {'p' * 39}…" in result.to_text()
+        assert "| prompt_sha256 |" in result.to_markdown()
