@@ -4,6 +4,20 @@ Ground truth is what the DOCUMENT says, not what it should say and not what a mo
 One JSON file per labeled document: `ground_truth/<doc_id>.json`. Every change is logged in
 [`CHANGELOG.md`](CHANGELOG.md) (the labeling app does it for you).
 
+## One document per input
+
+A label describes ONE business document. The extractor is asked for one document per input, so an
+input that holds several cannot be labeled or scored:
+
+- **Several documents on one page** (two invoices side by side): black one out with a redaction box
+  (`needs_redaction`, `data/redactions.yaml`) so the stored page holds one document, or leave the
+  input out of the dataset.
+- **A bundle** (a PDF of many invoices or companies): slice it with `page_range`, one manifest row per
+  document, or leave it out. Do not label 20 pages of unrelated documents as one.
+
+An input left out is removed from the manifest (and its stored pages and draft), with a line in
+`CHANGELOG.md` saying why. `doc_004`, `doc_017` and `doc_010` were left out this way.
+
 ## The three states of every field
 
 | In the JSON | Meaning | Scored? |

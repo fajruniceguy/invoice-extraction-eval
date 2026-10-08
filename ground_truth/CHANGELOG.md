@@ -27,3 +27,9 @@ Format: `YYYY-MM-DD | file | field | old -> new | reason`
 2026-10-08 | doc_028.json | (new file) | - -> label_mode=prelabel | labeled by hand
 
 2026-10-08 | doc_030.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-08 | doc_004 | (draft removed) | excluded from the dataset | two invoices on one page: one label cannot describe it
+
+2026-10-08 | doc_017 | (row removed) | excluded from the dataset | a copy of doc_004, which was excluded
+
+2026-10-08 | doc_010 | (draft removed) | excluded from the dataset | a 20-page bundle of many companies, not one document
