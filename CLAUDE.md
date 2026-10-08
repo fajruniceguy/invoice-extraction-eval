@@ -10,8 +10,8 @@ A document extraction system for invoices/receipts plus a rigorous evaluation ha
 
 ## Layout
 ```
-src/docextract/{config.py, providers/, ingest/, extract/, validate/, confidence/, api/}
-src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, compare.py, groundtruth.py, gt_store.py, construct.py, construct_io.py, prelabel.py, printed.py, labeling.py, labeling_ui.py}
+src/docextract/{config.py, calllog.py, providers/, ingest/, extract/, validate/, confidence/, api/{app.py, uploads.py}}
+src/evalkit/{comparators.py, matching.py, metrics.py, taxonomy.py, scorecard.py, perf.py, compare.py, groundtruth.py, gt_store.py, construct.py, construct_io.py, prelabel.py, printed.py, labeling.py, labeling_ui.py}
 data/{manifest.csv, redactions.yaml, pages/, private/{raw,preview}}
 ground_truth/{, drafts/}
 outputs/
@@ -75,8 +75,15 @@ docs/
 
 ## Scoring (`evalkit/`, `scripts/score.py`)
 - A run is scored offline against the labels: type-aware comparators, line items paired by a hand-written Hungarian assignment, every miss classified in `evalkit.taxonomy.ERROR_CLASSES`. The scorecard (markdown + JSON), the per-doc results and the run manifest (git SHA + dirty, prompt/schema hashes, model, config, GT hash, dataset hash) go to `<run_dir>/score/`.
+- The scorecard also reports cost per document (paid, and at list price = paid + avoided) and latency p50/p95 overall and per slice (`evalkit/perf.py`): every attempted document counts (ok or failed, labeled or not), latency is over LIVE calls only (a cache replay is 0 ms), percentiles are nearest-rank.
 - Only `validated` is scored, never `parsed`. An abstained or missing prediction is an error in the headline `accuracy`; `selective_accuracy` and `coverage` report it apart. Unlabeled GT is skipped, never a denominator.
 - The comparator thresholds are documented defaults, recorded in the manifest; scoring stays deterministic for the same inputs. How `abstained` scores is a scoring decision, not a validator one.
+
+## HTTP API (`docextract/api/`, `calllog.py`, `extract/concurrent.py`)
+- `python -m uv run uvicorn --factory docextract.api.app:create_app` (config from the environment/`.env`, nothing at import). `GET /health`; `POST /extract` = ONE document from the uploaded `files` (pages or photos in order; optional `page_range`, `doc_id`, `?compact=true`); `POST /extract/batch` = one file per document, answered synchronously (200, `{"run": ..., "documents": [...]}`: a bad file is `refused`, a provider failure `failed`, after the cost cap the rest are `not_run`). Answers are `DocRecord`s, built by the runner's own `extract_record`, so an API answer has the shape of a run-folder entry.
+- One process-wide semaphore (`API_CONCURRENCY`) bounds documents in flight across all requests; `extract.py --concurrency N` uses the same `run_bounded` helper (default 1 = sequential). Calls already in flight finish after the cost cap is crossed, so spend can pass `MAX_RUN_COST_USD` by up to that many calls; parallel calls also spend a provider's per-minute/per-day quota faster.
+- Uploads: bytes only, never a file name as a path; the same `load_pages` + `store_pages` + `IngestSettings` as ingestion minus redaction, so pages are byte-identical to ingested ones (same response-cache keys); a temp dir per request, PDFs page-counted before rendering, `API_MAX_UPLOAD_MB`/`API_MAX_BATCH` limits, optional bearer `API_TOKEN`. Nothing is written under `data/`.
+- Every request leaves one JSON line (request id, route, tokens, cost paid/avoided, cache hit, latency, attempts, repairs; never a file name or content) on the `docextract.calls` logger and in `CALL_LOG_PATH` when set.
 
 ## Regression comparison (`evalkit/compare.py`, `scripts/compare.py`)
 - `compare` re-scores both runs against the labels as they are now (never a stored `score/`) and pairs the labeled scalar fields of the documents scored in BOTH; line items are compared in aggregate only.
@@ -144,10 +151,11 @@ python -m uv run python scripts/degrade_docs.py (--doc ID | --all) [--levels lig
 python -m uv run python scripts/construct_invoices.py [--check] [--force]   # 3 constructed multi-page invoices + labels
 python -m uv run python scripts/check_ground_truth.py   # label files vs manifest, blind-draft rule, coverage per split
 python -m uv run python scripts/prelabel.py (--doc ID | --all) [--dry-run] [--force]   # COSTS MONEY: model drafts -> ground_truth/drafts
-python -m uv run python scripts/extract.py (--split dev|test | --doc ID ...) [--run-id ID] [--cache on|off|refresh] [--dry-run]   # COSTS MONEY unless cached: -> outputs/runs/<run_id>/
+python -m uv run python scripts/extract.py (--split dev|test | --doc ID ...) [--run-id ID] [--cache on|off|refresh] [--concurrency N] [--dry-run]   # COSTS MONEY unless cached: -> outputs/runs/<run_id>/
 python -m uv run python scripts/check_run.py outputs/runs/<run_id>   # records vs the value/confidence/evidence/status/reasons contract (offline)
 python -m uv run python scripts/score.py outputs/runs/<run_id>   # scorecard (markdown + JSON) + per-doc results + run manifest -> <run_dir>/score/ (offline)
 python -m uv run python scripts/compare.py outputs/runs/<baseline> outputs/runs/<candidate>   # flips + exact McNemar + bootstrap + verdict -> outputs/compare/<b>__vs__<c>/ (offline); exit 1 = regression
+python -m uv run uvicorn --factory docextract.api.app:create_app --port 8000   # the API: GET /health, POST /extract, POST /extract/batch (see HTTP API); calls the configured model, so it costs money unless cached
 python -m uv run streamlit run tools/label_app.py   # the labeling app
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
