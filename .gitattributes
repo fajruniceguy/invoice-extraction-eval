@@ -1,0 +1,11 @@
+# Text files are LF in the repository AND in every checkout, on every platform. Scorecards record
+# hashes of the label files and the manifest as BYTES (evalkit/scorecard.py), so a CRLF checkout
+# (git's default on Windows) would not reproduce the committed results in results/.
+* text=auto eol=lf
+
+# binary, never normalised
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.xlsx binary
