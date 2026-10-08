@@ -16,7 +16,9 @@ data/{manifest.csv, redactions.yaml, pages/, private/{raw,preview}}
 ground_truth/{, drafts/}
 outputs/
 scripts/
-tools/{label_app.py}
+tools/{label_app.py, secret_scan.py, mutation_check.py}
+.claude/{settings.json, hooks/pre_commit_secret_scan.py, skills/mutation-check/SKILL.md}
+.github/workflows/ci.yml
 tests/{fakes/, fixtures/}
 docs/
 ```
@@ -25,7 +27,7 @@ docs/
 ## Provider
 - The provider is OpenAI-compatible and fully configured via env: `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, plus per-token prices for cost (`LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`, USD per 1M tokens).
 - Pre-labeling has its own `PRELABEL_*` variables (below).
-- **`.env.example` is deliberately absent until the final submission step** (decided 2026-10-08, so a real key can never land in a committed example). The take-home requires one: before submitting, recreate it with placeholders only from `git show 3bbd99c:.env.example`, add the variables introduced since (`API_*`, `CALL_LOG_PATH`, `LLM_SEND_TEMPERATURE`, `PRELABEL_SEND_TEMPERATURE`, the `prompt` structured mode, the GLM / Command Code extractor lines), then scan the WHOLE git history for secrets (every object, not only that file) before any push. Until then the error messages that say "see .env.example" point at that file in git history.
+- **`.env.example`** was removed on 2026-10-08 after a real key was nearly pasted into it, and rewritten at the end of E1 with placeholders only. `tests/test_ci_and_env_example.py` keeps it true to the code (it must name every setting `Settings` reads, load as is, and pass the secret scanner), and the commit hook and CI scan (below) refuse a real value in it. Never edit `.env` itself; put new variables in the example.
 - Optional env: `LLM_MAX_REPAIRS` (default 1: re-asks when output is not valid JSON / does not match the schema), `LLM_REASONING_EFFORT` (passed through as `reasoning_effort` when set), `LLM_STRUCTURED_MODE` (auto|json_schema|json_object|prompt: `prompt` sends no `response_format`, only the schema in the text), `LLM_SEND_TEMPERATURE` (false for models that reject `temperature`), `LLM_TIMEOUT_S`, `LLM_MAX_RETRIES`, `LLM_BACKOFF_BASE_S`, `LLM_BACKOFF_MAX_S`, `LLM_MAX_PAGES` (default 15: a document with more pages is refused before any request; all its pages go in one call), and `MAX_RUN_COST_USD` (below). `.env.example` lists them all.
 - Never hardcode model names or secrets. `.env` is gitignored and holds a real key: never print it, never edit it, never commit it. `.env.example` is the only committed example.
 - Tests and fakes must never read `.env` or call the real API (`scripts/smoke.py --env-file <empty file>` plus a scrubbed environment; see `tests/test_provider_integration.py`).
@@ -80,6 +82,11 @@ docs/
 - The scorecard also reports cost per document (paid, and at list price = paid + avoided) and latency p50/p95 overall and per slice (`evalkit/perf.py`): every attempted document counts (ok or failed, labeled or not), latency is over LIVE calls only (a cache replay is 0 ms), percentiles are nearest-rank.
 - Only `validated` is scored, never `parsed`. An abstained or missing prediction is an error in the headline `accuracy`; `selective_accuracy` and `coverage` report it apart. Unlabeled GT is skipped, never a denominator.
 - The comparator thresholds are documented defaults, recorded in the manifest; scoring stays deterministic for the same inputs. How `abstained` scores is a scoring decision, not a validator one.
+
+## Secrets, mutation checks and CI (`tools/secret_scan.py`, `tools/mutation_check.py`, `.claude/`, `.github/`)
+- `secret_scan.py` (stdlib only) scans ADDED lines for key shapes, `NAME_KEY=<value>` assignments and staged `.env` files; its output never contains a value. `--staged`, `--worktree`, `--history`, and `--env-values` (the real `.env` values searched in the history, in memory; prints variable names only). The Claude Code hook `.claude/hooks/pre_commit_secret_scan.py` runs it before any `git commit` (the whole working tree when the same command also does `git add` or `commit -a`, because the hook runs before the command) and blocks with exit 2; CI runs `--history`. A false positive is fixed by making the value an obvious placeholder (`your-key-here`), not by disabling the scan. Hooks load when Claude Code starts: review them with `/hooks` or restart the session.
+- `mutation_check.py MUTANTS.py` is the mutation procedure of every milestone (skill: `.claude/skills/mutation-check`): mutants run on an ISOLATED COPY (a pass edits files a running Streamlit app imports), after a green baseline, and an ambiguous mutant is refused. Committed mutants: `tests/mutants/`.
+- CI (`.github/workflows/ci.yml`) is `windows-latest` (the only platform the suite has run on) and runs the secret scan, `ruff check` and `pytest -q -m "slow or not slow"`. It has not run on GitHub yet. The app tests are `slow`-marked: a plain `pytest -q` skips them.
 
 ## HTTP API (`docextract/api/`, `calllog.py`, `extract/concurrent.py`)
 - `python -m uv run uvicorn --factory docextract.api.app:create_app` (config from the environment/`.env`, nothing at import). `GET /health`; `POST /extract` = ONE document from the uploaded `files` (pages or photos in order; optional `page_range`, `doc_id`, `?compact=true`); `POST /extract/batch` = one file per document, answered synchronously (200, `{"run": ..., "documents": [...]}`: a bad file is `refused`, a provider failure `failed`, after the cost cap the rest are `not_run`). Answers are `DocRecord`s, built by the runner's own `extract_record`, so an API answer has the shape of a run-folder entry.
@@ -171,6 +178,8 @@ python -m uv run python scripts/sweep.py --baseline-run outputs/runs/<run_id> --
 python -m uv run python scripts/analyze_failures.py outputs/runs/<run_id> [--out F] [--notes F]   # what was withheld and why, wrong fields, row misses per document (offline)
 python -m uv run python scripts/noise_report.py RUN RUN [RUN ...] [--price-in X --price-out Y]   # spread between runs of ONE setting (offline); make the repeats with extract.py --cache refresh
 python -m uv run python scripts/calibrate.py RUN [RUN ...] [--out F] [--svg-dir D]   # reliability, risk-coverage, the threshold the rule picks (offline)
+python tools/secret_scan.py (--staged | --worktree | --history | --env-values)   # secrets in what a commit adds / the whole history / the real .env values (names only); exit 1 = found; stdlib only
+python -m uv run python tools/mutation_check.py tests/mutants/<topic>.py   # mutation pass on an isolated copy; exit 1 = a mutant survived
 python -m uv run uvicorn --factory docextract.api.app:create_app --port 8000   # the API: GET /health, POST /extract, POST /extract/batch (see HTTP API); calls the configured model, so it costs money unless cached
 python -m uv run streamlit run tools/label_app.py   # the labeling app
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
