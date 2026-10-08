@@ -97,3 +97,28 @@ p-value were the same in both, but only the second one proves it.
   McNemar p-value is optimistic; the report says so, and prints the document-level bootstrap interval
   beside it (the interval never gates).
 - Repeat this on `--split dev` once real dev documents are labeled (M2's human steps).
+
+## Repeated on the dev split (2026-10-08)
+
+The same three-edit prompt on the 10 dev documents (9 real + `cons_003`), `deepseek/deepseek-v4-flash-vision-exp`,
+`reasoning_effort=medium`. The baseline is `dev-medium` (production prompt `b154b4cc8ac0`, the prompt
+`degraded_prompt.txt` was derived from); the candidate is `dev-degraded`. The comparison's "differs"
+section lists only the prompt hash: nothing else changed.
+
+```
+python -m uv run python scripts/extract.py --split dev --run-id dev-medium --concurrency 3
+python -m uv run python scripts/extract.py --split dev --run-id dev-degraded --system-prompt-file docs/demo/degraded_prompt.txt --concurrency 3
+python -m uv run python scripts/compare.py outputs/runs/dev-medium outputs/runs/dev-degraded   # exit 1
+```
+
+`VERDICT: REGRESSION` (exit 1): accuracy 0.803 -> 0.705 (-9.8 pts), exact McNemar 18 regressions against 6
+improvements, p_worse 0.0113, bootstrap 95% interval [-17.9, -2.4] pts, coverage 0.893 -> 0.779, row F1
+0.696 -> 0.239, cell accuracy 0.981 -> 0.634.
+
+- The damage shows up as abstentions and missing values (`abstained_on_value` 12 -> 23, `missing_value`
+  6 -> 29), not as confidently wrong values: selective accuracy is flat (0.899 -> 0.905). That is what the
+  validators are for, but I did not trace each field to a validator rule.
+- The 6 "improvements" (e.g. `doc_013 vendor_name` Agoda -> the right name) are sampling noise: two clean
+  runs at the same setting also flip fields in both directions (4 regressions and 5 improvements between
+  `dev-medium` and `dev-final`).
+- One run each, 10 independent documents; the gate is about catching a blunt change, not its sensitivity.

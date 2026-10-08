@@ -86,3 +86,25 @@ The baseline itself replaced an earlier one: the same 10 documents, same prompt,
 
 Same accuracy within noise at about 7x lower median latency, which is why the extractor was switched
 mid-milestone. Both are one run of 10 documents.
+
+## Decision after the sweep (2026-10-08)
+
+The rule picked `effort-low`. The setting used from here on is **`medium`**, chosen by the project
+owner to meet the deadline, on the belief that the provider default is medium. What was measured
+afterwards:
+
+| run | prompt | effort | accuracy | output tokens | doc_015 latency |
+| --- | --- | --- | --- | --- | --- |
+| dev-baseline-ds | old | unset | 0.811 | 53.9k | 81 s |
+| dev-medium | old | medium | 0.803 | 76.2k | 106 s |
+| dev-final | item-code sentence added | medium | 0.811 | 45.1k | 33 s |
+
+- `medium` shows no accuracy gain over the default: 8 fields regressed and 7 improved (p_worse 0.50).
+- **Two runs at the same setting differ by 41% in output tokens and 3x in a document's latency.** So the
+  cost and latency gaps between default, low and medium in the sweep table are inside run-to-run noise,
+  just like the accuracy gaps. An earlier reading in this session, that `medium` thinks 37% more than
+  the default, was noise and is withdrawn. Only `effort-off` is clearly different (14.7k output tokens,
+  6-7 s on every document).
+- Whether the provider default equals `medium` is not established, but nothing here excludes it.
+- Consequence for the report: choosing `medium` over `low` costs nothing measurable and gains nothing
+  measurable; p95 figures from a single run of 10 documents (one slow document) should not be quoted.
