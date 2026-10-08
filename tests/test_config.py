@@ -261,3 +261,39 @@ def test_abstain_below_outside_0_to_1_is_rejected(bad: float) -> None:
 def test_abstain_below_comes_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ABSTAIN_BELOW", "0")
     assert make().abstain_below == 0
+
+
+def test_api_settings_defaults() -> None:
+    s = make()
+    assert (s.api_concurrency, s.api_max_batch, s.api_max_upload_mb) == (4, 20, 25)
+    assert s.api_token is None and s.call_log_path is None
+
+
+def test_api_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_BASE_URL", "http://localhost:1/v1")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    monkeypatch.setenv("API_CONCURRENCY", "2")
+    monkeypatch.setenv("API_MAX_BATCH", "5")
+    monkeypatch.setenv("API_MAX_UPLOAD_MB", "3")
+    monkeypatch.setenv("API_TOKEN", "s3cret")
+    monkeypatch.setenv("CALL_LOG_PATH", "outputs/logs/calls.jsonl")
+    s = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert (s.api_concurrency, s.api_max_batch, s.api_max_upload_mb) == (2, 5, 3)
+    assert s.api_token is not None and s.api_token.get_secret_value() == "s3cret"
+    assert "s3cret" not in repr(s) and "s3cret" not in str(s)  # a secret never leaks in logs
+    assert s.call_log_path == Path("outputs/logs/calls.jsonl")
+
+
+def test_a_blank_api_token_or_log_path_means_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_BASE_URL", "http://localhost:1/v1")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    monkeypatch.setenv("API_TOKEN", "  ")
+    monkeypatch.setenv("CALL_LOG_PATH", "")
+    s = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert s.api_token is None and s.call_log_path is None
+
+
+@pytest.mark.parametrize("name", ["api_concurrency", "api_max_batch", "api_max_upload_mb"])
+def test_api_limits_must_be_positive(name: str) -> None:
+    with pytest.raises(ValidationError):
+        make(**{name: 0})

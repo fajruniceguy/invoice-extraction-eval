@@ -77,6 +77,15 @@ class Settings(BaseSettings):
     # evidence contradicts is abstained whatever its confidence).
     abstain_below: float = Field(default=0.3, ge=0.0, le=1.0)
 
+    # HTTP API (docextract.api). api_concurrency bounds documents in flight across all requests;
+    # the run cost cap (max_run_cost_usd) then overshoots by up to that many calls. A blank
+    # api_token means open (fine locally); set it and /extract* needs `Authorization: Bearer`.
+    api_concurrency: int = Field(default=4, ge=1)
+    api_max_batch: int = Field(default=20, ge=1)  # documents per /extract/batch request
+    api_max_upload_mb: int = Field(default=25, ge=1)  # per uploaded file
+    api_token: SecretStr | None = None
+    call_log_path: Path | None = None  # JSONL, one line per request (see docextract.calllog)
+
     # Pre-labeling (scripts/prelabel.py): a DIFFERENT model drafts labels that a human verifies.
     # It talks to its own OpenAI-compatible endpoint through the same client class; see
     # `prelabel_settings()`. Unset base URL / model = pre-labeling is not configured.
@@ -103,6 +112,8 @@ class Settings(BaseSettings):
         "prelabel_base_url",
         "prelabel_model",
         "prelabel_max_run_cost_usd",
+        "api_token",
+        "call_log_path",
         mode="before",
     )
     @classmethod
