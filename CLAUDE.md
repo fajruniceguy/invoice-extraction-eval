@@ -56,6 +56,7 @@ docs/
 
 ## Extraction runs (`extract/runner.py`, `scripts/extract.py`)
 - **A BLIND document, or a variant of one (`gt_from`), is never extracted until its label is finished** (`ground_truth/<doc_id>.json` exists): it is refused with zero requests, because no model output may exist for it before a human has labeled it from the page alone.
+- `--system-prompt-file PATH` sends another system prompt (UTF-8, universal newlines; a missing or blank file is exit 2 before any request). The run records the hash of the prompt it used (`prompt_sha256()`), so a changed prompt is a different run; the default prompt, its hash and the cache keys are unchanged.
 
 ## Pre-labeling (`evalkit/prelabel.py`, `scripts/prelabel.py`)
 - A model drafts ground truth into `ground_truth/drafts/<doc_id>.json` (a label file with `label_mode: prelabel` and no `labeled_at`); a human verifies every field. It is configured by `PRELABEL_BASE_URL/API_KEY/MODEL` (+ prices, `PRELABEL_MAX_RUN_COST_USD`) and runs through the same `OpenAICompatClient` via `Settings.prelabel_settings()`: json_object pinned (the schema is in the prompt: Anthropic's OpenAI-compatible endpoint ignores `response_format`), page images downscaled in memory to 1568 px and under 4.5 MB, the extractor's reasoning effort and cost cap not inherited.
@@ -76,6 +77,11 @@ docs/
 - A run is scored offline against the labels: type-aware comparators, line items paired by a hand-written Hungarian assignment, every miss classified in `evalkit.taxonomy.ERROR_CLASSES`. The scorecard (markdown + JSON), the per-doc results and the run manifest (git SHA + dirty, prompt/schema hashes, model, config, GT hash, dataset hash) go to `<run_dir>/score/`.
 - Only `validated` is scored, never `parsed`. An abstained or missing prediction is an error in the headline `accuracy`; `selective_accuracy` and `coverage` report it apart. Unlabeled GT is skipped, never a denominator.
 - The comparator thresholds are documented defaults, recorded in the manifest; scoring stays deterministic for the same inputs. How `abstained` scores is a scoring decision, not a validator one.
+
+## Regression comparison (`evalkit/compare.py`, `scripts/compare.py`)
+- `compare` re-scores both runs against the labels as they are now (never a stored `score/`) and pairs the labeled scalar fields of the documents scored in BOTH; line items are compared in aggregate only.
+- A regression needs BOTH the exact one-sided McNemar p <= `--alpha` (0.05) AND an accuracy drop >= `--max-drop` (0.02), compared as exact fractions. The document-level paired bootstrap (clusters = label owner) is reported, never gated; fewer than 10 independent documents carries a caution, because fields inside a document are not independent.
+- Exit codes: 0 no regression, 1 REGRESSION, 2 cannot compare. This differs from `score.py` (1 = unscorable) on purpose: a gate needs 1 to mean "regressed".
 
 ## Dataset and ingestion (`src/docextract/ingest/`)
 - **Privacy by location.** Real originals live in `data/private/raw/` and unredacted previews in `data/private/preview/`: that whole tree is gitignored and must never be committed. Only normalized, REDACTED pages (`data/pages/<doc_id>/p<N>.png|jpg`), `data/manifest.csv`, `data/redactions.yaml` and ground truth are committed. Do not read page content of real documents while building tooling: use synthetic fixtures (`tests/files.py`), and for real files only metadata, counts and sizes.
@@ -141,6 +147,7 @@ python -m uv run python scripts/prelabel.py (--doc ID | --all) [--dry-run] [--fo
 python -m uv run python scripts/extract.py (--split dev|test | --doc ID ...) [--run-id ID] [--cache on|off|refresh] [--dry-run]   # COSTS MONEY unless cached: -> outputs/runs/<run_id>/
 python -m uv run python scripts/check_run.py outputs/runs/<run_id>   # records vs the value/confidence/evidence/status/reasons contract (offline)
 python -m uv run python scripts/score.py outputs/runs/<run_id>   # scorecard (markdown + JSON) + per-doc results + run manifest -> <run_dir>/score/ (offline)
+python -m uv run python scripts/compare.py outputs/runs/<baseline> outputs/runs/<candidate>   # flips + exact McNemar + bootstrap + verdict -> outputs/compare/<b>__vs__<c>/ (offline); exit 1 = regression
 python -m uv run streamlit run tools/label_app.py   # the labeling app
 python -m uv run python scripts/make_sample_receipt.py [OUT.png]   # regenerate the synthetic fixture (deterministic)
 python -m uv run python scripts/smoke.py [IMAGE] [--raw]   # ONE LIVE CALL using .env: costs money; writes outputs/smoke-last.json
