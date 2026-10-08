@@ -34,12 +34,14 @@ from evalkit.labeling import (
     BlindDraftError,
     LabelForm,
     LabelingError,
+    parse_pasted_rows,
     save_label,
 )
 from evalkit.labeling_ui import (
     Opened,
     PagesUnavailable,
     clear_wip,
+    frozen_input,
     load_form,
     overview,
     page_data_url,
@@ -113,6 +115,22 @@ def on_note(doc: str, name: str) -> None:
 
 def on_doc_notes(doc: str) -> None:
     form_of(doc).notes = st.session_state[key(doc, "notes")]
+    persist(doc)
+
+
+def on_paste(doc: str, append: bool) -> None:
+    """Read the spreadsheet cells in the paste box into the rows (a callback, because a widget's
+    own state can only be cleared before the script draws it again)."""
+    result = parse_pasted_rows(st.session_state.get(key(doc, "rows_paste"), ""))
+    problems = key(doc, "rows_paste_problems")
+    if result.problems:
+        st.session_state[problems] = result.problems  # the grid is left exactly as it was
+        return
+    st.session_state.pop(problems, None)
+    form_of(doc).paste_rows(result.rows, append=append)
+    version = st.session_state.get(key(doc, "rows_version"), 0)
+    st.session_state[key(doc, "rows_version")] = version + 1  # the grid shows the new rows
+    st.session_state[key(doc, "rows_paste")] = ""
     persist(doc)
 
 
@@ -197,7 +215,12 @@ def rows_widget(doc: str, form: LabelForm) -> None:
             "One row per printed row, in order. Leave a cell empty if the row does not show it; "
             f"type {UNLABELED_CELL} to leave a cell unlabeled. Amounts as printed."
         )
-        frame = pd.DataFrame(form.rows or [], columns=list(ROW_CELLS)).astype(str)
+        frame = frozen_input(
+            st.session_state,
+            key(doc, "rows_source"),
+            version,
+            lambda: pd.DataFrame(form.rows or [], columns=list(ROW_CELLS)).astype(str),
+        )
         edited = st.data_editor(
             frame,
             num_rows="dynamic",
@@ -209,6 +232,34 @@ def rows_widget(doc: str, form: LabelForm) -> None:
         form.set_rows(edited.fillna("").to_dict("records"))
         if form.rows != before:  # only real edits write saved work, never just looking
             persist(doc)
+        with st.expander("Paste rows from a spreadsheet"):
+            st.caption(
+                "Copy a block of cells from Excel or Sheets and paste it here. Columns: "
+                f"{', '.join(ROW_CELLS)} (fewer is fine; a header line is skipped)."
+            )
+            st.text_area(
+                "pasted cells",
+                key=key(doc, "rows_paste"),
+                height=140,
+                label_visibility="collapsed",
+            )
+            replace, add = st.columns(2)
+            replace.button(
+                "replace the rows",
+                key=key(doc, "rows", "paste_replace"),
+                on_click=on_paste,
+                args=(doc, False),
+                use_container_width=True,
+            )
+            add.button(
+                "add after the last row",
+                key=key(doc, "rows", "paste_add"),
+                on_click=on_paste,
+                args=(doc, True),
+                use_container_width=True,
+            )
+            for problem in st.session_state.get(key(doc, "rows_paste_problems"), []):
+                st.error(problem)
         verify, absent, unlabeled = st.columns(3)
         if verify.button("verify rows", key=key(doc, "rows", "verify"), use_container_width=True):
             form.verify_rows()

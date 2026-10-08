@@ -23,6 +23,7 @@ from evalkit.labeling_ui import (
     GEOMETRY_JS,
     PagesUnavailable,
     clear_wip,
+    frozen_input,
     labelable_rows,
     load_form,
     overview,
@@ -560,3 +561,37 @@ class TestViewerScriptInNode:
             width=120,
         )
         assert small["box"] == big["box"]
+
+
+class TestFrozenInput:
+    """The line-item grid must be handed the same input on every rerun until its version moves."""
+
+    def test_the_input_is_built_once_per_version(self) -> None:
+        state: dict[str, Any] = {}
+        built = []
+
+        def make() -> list[str]:
+            built.append(1)
+            return ["first"]
+
+        first = frozen_input(state, "rows_source", 0, make)
+        assert frozen_input(state, "rows_source", 0, make) is first and len(built) == 1
+
+    def test_edits_made_meanwhile_do_not_change_it(self) -> None:
+        state: dict[str, Any] = {}
+        rows = ["typed once"]
+        held = frozen_input(state, "rows_source", 0, lambda: list(rows))
+        rows.append("the form was rewritten from the grid's own output")
+        assert frozen_input(state, "rows_source", 0, lambda: list(rows)) == held == ["typed once"]
+
+    def test_a_new_version_builds_a_new_input(self) -> None:
+        state: dict[str, Any] = {}
+        rows = ["a"]
+        frozen_input(state, "rows_source", 0, lambda: list(rows))
+        rows.append("b")
+        assert frozen_input(state, "rows_source", 1, lambda: list(rows)) == ["a", "b"]
+
+    def test_different_names_do_not_share_an_input(self) -> None:
+        state: dict[str, Any] = {}
+        assert frozen_input(state, "doc_001:rows_source", 0, lambda: 1) == 1
+        assert frozen_input(state, "doc_002:rows_source", 0, lambda: 2) == 2

@@ -19,9 +19,10 @@ is a few lines of JavaScript (`GEOMETRY_JS`) that tests run with Node against a 
 import base64
 import json
 import re
+from collections.abc import Callable, MutableMapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, TypeVar
 
 from PIL import Image
 
@@ -33,6 +34,7 @@ from evalkit.labeling import BlindDraftError, LabelForm, LabelingError, labelabl
 from evalkit.prelabel import PrelabelRefused, stored_pages
 
 State = Literal["labeled", "in_progress", "drafted", "todo"]
+T = TypeVar("T")
 _PAGE_FILE = re.compile(r"p(\d+)\.(png|jpg)")
 
 
@@ -131,6 +133,24 @@ def save_wip(form: LabelForm, paths: DatasetPaths) -> Path:
 
 def clear_wip(doc_id: str, paths: DatasetPaths) -> None:
     label_path(wip_dir(paths), doc_id).unlink(missing_ok=True)
+
+
+def frozen_input(
+    state: MutableMapping[str, Any], name: str, version: int, make: Callable[[], T]
+) -> T:
+    """What a widget is given as its input, held still until `version` changes.
+
+    `st.data_editor` keeps the user's edits as deltas against the data it was first given. If that
+    input is rebuilt from the edited result on every rerun (as the line-item grid once did), the
+    deltas are applied to a different table and the first edit is lost. So the input is built once
+    per version and handed back unchanged on every rerun; bumping the version (verify, paste, load)
+    is the only way to show something new.
+    """
+    held = state.get(name)
+    if held is None or held[0] != version:
+        held = (version, make())
+        state[name] = held
+    return held[1]  # type: ignore[no-any-return]
 
 
 # ---------------------------------------------------------------- pages

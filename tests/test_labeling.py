@@ -18,6 +18,7 @@ from evalkit.labeling import (
     LabelingError,
     changelog_lines,
     labelable_mode,
+    parse_pasted_rows,
     save_label,
 )
 
@@ -540,6 +541,124 @@ class TestRows:
 
 
 # ------------------------------------------------------------------ the finished label
+
+
+class TestPastedRows:
+    def test_a_spreadsheet_selection_becomes_rows_as_printed_text(self) -> None:
+        pasted = parse_pasted_rows("Tea\t2\t5.000\t10.000\nCake\t1\t3.000\t3.000\n")
+        assert pasted.problems == []
+        assert pasted.rows == [
+            {"description": "Tea", "quantity": "2", "unit_price": "5.000", "amount": "10.000"},
+            {"description": "Cake", "quantity": "1", "unit_price": "3.000", "amount": "3.000"},
+        ]
+
+    @pytest.mark.parametrize(
+        "header",
+        [
+            "description\tquantity\tunit_price\tamount",
+            "Description\tQty\tUnit Price\tAmount",
+            "DESCRIPTION\tQTY\tPRICE\tAMOUNT",
+            "description\tamount",
+        ],
+    )
+    def test_a_header_line_is_skipped(self, header: str) -> None:
+        pasted = parse_pasted_rows(f"{header}\nTea\t2\t5\t10")
+        assert [row["description"] for row in pasted.rows] == ["Tea"]
+
+    def test_a_first_row_of_data_is_not_mistaken_for_a_header(self) -> None:
+        # "qty" is a header word but "2" is not, so this line is data
+        pasted = parse_pasted_rows("Qty\t2\nTea\t1")
+        assert [row["description"] for row in pasted.rows] == ["Qty", "Tea"]
+        # a single header word is not a header either
+        assert len(parse_pasted_rows("Amount\t\nTea\t1").rows) == 2
+
+    def test_blank_lines_cr_lf_and_surrounding_spaces_are_ignored(self) -> None:
+        pasted = parse_pasted_rows("\r\n Tea \t 2 \r\n\r\n\t\t\r\nCake\t1\r\n")
+        assert pasted.problems == []
+        assert pasted.rows == [
+            {"description": "Tea", "quantity": "2", "unit_price": "", "amount": ""},
+            {"description": "Cake", "quantity": "1", "unit_price": "", "amount": ""},
+        ]
+
+    def test_a_quoted_cell_may_hold_a_tab_and_a_line_break(self) -> None:
+        pasted = parse_pasted_rows('"Tea\twith milk\nlarge"\t2\t5\t10\n')
+        assert pasted.problems == []
+        assert pasted.rows[0]["description"] == "Tea\twith milk\nlarge"
+        assert pasted.rows[0]["quantity"] == "2" and len(pasted.rows) == 1
+
+    def test_fewer_than_four_columns_are_padded_with_empty_cells(self) -> None:
+        pasted = parse_pasted_rows("Tea\t2")
+        assert pasted.rows == [
+            {"description": "Tea", "quantity": "2", "unit_price": "", "amount": ""}
+        ]
+
+    def test_more_than_four_columns_refuses_the_whole_paste_naming_the_rows(self) -> None:
+        pasted = parse_pasted_rows("Tea\t1\t2\t3\t4\nCake\t1\nBun\t1\t2\t3\t4\t5")
+        assert pasted.rows == []
+        assert pasted.problems == [
+            "row 1: 5 columns, at most 4 (description, quantity, unit_price, amount)",
+            "row 3: 6 columns, at most 4 (description, quantity, unit_price, amount)",
+        ]
+
+    @pytest.mark.parametrize(
+        ("text", "problem"),
+        [
+            ("", "nothing was pasted"),
+            (" \n  \n", "nothing was pasted"),
+            ("Tea 2 5 10", "no tab found"),
+            ("description\tquantity\n", "only a header line"),
+            ("\t\t\n\t", "nothing was pasted"),  # tabs are whitespace too
+        ],
+    )
+    def test_text_that_is_not_rows_is_a_problem_not_an_empty_table(
+        self, text: str, problem: str
+    ) -> None:
+        pasted = parse_pasted_rows(text)
+        assert pasted.rows == [] and len(pasted.problems) == 1
+        assert problem in pasted.problems[0]
+
+
+class TestPasteRows:
+    def pasted(self) -> list[dict[str, str]]:
+        return parse_pasted_rows("Tea\t2\t5\t10\nCake\t1\t3\t3").rows
+
+    def test_replace_discards_the_old_rows(self) -> None:
+        form = LabelForm.start(row())
+        form.set_rows([{"description": "Old"}])
+        form.paste_rows(self.pasted(), append=False)
+        assert [r["description"] for r in form.rows] == ["Tea", "Cake"]
+
+    def test_append_keeps_the_old_rows_first(self) -> None:
+        form = LabelForm.start(row())
+        form.set_rows([{"description": "Old"}])
+        form.paste_rows(self.pasted(), append=True)
+        assert [r["description"] for r in form.rows] == ["Old", "Tea", "Cake"]
+
+    def test_a_paste_makes_a_verified_table_pending_again(self) -> None:
+        form = LabelForm.start(row())
+        form.paste_rows(self.pasted(), append=False)
+        assert form.verify_rows() and form.rows_status == "verified"
+        form.paste_rows(self.pasted(), append=True)
+        assert form.rows_status == "pending" and form.rows_values == []
+
+    def test_a_paste_changes_no_other_field(self) -> None:
+        form = LabelForm.start(row())
+        form.set_text("vendor_name", "PT Contoh")
+        assert form.verify("vendor_name")
+        form.paste_rows(self.pasted(), append=False)
+        assert form.fields["vendor_name"].status == "verified"
+
+    def test_pasted_amounts_are_normalized_by_verifying_like_typed_ones(self) -> None:
+        form = LabelForm.start(row())
+        form.set_text("currency", "Rp")
+        form.paste_rows(parse_pasted_rows("Tea\t2\t5.000,00\t10.000,00").rows, append=False)
+        assert form.verify_rows(), form.rows_errors
+        assert str(form.rows_values[0]["amount"]) == "10000.00"
+
+    def test_an_ambiguous_pasted_amount_is_an_error_not_a_guess(self) -> None:
+        form = LabelForm.start(row())
+        form.paste_rows(parse_pasted_rows("Tea\t2\t5.000\t10.000").rows, append=False)
+        assert not form.verify_rows() and form.rows_errors
 
 
 class TestBuildLabel:

@@ -391,3 +391,105 @@ class TestKeepingWork:
         write_label(world.paths.ground_truth_dir, GroundTruth.model_validate({"doc_id": "doc_999"}))
         at = world.app()
         assert any("no document 'doc_999'" in str(e.value) for e in at.sidebar.error)
+
+
+def form_rows(at: AppTest, doc: str) -> list[dict[str, str]]:
+    return list(at.session_state["forms"][doc].form.rows)
+
+
+def paste(at: AppTest, doc: str, text: str, how: str = "replace") -> AppTest:
+    at.text_area(key=f"{doc}:rows_paste").set_value(text)
+    return click(at, f"{doc}:rows:paste_{how}")
+
+
+class TestPasteRows:
+    def test_pasted_cells_fill_the_form_and_the_grid_and_the_box_empties(
+        self, world: World
+    ) -> None:
+        at = select(world.app(), "doc_002")
+        at = paste(at, "doc_002", "Tea\t2\t12500\t25000\nCake\t1\t3000\t3000")
+        assert [r["description"] for r in form_rows(at, "doc_002")] == ["Tea", "Cake"]
+        assert at.text_area(key="doc_002:rows_paste").value == ""
+        assert at.session_state["doc_002:rows_version"] == 1
+        saved = (wip_dir(world.paths) / "doc_002.json").read_text(encoding="utf-8")
+        assert "Tea" in saved and "Cake" in saved  # work in progress is written
+
+    def test_the_pasted_table_verifies_like_a_typed_one(self, world: World) -> None:
+        at = select(world.app(), "doc_002")
+        at = paste(at, "doc_002", "Tea\t2\t12500\t25000")
+        at = click(at, "doc_002:rows:verify")
+        assert at.session_state["forms"]["doc_002"].form.rows_status == "verified"
+
+    def test_add_after_the_last_row_keeps_what_is_there(self, world: World) -> None:
+        at = select(world.app(), "doc_002")
+        at = paste(at, "doc_002", "Tea\t1\t5\t5")
+        at = paste(at, "doc_002", "Cake\t1\t3\t3", how="add")
+        assert [r["description"] for r in form_rows(at, "doc_002")] == ["Tea", "Cake"]
+        assert at.session_state["doc_002:rows_version"] == 2
+
+    def test_replace_discards_the_rows_that_were_there(self, world: World) -> None:
+        at = select(world.app(), "doc_002")
+        at = paste(at, "doc_002", "Tea\t1\t5\t5\nCake\t1\t3\t3")
+        at = paste(at, "doc_002", "Bun\t1\t2\t2", how="replace")
+        assert [r["description"] for r in form_rows(at, "doc_002")] == ["Bun"]
+
+    def test_a_bad_paste_changes_nothing_and_says_why(self, world: World) -> None:
+        at = select(world.app(), "doc_002")
+        at = paste(at, "doc_002", "Tea\t1\t5\t5")
+        at = paste(at, "doc_002", "just typed words", how="add")
+        assert [r["description"] for r in form_rows(at, "doc_002")] == ["Tea"]
+        assert any("no tab found" in str(e.value) for e in at.error)
+        assert at.text_area(key="doc_002:rows_paste").value == "just typed words"  # kept to fix
+        assert at.session_state["doc_002:rows_version"] == 1
+
+    def test_a_good_paste_after_a_bad_one_clears_the_message(self, world: World) -> None:
+        at = select(world.app(), "doc_002")
+        at = paste(at, "doc_002", "words")
+        assert any("no tab found" in str(e.value) for e in at.error)
+        at = paste(at, "doc_002", "Tea\t1\t5\t5")
+        assert not any("no tab found" in str(e.value) for e in at.error)
+
+    def test_a_blind_document_stays_blind_after_a_paste(self, world: World) -> None:
+        at = select(world.app(), "doc_002")
+        at = paste(at, "doc_002", "Tea\t1\t5\t5")
+        opened = at.session_state["forms"]["doc_002"]
+        assert opened.form.label_mode == "blind" and opened.source == "empty"
+
+    def test_saved_work_from_before_this_change_still_loads(self, world: World) -> None:
+        from evalkit.labeling import LabelForm
+        from evalkit.labeling_ui import save_wip
+
+        form = LabelForm.start(world.rows[1])
+        form.set_rows([{"description": "Saved earlier", "quantity": "1"}])
+        save_wip(form, world.paths)
+        at = select(world.app(), "doc_002")
+        assert [r["description"] for r in form_rows(at, "doc_002")] == ["Saved earlier"]
+        assert at.session_state["forms"]["doc_002"].source == "saved work"
+
+    def test_the_grid_is_given_the_same_input_on_every_rerun_until_the_version_moves(
+        self, world: World
+    ) -> None:
+        at = select(world.app(), "doc_002")
+        at = paste(at, "doc_002", "Tea\t1\t5\t5")
+        held = at.session_state["doc_002:rows_source"]
+        assert held[0] == 1 and list(held[1]["description"]) == ["Tea"]
+        # the grid's own output is written back into the form on every run; that must not change
+        # what the grid is given, or the next edit is applied to a different table
+        at.session_state["forms"]["doc_002"].form.set_rows([{"description": "Tea (edited)"}])
+        at = at.run()
+        again = at.session_state["doc_002:rows_source"]
+        assert again[0] == 1 and list(again[1]["description"]) == ["Tea"]
+        # the version moving is the only way to show something new: the grid output (not the
+        # simulated rewrite above) is what the form holds, and the new input is built from it
+        at = paste(at, "doc_002", "Cake\t1\t3\t3", how="add")
+        moved = at.session_state["doc_002:rows_source"]
+        assert moved[0] == 2 and list(moved[1]["description"]) == ["Tea", "Cake"]
+
+    def test_discarding_unsaved_work_also_forgets_the_frozen_grid_input(self, world: World) -> None:
+        at = select(world.app(), "doc_002")
+        at = paste(at, "doc_002", "Tea\t1\t5\t5")
+        assert "doc_002:rows_source" in at.session_state
+        at = click(at, "discard")
+        # rebuilt from the reloaded (empty) form at version 0, not the pasted table
+        reloaded = at.session_state["doc_002:rows_source"]
+        assert reloaded[0] == 0 and len(reloaded[1]) == 0

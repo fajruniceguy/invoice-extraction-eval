@@ -17,6 +17,8 @@ turn into ground truth by being left alone.
     put back as it was).
 """
 
+import csv
+import io
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, date, datetime
@@ -50,6 +52,56 @@ FIELD_KINDS: dict[str, FieldKind] = {
 }
 ROW_CELLS = ("description", "quantity", "unit_price", "amount")
 UNLABELED_CELL = "?"  # typed in a line-item cell to leave that cell unlabeled
+# column titles a spreadsheet selection may start with: such a first line is skipped
+HEADER_WORDS = frozenset({"description", "quantity", "qty", "unit_price", "price", "amount"})
+
+
+@dataclass(frozen=True)
+class PastedRows:
+    """The result of reading a spreadsheet selection: rows, or the reasons it was refused."""
+
+    rows: list[dict[str, str]]
+    problems: list[str]
+
+
+def _is_header(cells: list[str]) -> bool:
+    words = [cell.lower().replace(" ", "_") for cell in cells if cell]
+    return len(words) >= 2 and all(word in HEADER_WORDS for word in words)
+
+
+def parse_pasted_rows(text: str) -> PastedRows:
+    """Rows from what Excel or Sheets put on the clipboard: tab-separated cells, a cell in double
+    quotes when it holds a tab or a line break, blank lines ignored, an optional header line.
+    Columns are description, quantity, unit_price, amount; fewer are padded with empty cells.
+    Cells stay as printed text (verifying the rows normalizes them), and any problem refuses the
+    whole paste so a half-read table never reaches the grid."""
+    if not text.strip():
+        return PastedRows([], ["nothing was pasted"])
+    if "\t" not in text:
+        return PastedRows(
+            [], ["no tab found: copy a block of cells from the spreadsheet, do not retype them"]
+        )
+    records = [
+        [cell.strip() for cell in record]
+        for record in csv.reader(io.StringIO(text, newline=""), delimiter="\t", quotechar='"')
+    ]
+    records = [record for record in records if any(record)]
+    if records and _is_header(records[0]):
+        records = records[1:]
+    if not records:
+        return PastedRows([], ["only a header line was found: no rows"])
+    problems = [
+        f"row {number}: {len(record)} columns, at most {len(ROW_CELLS)} ({', '.join(ROW_CELLS)})"
+        for number, record in enumerate(records, start=1)
+        if len(record) > len(ROW_CELLS)
+    ]
+    if problems:
+        return PastedRows([], problems)
+    rows = [
+        dict(zip(ROW_CELLS, [*record, *([""] * (len(ROW_CELLS) - len(record)))], strict=True))
+        for record in records
+    ]
+    return PastedRows(rows, [])
 
 
 class LabelingError(Exception):
@@ -258,6 +310,11 @@ class LabelForm:
         if cleaned != self.rows:
             self.rows = cleaned
             self._rows_changed()
+
+    def paste_rows(self, rows: Sequence[Mapping[str, Any]], *, append: bool) -> None:
+        """Replace the rows with `rows`, or add them after the last one. Like any row edit, this
+        leaves the table pending: it must be verified again."""
+        self.set_rows([*self.rows, *rows] if append else rows)
 
     def add_row(self) -> None:
         self.rows.append(dict.fromkeys(ROW_CELLS, ""))

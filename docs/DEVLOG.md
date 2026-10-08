@@ -284,3 +284,10 @@ retries burn a daily request quota: use `LLM_MAX_RETRIES=0-1` on a limited key.
 **Not done, needs a decision.** The grounding fix (options in `docs/eval/failure_analysis.md`): `validate/` was out of scope, so nothing about validators, caps or the threshold changed.
 **Tech debt.** The SVGs are only structurally tested, not viewed; reliability bins are coarse on 10 documents.
 **Next.** The grounding decision; S4 hallucination probe (own spec); M9; M10; the 20 test labels (yours).
+
+## L1 - labeling app: paste rows from a spreadsheet, and the grid that lost the first edit (2026-10-08)
+**Why.** The owner was labeling the 10 blind test documents by hand (doc_019 has 20+ rows) and reported that a value typed once into the line-item grid vanished and had to be typed again.
+**Done.** `labeling.parse_pasted_rows` + `LabelForm.paste_rows` and a "Paste rows from a spreadsheet" expander (replace / add after the last row; a bad paste changes nothing and says why); `labeling_ui.frozen_input` so the grid is given the same input on every rerun until `rows_version` moves; a "Long tables" rule in `ground_truth/LABELING.md` (label every row or mark the table `unlabeled`, never part). 36 new tests; the labeling suites pass (234 with the slow app tests), `ruff` clean. Mutation pass: 22 mutants, 1 survived (the replace button behaving as add), killed by one more test.
+**Cause of the lost edit (found by reading, not reproduced).** `rows_widget` rebuilt the `st.data_editor` input from `form.rows` on every run while `form.rows` is rewritten from the editor's own output, so the editor's stored deltas were applied to a different table. Headless `AppTest` cannot type into a data editor, so the fix is tested at its seam (the input is frozen per version, and the app holds it in session state); whether the browser behaviour is fixed is for the owner to confirm.
+**Found along the way.** The app tests are marked `slow`, so a plain `pytest -q` had not been running them; and a mutation pass edits the very files a running Streamlit app imports, so it was run on an isolated copy of the repo.
+**Not done.** No label, draft or saved work was touched.

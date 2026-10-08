@@ -104,6 +104,20 @@ Each cell is a value, `null` (the row does not show it: the usual case for a mis
 - `line_items: null` means "labeled: this document has no itemization"; omit the key (or use
   `"__unlabeled__"`) when you have not labeled the rows.
 
+### Long tables: how much to label
+
+Labeling a table of 20 or more rows by hand is slow, and you may skip it. **Label every printed
+row, or mark the whole table `unlabeled`: never label part of it.** The extractor's rows that
+match nothing you labeled are scored as spurious, so a half-labeled table counts the model's
+correct rows against it. A table marked `unlabeled` is simply skipped in scoring, and the document's
+other fields still count. To enter a long table quickly, type or paste it into a spreadsheet and
+use "Paste rows from a spreadsheet" in the labeling app (columns: description, quantity,
+unit_price, amount; verifying the rows still normalizes and checks every number).
+
+The same leniency applies to a free-text field you cannot read or cannot delimit (an address that
+runs into other text, a payment method that is half cut off): mark it `unlabeled`. Do not guess
+and do not use `null` for "I am not sure": `null` claims the page does not print it.
+
 ## Rule 5: redacted fields
 
 Pages are redacted (black boxes) before they are stored. A field you cannot read because a box
