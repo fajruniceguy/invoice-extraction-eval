@@ -126,6 +126,16 @@ class TestRefusals:
             )
         assert not (tmp_path / "w").exists()
 
+    def test_a_file_exactly_at_the_limit_is_accepted_one_byte_over_is_not(
+        self, env: Env, tmp_path: Path
+    ) -> None:
+        gray_png(env, "a.png")
+        data = (env.raw / "a.png").read_bytes()
+        ok = pages_from_uploads([data], tmp_path / "ok", max_pages=5, max_bytes=len(data))
+        assert len(ok) == 1
+        with pytest.raises(FileTooLarge):
+            pages_from_uploads([data], tmp_path / "no", max_pages=5, max_bytes=len(data) - 1)
+
     def test_too_many_pages_is_refused_without_rendering(self, env: Env, tmp_path: Path) -> None:
         make_sized_pdf(env.raw / "long.pdf", [A4] * 21)
         with pytest.raises(TooManyPages, match="21 pages, but at most 20"):

@@ -242,6 +242,21 @@ class TestExtractErrors:
         assert response.status_code == 413 and response.json()["error"]["code"] == "file_too_large"
         assert fake_llm.requests == []
 
+    async def test_a_file_exactly_at_the_limit_gets_past_the_size_check(
+        self, fake_llm: FakeLLMServer
+    ) -> None:
+        limit = 1024 * 1024
+        async with serve(make_settings(fake_llm, api_max_upload_mb=1)) as (http, _):
+            at_limit = await http.post(
+                "/extract", files=upload(("a.png", b"0" * limit, "image/png"))
+            )
+            over = await http.post(
+                "/extract", files=upload(("b.png", b"0" * (limit + 1), "image/png"))
+            )
+        # exactly at the limit it is read, found to be no image (400); one byte more is a 413
+        assert at_limit.status_code == 400 and at_limit.json()["error"]["code"] == "unreadable_file"
+        assert over.status_code == 413
+
     async def test_too_many_pages_is_a_422(self, fake_llm: FakeLLMServer, tmp_path: Path) -> None:
         files = upload(("long.pdf", pdf(tmp_path, 21), "application/pdf"))
         async with serve(make_settings(fake_llm, llm_max_pages=20)) as (http, _):
@@ -397,6 +412,11 @@ class TestBatch:
             )
         assert response.status_code == 413 and response.json()["error"]["code"] == "batch_too_large"
         assert fake_llm.requests == []
+
+    async def test_exactly_the_batch_limit_is_accepted(self, fake_llm: FakeLLMServer) -> None:
+        async with serve(make_settings(fake_llm, api_max_batch=2)) as (http, _):
+            response = await http.post("/extract/batch", files=batch_files("a.png", "b.png"))
+        assert response.status_code == 200 and response.json()["run"]["ok"] == 2
 
     async def test_no_files(self, fake_llm: FakeLLMServer) -> None:
         async with serve(make_settings(fake_llm)) as (http, _):

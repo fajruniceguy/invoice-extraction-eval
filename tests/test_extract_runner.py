@@ -365,6 +365,26 @@ async def test_a_repair_refused_by_the_cap_keeps_the_unusable_output(data: Datas
     assert len(data.server.requests) == 1
 
 
+async def test_a_repair_refused_by_the_cap_stops_the_run_even_on_the_last_document(
+    data: Dataset,
+) -> None:
+    data.png("doc_a")
+    data.server.enqueue(chat_reply(uncited()))
+    run = await data.run(**capped())
+    assert run.statuses == {"doc_a": "failed"}
+    assert run.stopped == "cost_cap" and exit_code(run) == 3
+
+
+async def test_documents_after_a_refused_repair_are_skipped_without_a_call(data: Dataset) -> None:
+    for doc_id in ("doc_a", "doc_b", "doc_c"):
+        data.png(doc_id)
+    data.server.enqueue(chat_reply(uncited()))
+    run = await data.run(**capped())
+    assert run.statuses == {"doc_a": "failed", "doc_b": "not_run", "doc_c": "not_run"}
+    assert data.record("doc_b").error == "the cost cap was reached"  # skipped, never asked
+    assert len(data.server.requests) == 1
+
+
 async def test_cached_answers_are_free_and_reported_apart(data: Dataset, tmp_path: Path) -> None:
     data.png("doc_a")
     cache = {"llm_cache_dir": tmp_path / "cache", **capped(max_run_cost_usd="10")}
