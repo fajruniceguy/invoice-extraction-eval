@@ -107,6 +107,10 @@ def run_tests(work: Path, tests: Sequence[str], python: str) -> subprocess.Compl
     env = {
         **os.environ,
         "PYTHONPATH": str(work / "src") + (os.pathsep + existing if existing else ""),
+        # Python trusts a .pyc whose source mtime (whole seconds) and size match, so a mutant of
+        # the same size written in the same second as the one before it would run the earlier
+        # mutation and be reported killed. No bytecode is written, so none can be stale.
+        "PYTHONDONTWRITEBYTECODE": "1",
     }
     return subprocess.run(
         [python, "-m", "pytest", *PYTEST, *tests],

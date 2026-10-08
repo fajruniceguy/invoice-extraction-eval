@@ -62,6 +62,38 @@ def verdicts(report: "tool.Report") -> dict[str, str]:
 COPY = ("src", "tests", "pyproject.toml")
 
 
+class TestStaleBytecode:
+    """A mutant the same size as the code before it, written within the same second, must not be
+    served from the bytecode the earlier run left behind (Python trusts a .pyc whose source mtime,
+    in whole seconds, and size match). That made a mutant run the PREVIOUS mutation and be
+    reported killed, which is how the first test of this module flaked."""
+
+    def test_a_same_size_edit_with_the_same_mtime_is_not_served_from_old_bytecode(
+        self, tmp_path: Path
+    ) -> None:
+        import os
+        import sys
+
+        work = project(tmp_path)
+        source = work / "src" / "calc.py"
+        assert tool.run_tests(work, ["tests/test_calc.py"], sys.executable).returncode == 0
+        stamp = source.stat().st_mtime_ns
+        text = source.read_text(encoding="utf-8")
+        edited = text.replace("return a + b", "return a - b", 1)
+        assert len(edited) == len(text)
+        source.write_text(edited, encoding="utf-8")
+        os.utime(source, ns=(stamp, stamp))  # the same second, the same size
+        broken = tool.run_tests(work, ["tests/test_calc.py"], sys.executable)
+        assert broken.returncode != 0, "the edited code was not the code that ran"
+
+    def test_no_bytecode_is_left_in_the_work_tree(self, tmp_path: Path) -> None:
+        import sys
+
+        work = project(tmp_path)
+        tool.run_tests(work, ["tests/test_calc.py"], sys.executable)
+        assert list(work.rglob("*.pyc")) == []
+
+
 class TestCheck:
     def test_a_mutant_a_test_notices_is_killed_and_one_nothing_notices_survives(
         self, tmp_path: Path

@@ -205,7 +205,7 @@ between options (which extractor, the effort setting, what to build next) are mi
   after a **green baseline**, and a mutant that no test notices is a missing test. It ran on every milestone after it existed (mutant files in [tests/mutants/](tests/mutants/)) and the earlier
   milestones' passes are in the log. What it found: vacuous assertions (`assert ... or True`), a test world that could not tell a weighted mean from a plain one, a test
   skipped because it was marked slow, a quadratic regular expression that hung the secret scanner, and, in this very tool, a harness that reports every mutant "killed" when it cannot run
-  the tests (hence the green baseline). One flaky test of the tool points to a likely stale-bytecode race that can report a false kill (diagnosed, **not fixed**, see below).
+  the tests (hence the green baseline). One flaky test of the tool exposed a stale-bytecode race that could report a false kill (a mutant of the same size written in the same second ran the previous mutation); it is reproduced by a deterministic test and fixed.
 - **A guard hook** ([.claude/hooks/pre_commit_secret_scan.py](.claude/hooks/pre_commit_secret_scan.py), wired in [.claude/settings.json](.claude/settings.json), scanner in
   [tools/secret_scan.py](tools/secret_scan.py)): a Claude Code `PreToolUse` hook that scans what a `git commit` would add and blocks it on a key-shaped value. It exists because a real key was
   nearly pasted into `.env.example`. It is tested with fake keys; the log does not show it blocking anything real.
@@ -227,7 +227,7 @@ byte-identical to ingested ones, true for PNG and false for JPEG, found only whe
    `hallucinated_value` errors are mostly that question.
 6. **Other models**: a local run (the author's 4 GB GPU cannot serve a useful vision model) and an OCR + LLM ablation, compared head to head with the same gate.
 7. **Operations**: CI exists ([.github/workflows/ci.yml](.github/workflows/ci.yml): secret scan, lint, the suite, the offline re-score) but has not run on GitHub yet and has no Docker job (the runner is
-   Windows); async batch jobs and a metrics endpoint; fix the bytecode race in `tools/mutation_check.py`.
+   Windows); async batch jobs and a metrics endpoint.
 
 ## Where to start reading
 
