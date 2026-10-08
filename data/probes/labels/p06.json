@@ -1,0 +1,217 @@
+{
+  "doc_id": "p06",
+  "vendor_name": "CV Karya Mandiri Jaya",
+  "vendor_address": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+  "vendor_tax_id": "72.551.623.1-533.000",
+  "buyer_name": "CV Mitra Teknik Mandiri",
+  "document_number": "4428/CJ/2024",
+  "document_date": "2024-04-06",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": null,
+  "subtotal": "628952500.00",
+  "tax": "69131425.00",
+  "discount": "485000.00",
+  "total": "697598925.00",
+  "line_items": [
+    {
+      "description": "Map Plastik Biru",
+      "quantity": "8",
+      "unit_price": "1344500.00",
+      "amount": "10756000.00"
+    },
+    {
+      "description": "Tisu Gulung (isi 6)",
+      "quantity": "34",
+      "unit_price": "1396500.00",
+      "amount": "47481000.00"
+    },
+    {
+      "description": "Stabilo Kuning",
+      "quantity": "9",
+      "unit_price": "1674000.00",
+      "amount": "15066000.00"
+    },
+    {
+      "description": "Amplop Coklat A4",
+      "quantity": "19",
+      "unit_price": "1668500.00",
+      "amount": "31701500.00"
+    },
+    {
+      "description": "Lampu LED 12 Watt",
+      "quantity": "1.5",
+      "unit_price": "781500.00",
+      "amount": "1172250.00"
+    },
+    {
+      "description": "Jam Dinding 30cm",
+      "quantity": "39",
+      "unit_price": "481500.00",
+      "amount": "18778500.00"
+    },
+    {
+      "description": "Hand Sanitizer 500ml",
+      "quantity": "22",
+      "unit_price": "769500.00",
+      "amount": "16929000.00"
+    },
+    {
+      "description": "Amplop Putih Panjang",
+      "quantity": "3.5",
+      "unit_price": "519500.00",
+      "amount": "1818250.00"
+    },
+    {
+      "description": "Keyboard Standar USB",
+      "quantity": "29",
+      "unit_price": "1179500.00",
+      "amount": "34205500.00"
+    },
+    {
+      "description": "Kursi Lipat Besi",
+      "quantity": "15",
+      "unit_price": "1306500.00",
+      "amount": "19597500.00"
+    },
+    {
+      "description": "Kabel HDMI 2m",
+      "quantity": "40",
+      "unit_price": "734500.00",
+      "amount": "29380000.00"
+    },
+    {
+      "description": "Kabel USB Type-C 1m",
+      "quantity": "10",
+      "unit_price": "80000.00",
+      "amount": "800000.00"
+    },
+    {
+      "description": "Beras Premium 5kg",
+      "quantity": "16.5",
+      "unit_price": "1875500.00",
+      "amount": "30945750.00"
+    },
+    {
+      "description": "Mie Instan Goreng (dus)",
+      "quantity": "24",
+      "unit_price": "1460500.00",
+      "amount": "35052000.00"
+    },
+    {
+      "description": "Papan Tulis 60x90",
+      "quantity": "2.5",
+      "unit_price": "455000.00",
+      "amount": "1137500.00"
+    },
+    {
+      "description": "Kipas Angin Berdiri",
+      "quantity": "29",
+      "unit_price": "396500.00",
+      "amount": "11498500.00"
+    },
+    {
+      "description": "Pel Lantai Ember Set",
+      "quantity": "29",
+      "unit_price": "1665500.00",
+      "amount": "48299500.00"
+    },
+    {
+      "description": "Baterai AA Alkaline (4)",
+      "quantity": "19.5",
+      "unit_price": "1676000.00",
+      "amount": "32682000.00"
+    },
+    {
+      "description": "Klip Kertas Warna",
+      "quantity": "4.5",
+      "unit_price": "13500.00",
+      "amount": "60750.00"
+    },
+    {
+      "description": "Setrika Listrik 350W",
+      "quantity": "12",
+      "unit_price": "1165500.00",
+      "amount": "13986000.00"
+    },
+    {
+      "description": "Pulpen Gel Biru 0.5",
+      "quantity": "19",
+      "unit_price": "1758500.00",
+      "amount": "33411500.00"
+    },
+    {
+      "description": "Lemari Besi 2 Pintu",
+      "quantity": "31",
+      "unit_price": "620000.00",
+      "amount": "19220000.00"
+    },
+    {
+      "description": "Baterai AAA Alkaline (4)",
+      "quantity": "11",
+      "unit_price": "255000.00",
+      "amount": "2805000.00"
+    },
+    {
+      "description": "Rompi Proyek Oranye",
+      "quantity": "17.5",
+      "unit_price": "836500.00",
+      "amount": "14638750.00"
+    },
+    {
+      "description": "Buku Folio 100 lembar",
+      "quantity": "39",
+      "unit_price": "235500.00",
+      "amount": "9184500.00"
+    },
+    {
+      "description": "Binder Clip 155",
+      "quantity": "20",
+      "unit_price": "279500.00",
+      "amount": "5590000.00"
+    },
+    {
+      "description": "Tas Ransel 20L",
+      "quantity": "18",
+      "unit_price": "1837500.00",
+      "amount": "33075000.00"
+    },
+    {
+      "description": "Masker Medis (box)",
+      "quantity": "11.5",
+      "unit_price": "1906500.00",
+      "amount": "21924750.00"
+    },
+    {
+      "description": "Gunting Besar",
+      "quantity": "35",
+      "unit_price": "717000.00",
+      "amount": "25095000.00"
+    },
+    {
+      "description": "Gula Pasir 1kg",
+      "quantity": "37",
+      "unit_price": "412000.00",
+      "amount": "15244000.00"
+    },
+    {
+      "description": "Payung Lipat Hitam",
+      "quantity": "18",
+      "unit_price": "354500.00",
+      "amount": "6381000.00"
+    },
+    {
+      "description": "Sapu Ijuk",
+      "quantity": "16.5",
+      "unit_price": "830000.00",
+      "amount": "13695000.00"
+    },
+    {
+      "description": "Cutter Kecil",
+      "quantity": "16.5",
+      "unit_price": "1657000.00",
+      "amount": "27340500.00"
+    }
+  ],
+  "notes": "probe p06 from cons_003: the value of due_date, payment_method was painted over (its printed label stays)"
+}

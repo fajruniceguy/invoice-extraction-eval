@@ -1,0 +1,47 @@
+{
+  "ingest_version": 1,
+  "inputs_hash": "b983e856ba90c88d76e4e9cf7a620aee13d4cfa60f91277636f39a8eb2aacaec",
+  "page_range": null,
+  "pages": [
+    {
+      "bytes": 493979,
+      "file": "p1.png",
+      "format": "png",
+      "n": 1,
+      "sha256": "8632d79004a0a9585e32af13df5648843db98b94fb03fd244484ab1ac55b364d",
+      "size": [
+        1654,
+        2339
+      ],
+      "source": {
+        "file": 0,
+        "page": 1
+      }
+    },
+    {
+      "bytes": 261164,
+      "file": "p2.png",
+      "format": "png",
+      "n": 2,
+      "sha256": "22e770157797230b4ebee8808f8f7f0b91b486b28c8beea6fe13cc5659b74041",
+      "size": [
+        1654,
+        2339
+      ],
+      "source": {
+        "file": 1,
+        "page": 1
+      }
+    }
+  ],
+  "raw_sha256": [
+    "aaee96d64c6860581418ffc92b92d70f2334444e1caac1aa33f1a44020da2422",
+    "b1dd97f8b19c12cc237a6e7e6d593896ed679485543c04420aded7d0f10b3daf"
+  ],
+  "redactions": {},
+  "settings": {
+    "dpi": 200,
+    "jpeg_quality": 92,
+    "max_long_edge": 2400
+  }
+}

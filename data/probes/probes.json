@@ -1,0 +1,316 @@
+{
+  "probes": [
+    {
+      "erased": [
+        "document_number"
+      ],
+      "erasures": [
+        {
+          "field": "document_number",
+          "pages": [
+            1,
+            2
+          ],
+          "value": "INV/2024/2360"
+        }
+      ],
+      "id": "p01",
+      "kind": "erase",
+      "layout": "classic",
+      "original": {
+        "document_number": "INV/2024/2360"
+      },
+      "pages": [
+        "9b166a450d4fe437d22c538922345a6fce46484a9770463ec17bab931b260051",
+        "dfe967efbec78301d8e8c54245ee9c82f2e0df75b9aa4bf8fdf76a4863854787"
+      ],
+      "source": "cons_001",
+      "source_pages": 2
+    },
+    {
+      "erased": [
+        "vendor_tax_id"
+      ],
+      "erasures": [
+        {
+          "field": "vendor_tax_id",
+          "pages": [
+            1
+          ],
+          "value": "32.723.399.8-880.000"
+        }
+      ],
+      "id": "p02",
+      "kind": "erase",
+      "layout": "classic",
+      "original": {
+        "vendor_tax_id": "32.723.399.8-880.000"
+      },
+      "pages": [
+        "8632d79004a0a9585e32af13df5648843db98b94fb03fd244484ab1ac55b364d",
+        "22e770157797230b4ebee8808f8f7f0b91b486b28c8beea6fe13cc5659b74041"
+      ],
+      "source": "cons_001",
+      "source_pages": 2
+    },
+    {
+      "erased": [
+        "document_date"
+      ],
+      "erasures": [
+        {
+          "field": "document_date",
+          "pages": [
+            1
+          ],
+          "value": "20/03/2024"
+        }
+      ],
+      "id": "p03",
+      "kind": "erase",
+      "layout": "modern",
+      "original": {
+        "document_date": "2024-03-20"
+      },
+      "pages": [
+        "8fe763699642e5be9341e75998f6c7249033872ac6952d4637beddf03dcf1017",
+        "313ec7653847c1ee621881b7eea84446b4f538c935906530c67350b859a79ff3",
+        "a88ff55f114495f38ab3bb967b50cf36250029d51254668214bba10e93beb5f5"
+      ],
+      "source": "cons_002",
+      "source_pages": 3
+    },
+    {
+      "erased": [
+        "vendor_name",
+        "vendor_address"
+      ],
+      "erasures": [
+        {
+          "field": "vendor_name",
+          "pages": [
+            1
+          ],
+          "value": "UD Berkah Sejahtera"
+        },
+        {
+          "field": "vendor_address",
+          "pages": [
+            1
+          ],
+          "value": "Jl. Diponegoro No. 5, Surabaya 60241"
+        }
+      ],
+      "id": "p04",
+      "kind": "erase",
+      "layout": "modern",
+      "original": {
+        "vendor_address": "Jl. Diponegoro No. 5, Surabaya 60241",
+        "vendor_name": "UD Berkah Sejahtera"
+      },
+      "pages": [
+        "bd32552b7a16128d513cca6750ba57c968fe9314ee05aff393946707f15e057e",
+        "313ec7653847c1ee621881b7eea84446b4f538c935906530c67350b859a79ff3",
+        "a88ff55f114495f38ab3bb967b50cf36250029d51254668214bba10e93beb5f5"
+      ],
+      "source": "cons_002",
+      "source_pages": 3
+    },
+    {
+      "erased": [
+        "buyer_name"
+      ],
+      "erasures": [
+        {
+          "field": "buyer_name",
+          "pages": [
+            1
+          ],
+          "value": "CV Mitra Teknik Mandiri"
+        }
+      ],
+      "id": "p05",
+      "kind": "erase",
+      "layout": "compact",
+      "original": {
+        "buyer_name": "CV Mitra Teknik Mandiri"
+      },
+      "pages": [
+        "7b3bd9d121f18bd404c834d9941059899a81473c4510ba0ac9ccf33dd9744475",
+        "dfaf033563488cd772f5583c15144ab787da7e59e4ff49d63348ddd0095e245c"
+      ],
+      "source": "cons_003",
+      "source_pages": 2
+    },
+    {
+      "erased": [
+        "due_date",
+        "payment_method"
+      ],
+      "erasures": [
+        {
+          "field": "due_date",
+          "pages": [
+            1
+          ],
+          "value": "2024-05-06"
+        },
+        {
+          "field": "payment_method",
+          "pages": [
+            1
+          ],
+          "value": "Tunai"
+        }
+      ],
+      "id": "p06",
+      "kind": "erase",
+      "layout": "compact",
+      "original": {
+        "due_date": "2024-05-06",
+        "payment_method": "Tunai"
+      },
+      "pages": [
+        "b1376d5683bcbfef8d0d3e2d2de4ce0fea99420c5fcdfc7d736115f012808490",
+        "dfaf033563488cd772f5583c15144ab787da7e59e4ff49d63348ddd0095e245c"
+      ],
+      "source": "cons_003",
+      "source_pages": 2
+    },
+    {
+      "erased": [
+        "subtotal",
+        "discount",
+        "tax",
+        "total"
+      ],
+      "erasures": [],
+      "id": "p07",
+      "kind": "drop_last_page",
+      "layout": "classic",
+      "original": {
+        "discount": "49473825.00",
+        "subtotal": "989476500.00",
+        "tax": "103400294.00",
+        "total": "1043402969.00"
+      },
+      "pages": [
+        "9034696df4e84ece4d3820a42ce676c40d3b5b858421289f495aafe8129cdaee"
+      ],
+      "source": "cons_001",
+      "source_pages": 2
+    },
+    {
+      "erased": [
+        "subtotal",
+        "tax",
+        "total"
+      ],
+      "erasures": [
+        {
+          "field": "subtotal",
+          "pages": [
+            3
+          ],
+          "value": "1.278.017.500"
+        },
+        {
+          "field": "tax",
+          "pages": [
+            3
+          ],
+          "value": "140.581.925"
+        },
+        {
+          "field": "total",
+          "pages": [
+            3
+          ],
+          "value": "1.418.599.425"
+        }
+      ],
+      "id": "p08",
+      "kind": "erase",
+      "layout": "modern",
+      "original": {
+        "subtotal": "1278017500",
+        "tax": "140581925",
+        "total": "1418599425"
+      },
+      "pages": [
+        "ba6997b3c1af1a5886ea9d5410a6e8be90fa5ffebe35940a1031790c443ad3c4",
+        "313ec7653847c1ee621881b7eea84446b4f538c935906530c67350b859a79ff3",
+        "a54f9a5a6aebb76c57c6125c8266fd5d0dc4b5393f8911658ce0cc466038a7c3"
+      ],
+      "source": "cons_002",
+      "source_pages": 3
+    },
+    {
+      "erased": [
+        "subtotal",
+        "discount",
+        "tax",
+        "total"
+      ],
+      "erasures": [],
+      "id": "p09",
+      "kind": "drop_last_page",
+      "layout": "compact",
+      "original": {
+        "discount": "485000.00",
+        "subtotal": "628952500.00",
+        "tax": "69131425.00",
+        "total": "697598925.00"
+      },
+      "pages": [
+        "fd90c6418edc35531637d844ea76758135ab4ba8dfd0981f7b0f10d6b92b4f83"
+      ],
+      "source": "cons_003",
+      "source_pages": 2
+    },
+    {
+      "erased": [],
+      "erasures": [],
+      "id": "c01",
+      "kind": "control",
+      "layout": "classic",
+      "original": {},
+      "pages": [
+        "9034696df4e84ece4d3820a42ce676c40d3b5b858421289f495aafe8129cdaee",
+        "22e770157797230b4ebee8808f8f7f0b91b486b28c8beea6fe13cc5659b74041"
+      ],
+      "source": "cons_001",
+      "source_pages": 2
+    },
+    {
+      "erased": [],
+      "erasures": [],
+      "id": "c02",
+      "kind": "control",
+      "layout": "modern",
+      "original": {},
+      "pages": [
+        "ba6997b3c1af1a5886ea9d5410a6e8be90fa5ffebe35940a1031790c443ad3c4",
+        "313ec7653847c1ee621881b7eea84446b4f538c935906530c67350b859a79ff3",
+        "a88ff55f114495f38ab3bb967b50cf36250029d51254668214bba10e93beb5f5"
+      ],
+      "source": "cons_002",
+      "source_pages": 3
+    },
+    {
+      "erased": [],
+      "erasures": [],
+      "id": "c03",
+      "kind": "control",
+      "layout": "compact",
+      "original": {},
+      "pages": [
+        "fd90c6418edc35531637d844ea76758135ab4ba8dfd0981f7b0f10d6b92b4f83",
+        "dfaf033563488cd772f5583c15144ab787da7e59e4ff49d63348ddd0095e245c"
+      ],
+      "source": "cons_003",
+      "source_pages": 2
+    }
+  ],
+  "seed": "docextract-construct-v1"
+}
