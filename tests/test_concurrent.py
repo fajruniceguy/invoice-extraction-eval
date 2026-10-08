@@ -106,3 +106,20 @@ async def test_skip_and_skipped_go_together() -> None:
         await run_bounded([1], Gauge().work, concurrency=1, skip=lambda: False)
     with pytest.raises(ValueError, match="go together"):
         await run_bounded([1], Gauge().work, concurrency=1, skipped=lambda item: 0)
+
+
+async def test_two_calls_can_share_one_semaphore() -> None:
+    gauge = Gauge()
+    shared = asyncio.Semaphore(2)
+    first, second = await asyncio.gather(
+        run_bounded(list(range(4)), gauge.work, semaphore=shared),
+        run_bounded(list(range(4, 8)), gauge.work, semaphore=shared),
+    )
+    assert first == [0, 10, 20, 30] and second == [40, 50, 60, 70]
+    assert gauge.peak == 2  # one limit for both, not 2 + 2
+
+
+async def test_a_given_semaphore_replaces_the_concurrency_argument() -> None:
+    gauge = Gauge()
+    await run_bounded(list(range(6)), gauge.work, concurrency=0, semaphore=asyncio.Semaphore(3))
+    assert gauge.peak == 3

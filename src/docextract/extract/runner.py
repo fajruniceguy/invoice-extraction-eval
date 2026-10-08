@@ -288,7 +288,8 @@ async def _extract_one(
     )
 
 
-def _totals(records: Sequence[DocRecord]) -> RunTotals:
+def run_totals(records: Sequence[DocRecord]) -> RunTotals:
+    """What a set of document records adds up to (the run, or one API batch)."""
     totals = RunTotals(documents=len(records))
     for record in records:
         setattr(totals, record.status, getattr(totals, record.status) + 1)
@@ -384,7 +385,7 @@ async def run_extraction(
         },
         selection=selection,
         statuses={record.doc_id: record.status for record in records},
-        totals=_totals(records),
+        totals=run_totals(records),
         budget_spent_usd=client.budget.spent,
         stopped="cost_cap" if stopped else None,
         concurrency=concurrency,

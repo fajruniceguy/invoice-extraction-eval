@@ -21,16 +21,19 @@ async def run_bounded(
     items: Sequence[T],
     worker: Callable[[T], Awaitable[R]],
     *,
-    concurrency: int,
+    concurrency: int = 1,
+    semaphore: asyncio.Semaphore | None = None,
     skip: Callable[[], bool] | None = None,
     skipped: Callable[[T], R] | None = None,
 ) -> list[R]:
-    """`[await worker(item) for item in items]`, at most `concurrency` at a time."""
-    if concurrency < 1:
-        raise ValueError(f"concurrency must be at least 1, got {concurrency}")
+    """`[await worker(item) for item in items]`, at most `concurrency` at a time. Pass a
+    `semaphore` instead to share one limit with other work (the API's process-wide cap)."""
+    if semaphore is None:
+        if concurrency < 1:
+            raise ValueError(f"concurrency must be at least 1, got {concurrency}")
+        semaphore = asyncio.Semaphore(concurrency)
     if (skip is None) != (skipped is None):
         raise ValueError("skip and skipped go together")
-    semaphore = asyncio.Semaphore(concurrency)
     results: list[R | None] = [None] * len(items)
 
     async def one(index: int, item: T) -> None:
