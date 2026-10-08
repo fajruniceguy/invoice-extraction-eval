@@ -304,3 +304,36 @@ def test_a_missing_or_blank_prompt_file_exits_2_before_any_request(
     assert done.returncode == 2
     assert "--system-prompt-file" in done.stderr
     assert fake_llm.requests == [] and not ws.runs.exists()
+
+
+def test_concurrency_runs_documents_in_parallel_and_records_it(
+    ws: Workspace, fake_llm: FakeLLMServer
+) -> None:
+    for doc_id in ("doc_a", "doc_b", "doc_c"):
+        ws.add_png(doc_id)
+    done = ws.extract(fake_llm, "--split", "dev", "--run-id", "par", "--concurrency", "2")
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "concurrency 2" in done.stdout
+    run = json.loads((ws.runs / "par" / "run.json").read_text(encoding="utf-8"))
+    assert run["concurrency"] == 2 and list(run["statuses"]) == ["doc_a", "doc_b", "doc_c"]
+    assert run["totals"]["ok"] == 3 and len(fake_llm.requests) == 3
+
+
+def test_the_default_concurrency_is_one(ws: Workspace, fake_llm: FakeLLMServer) -> None:
+    ws.add_png("doc_a")
+    done = ws.extract(fake_llm, "--doc", "doc_a", "--run-id", "seq")
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "concurrency 1" in done.stdout
+    assert (
+        json.loads((ws.runs / "seq" / "run.json").read_text(encoding="utf-8"))["concurrency"] == 1
+    )
+
+
+@pytest.mark.parametrize(("value", "message"), [("0", "at least 1"), ("abc", "not a whole number")])
+def test_a_bad_concurrency_exits_2_before_any_request(
+    ws: Workspace, fake_llm: FakeLLMServer, value: str, message: str
+) -> None:
+    ws.add_png("doc_a")
+    done = ws.extract(fake_llm, "--doc", "doc_a", "--concurrency", value)
+    assert done.returncode == 2 and message in done.stderr
+    assert fake_llm.requests == [] and not ws.runs.exists()

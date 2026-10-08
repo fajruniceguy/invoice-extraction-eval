@@ -1,7 +1,8 @@
 """Extract documents with the configured model into outputs/runs/<run_id>/.
 
 Usage: python -m uv run python scripts/extract.py (--split dev|test | --doc DOC_ID ...)
-           [--run-id ID] [--cache on|off|refresh] [--system-prompt-file PATH] [--dry-run]
+           [--run-id ID] [--cache on|off|refresh] [--system-prompt-file PATH] [--concurrency N]
+           [--dry-run]
            [--env-file PATH]
            [--manifest FILE] [--pages-dir DIR] [--ground-truth-dir DIR] [--runs-dir DIR]
 
@@ -18,6 +19,10 @@ Refused before any call (status "refused", the run goes on):
   * a document with more pages than LLM_MAX_PAGES.
 A provider error, or output still unusable after the repairs (LLM_MAX_REPAIRS), is "failed" and the
 run goes on. The run cost cap (MAX_RUN_COST_USD) stops the run: the rest is "not_run".
+
+--concurrency N runs N documents at a time (default 1). Calls already in flight finish when the
+cost cap stops the run, so the spend can pass the cap by up to N calls; parallel calls also use a
+provider's per-minute and per-day quota faster.
 
 --dry-run lists what would be extracted or refused (blind rule and stored pages), and calls nothing.
 Exit codes: 0 every document ok, 1 a document failed or was refused, 2 bad arguments,
@@ -49,6 +54,16 @@ from docextract.paths import DatasetPaths, find_repo_root
 from docextract.providers.openai_compat import OpenAICompatClient
 
 _RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
+
+
+def _positive_int(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number") from None
+    if value < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return value
 
 
 def print_record(record: DocRecord) -> None:
@@ -103,6 +118,7 @@ async def run(
             selection=selection,
             cache=args.cache,
             on_record=print_record,
+            concurrency=args.concurrency,
             system_prompt=system_prompt,
         )
     totals = record.totals
@@ -141,6 +157,12 @@ def main() -> int:
         type=Path,
         help="send this text as the system prompt instead of the production one (the run "
         "records its hash)",
+    )
+    parser.add_argument(
+        "--concurrency",
+        type=_positive_int,
+        default=1,
+        help="documents extracted at a time (default 1)",
     )
     parser.add_argument("--dry-run", action="store_true", help="plan only, call nothing")
     parser.add_argument("--env-file", type=Path, default=root / ".env")
@@ -193,7 +215,8 @@ def main() -> int:
     print(
         f"extract: {settings.llm_model} at {settings.llm_base_url}, "
         f"{len(selected)} document(s) -> {run_dir}\n"
-        f"  prompt: {prompt_sha256(system_prompt)[:12]} ({source})"
+        f"  prompt: {prompt_sha256(system_prompt)[:12]} ({source}), "
+        f"concurrency {args.concurrency}"
     )
     return asyncio.run(run(selected, rows, settings, args, run_dir, system_prompt))
 

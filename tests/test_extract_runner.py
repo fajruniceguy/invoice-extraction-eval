@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import json
 import os
+import time
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -103,6 +104,7 @@ class Dataset:
         self, selected: list[ManifestRow] | None = None, run_id: str = "r1", **changes: Any
     ) -> RunRecord:
         cache = changes.pop("cache", None)
+        concurrency = changes.pop("concurrency", 1)
         config = self.settings(**changes)
         async with OpenAICompatClient(config) as client:
             return await run_extraction(
@@ -115,6 +117,7 @@ class Dataset:
                 run_dir=self.runs / run_id,
                 selection={"split": "dev"},
                 cache=cache,
+                concurrency=concurrency,
             )
 
     def record(self, doc_id: str, run_id: str = "r1") -> DocRecord:
@@ -485,3 +488,112 @@ class TestSystemPrompt:
         ] * 2
         assert run.prompt_sha256 == prompt_sha256("Extract nothing clever.") != PROMPT_SHA256
         assert data.run_json("custom")["prompt_sha256"] == run.prompt_sha256
+
+
+# ------------------------------------------------------------------ concurrency
+
+
+def comparable(record: DocRecord) -> dict[str, Any]:
+    """A record without the one thing that legitimately differs between two runs: its timing."""
+    return record.model_dump(mode="json", exclude={"latency_ms"})
+
+
+def peak_in_flight(requests: list[Any], delay: float) -> int:
+    """The most requests the fake server had open at once, from arrival times and a fixed delay."""
+    starts = sorted(request.received_at for request in requests)
+    return max(sum(1 for other in starts if start <= other < start + delay) for start in starts)
+
+
+class TestConcurrency:
+    DOCS = ("doc_a", "doc_b", "doc_c", "doc_d", "doc_e", "doc_f")
+
+    def make(self, data: Dataset) -> None:
+        for doc_id in self.DOCS:
+            data.png(doc_id)
+
+    async def test_the_records_do_not_depend_on_the_concurrency(self, data: Dataset) -> None:
+        self.make(data)
+        one = await data.run(run_id="one", concurrency=1)
+        three = await data.run(run_id="three", concurrency=3)
+        assert one.concurrency == 1 and three.concurrency == 3
+        assert list(one.statuses) == list(three.statuses) == list(self.DOCS)
+        assert one.statuses == three.statuses
+        for doc_id in self.DOCS:
+            assert comparable(data.record(doc_id, "one")) == comparable(
+                data.record(doc_id, "three")
+            )
+        assert one.totals == three.totals
+        assert data.run_json("three")["concurrency"] == 3
+
+    async def test_the_default_is_one_at_a_time(self, data: Dataset) -> None:
+        self.make(data)
+        data.server.enqueue(*[Reply(200, chat_reply(canned_answer()).body, delay_s=0.1)] * 6)
+        run = await data.run()
+        assert run.concurrency == 1
+        assert peak_in_flight(data.server.requests, 0.1) == 1
+
+    async def test_the_server_never_has_more_requests_open_than_the_concurrency(
+        self, data: Dataset
+    ) -> None:
+        self.make(data)
+        data.server.enqueue(*[Reply(200, chat_reply(canned_answer()).body, delay_s=0.3)] * 6)
+        await data.run(concurrency=2)
+        assert len(data.server.requests) == 6
+        assert peak_in_flight(data.server.requests, 0.3) == 2
+
+    async def test_parallel_documents_finish_sooner(self, data: Dataset) -> None:
+        self.make(data)
+        reply = Reply(200, chat_reply(canned_answer()).body, delay_s=0.2)
+        data.server.enqueue(*[reply] * 6)
+        started = time.monotonic()
+        await data.run(run_id="serial", concurrency=1)
+        serial = time.monotonic() - started
+        data.server.enqueue(*[reply] * 6)
+        started = time.monotonic()
+        await data.run(run_id="parallel", concurrency=3)
+        parallel = time.monotonic() - started
+        assert serial >= 6 * 0.2 and parallel < 0.75 * serial
+
+    async def test_records_are_written_and_reported_as_each_document_finishes(
+        self, data: Dataset
+    ) -> None:
+        self.make(data)
+        seen: list[str] = []
+        config = data.settings()
+        async with OpenAICompatClient(config) as client:
+            await run_extraction(
+                data.rows,
+                rows=data.rows,
+                client=client,
+                settings=config,
+                pages_dir=data.env.pages,
+                labels_dir=data.labels,
+                run_dir=data.runs / "cb",
+                selection={"split": "dev"},
+                on_record=lambda record: seen.append(record.doc_id),
+                concurrency=3,
+            )
+        assert sorted(seen) == sorted(self.DOCS) and len(seen) == 6
+
+    async def test_a_cost_cap_stop_leaves_unstarted_documents_not_run(self, data: Dataset) -> None:
+        self.make(data)
+        run = await data.run(concurrency=2, **capped())
+        # two calls were already in flight when the first one crossed the cap: both complete
+        assert run.stopped == "cost_cap" and exit_code(run) == 3
+        assert len(data.server.requests) == 2
+        assert [run.statuses[d] for d in self.DOCS] == ["ok", "ok"] + ["not_run"] * 4
+        assert data.record("doc_f").error == "the cost cap was reached"
+        assert Decimal(data.run_json()["budget_spent_usd"]) == Decimal("3.0")
+
+    async def test_a_failing_document_does_not_stop_the_others(self, data: Dataset) -> None:
+        self.make(data)
+        data.server.enqueue(Reply(500, {"error": {"message": "upstream exploded"}}))
+        run = await data.run(concurrency=3)
+        assert sorted(run.statuses.values()).count("failed") == 1
+        assert sorted(run.statuses.values()).count("ok") == 5
+        assert exit_code(run) == 1
+
+    async def test_zero_concurrency_is_refused(self, data: Dataset) -> None:
+        self.make(data)
+        with pytest.raises(ValueError, match="at least 1"):
+            await data.run(concurrency=0)

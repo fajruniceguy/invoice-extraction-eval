@@ -29,6 +29,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 from docextract.config import CacheMode, Settings
+from docextract.extract.concurrent import run_bounded
 from docextract.extract.extractor import ExtractionRefused, extract_pages
 from docextract.extract.prompt import SYSTEM_PROMPT, prompt_sha256
 from docextract.extract.schema import DocumentExtraction
@@ -124,6 +125,7 @@ class RunRecord(BaseModel):
     totals: RunTotals
     budget_spent_usd: Decimal  # the client's own tally: includes calls of documents cut short
     stopped: Literal["cost_cap"] | None = None
+    concurrency: int = 1  # documents in flight at once (not a result-changing setting)
 
 
 # ---------------------------------------------------------------- what to run
@@ -205,44 +207,37 @@ def _failure(doc_id: str, exc: ProviderError, pages: list[PageRef]) -> DocRecord
     return record
 
 
-async def _extract_one(
-    row: ManifestRow,
-    rows: Sequence[ManifestRow],
+async def extract_record(
+    doc_id: str,
+    pages: Sequence[Path],
     *,
     client: OpenAICompatClient,
     settings: Settings,
-    pages_dir: Path,
-    labels_dir: Path,
     cache: CacheMode | None,
     system_prompt: str,
 ) -> tuple[DocRecord, bool]:
-    """One document's record, and whether the cost cap stopped the run on it."""
-    reason = blind_refusal(row, rows, labels_dir)
-    if reason is not None:
-        return DocRecord(doc_id=row.doc_id, status="refused", error=reason), False
-    try:
-        pages = stored_pages(row.doc_id, pages_dir, derived=row.is_derived)
-    except StoredPagesError as exc:
-        return DocRecord(doc_id=row.doc_id, status="refused", error=str(exc)), False
+    """One document's record from its page files, and whether the cost cap stopped the run on it.
+    The runner (stored pages) and the API (uploaded pages) both come through here, so a record
+    never depends on which of them produced it."""
     refs = _page_refs(pages)
     try:
         result = await extract_pages(
             pages, client=client, settings=settings, cache=cache, system_prompt=system_prompt
         )
     except ExtractionRefused as exc:
-        return DocRecord(doc_id=row.doc_id, status="refused", error=str(exc), pages=refs), False
+        return DocRecord(doc_id=doc_id, status="refused", error=str(exc), pages=refs), False
     except BudgetExceededError as exc:
         cause = exc.__cause__
         if isinstance(cause, ResponseParseError):  # the cap refused a repair of this document
-            record = _failure(row.doc_id, cause, refs)
+            record = _failure(doc_id, cause, refs)
             record.error = f"{exc} (refused a repair of: {cause})"
             return record, True
-        return DocRecord(doc_id=row.doc_id, status="not_run", error=str(exc), pages=refs), True
+        return DocRecord(doc_id=doc_id, status="not_run", error=str(exc), pages=refs), True
     except ProviderError as exc:
-        return _failure(row.doc_id, exc, refs), False
+        return _failure(doc_id, exc, refs), False
     response = result.response
     record = DocRecord(
-        doc_id=row.doc_id,
+        doc_id=doc_id,
         status="ok",
         pages=refs,
         raw_text=response.text,
@@ -262,6 +257,35 @@ async def _extract_one(
         finish_reason=response.finish_reason,
     )
     return record, False
+
+
+async def _extract_one(
+    row: ManifestRow,
+    rows: Sequence[ManifestRow],
+    *,
+    client: OpenAICompatClient,
+    settings: Settings,
+    pages_dir: Path,
+    labels_dir: Path,
+    cache: CacheMode | None,
+    system_prompt: str,
+) -> tuple[DocRecord, bool]:
+    """One document's record, and whether the cost cap stopped the run on it."""
+    reason = blind_refusal(row, rows, labels_dir)
+    if reason is not None:
+        return DocRecord(doc_id=row.doc_id, status="refused", error=reason), False
+    try:
+        pages = stored_pages(row.doc_id, pages_dir, derived=row.is_derived)
+    except StoredPagesError as exc:
+        return DocRecord(doc_id=row.doc_id, status="refused", error=str(exc)), False
+    return await extract_record(
+        row.doc_id,
+        pages,
+        client=client,
+        settings=settings,
+        cache=cache,
+        system_prompt=system_prompt,
+    )
 
 
 def _totals(records: Sequence[DocRecord]) -> RunTotals:
@@ -295,37 +319,48 @@ async def run_extraction(
     cache: CacheMode | None = None,
     on_record: Callable[[DocRecord], None] | None = None,
     system_prompt: str = SYSTEM_PROMPT,
+    concurrency: int = 1,
 ) -> RunRecord:
-    """Extract `selected` one at a time into `run_dir`. `rows` is the whole manifest (for the blind
-    rule); `settings` are the client's; `selection` is recorded as given; `system_prompt` is the
-    prompt sent, and the run records its hash."""
+    """Extract `selected` into `run_dir`, `concurrency` documents at a time (1 = one after the
+    other). `rows` is the whole manifest (for the blind rule); `settings` are the client's;
+    `selection` is recorded as given; `system_prompt` is the prompt sent, and the run records its
+    hash. Once the cost cap stops a document, no document that has not started is called: calls
+    already in flight finish, so the spend can pass the cap by up to `concurrency` calls."""
     started = datetime.now(UTC).isoformat(timespec="seconds")
-    records: list[DocRecord] = []
-    stopped: Literal["cost_cap"] | None = None
-    for row in selected:
-        if stopped is not None:
-            record = DocRecord(
-                doc_id=row.doc_id, status="not_run", error="the cost cap was reached"
-            )
-        else:
-            record, hit_cap = await _extract_one(
-                row,
-                rows,
-                client=client,
-                settings=settings,
-                pages_dir=pages_dir,
-                labels_dir=labels_dir,
-                cache=cache,
-                system_prompt=system_prompt,
-            )
-            if hit_cap:
-                stopped = "cost_cap"
+    stopped = False
+
+    def finish(record: DocRecord) -> DocRecord:
         write_json_atomic(
-            run_dir / "docs" / f"{row.doc_id}.json", record.model_dump_json(indent=2) + "\n"
+            run_dir / "docs" / f"{record.doc_id}.json", record.model_dump_json(indent=2) + "\n"
         )
-        records.append(record)
         if on_record is not None:
             on_record(record)
+        return record
+
+    async def work(row: ManifestRow) -> DocRecord:
+        nonlocal stopped
+        record, hit_cap = await _extract_one(
+            row,
+            rows,
+            client=client,
+            settings=settings,
+            pages_dir=pages_dir,
+            labels_dir=labels_dir,
+            cache=cache,
+            system_prompt=system_prompt,
+        )
+        if hit_cap:
+            stopped = True
+        return finish(record)
+
+    def not_run(row: ManifestRow) -> DocRecord:
+        return finish(
+            DocRecord(doc_id=row.doc_id, status="not_run", error="the cost cap was reached")
+        )
+
+    records = await run_bounded(
+        list(selected), work, concurrency=concurrency, skip=lambda: stopped, skipped=not_run
+    )
 
     run = RunRecord(
         run_id=run_dir.name,
@@ -351,7 +386,8 @@ async def run_extraction(
         statuses={record.doc_id: record.status for record in records},
         totals=_totals(records),
         budget_spent_usd=client.budget.spent,
-        stopped=stopped,
+        stopped="cost_cap" if stopped else None,
+        concurrency=concurrency,
     )
     write_json_atomic(run_dir / "run.json", run.model_dump_json(indent=2) + "\n")
     return run
