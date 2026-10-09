@@ -1,0 +1,32 @@
+{
+  "doc_id": "doc_033",
+  "label_mode": "prelabel",
+  "labeled_at": "2026-10-09T00:07:18.628507Z",
+  "vendor_name": "NAKOA Kopi",
+  "vendor_address": "Jl. Mayjend Panjaitan No.75, Malang",
+  "vendor_tax_id": null,
+  "buyer_name": "Justin",
+  "document_number": "POS-MLG-4-20261006-103301",
+  "document_date": "2026-10-06",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": "QRIS",
+  "subtotal": "33182",
+  "tax": "3273",
+  "discount": null,
+  "total": "36000",
+  "line_items": [
+    {
+      "description": "Caffe Latte - Ice Regular",
+      "quantity": "1",
+      "unit_price": "28182",
+      "amount": "28182"
+    },
+    {
+      "description": "(+) Extra Espresso 1 Shot",
+      "quantity": "1",
+      "unit_price": "5000",
+      "amount": "5000"
+    }
+  ]
+}
