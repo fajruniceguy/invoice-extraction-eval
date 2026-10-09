@@ -1,0 +1,175 @@
+{
+  "doc_id": "doc_023",
+  "errors": {
+    "abstained_on_absent": 1,
+    "name_near_miss": 2,
+    "string_mismatch": 2
+  },
+  "fields": [
+    {
+      "error_class": "name_near_miss",
+      "expected": "MART SUNSET BASANGK / SUNSET BASANGKASA [SUNK]",
+      "how": null,
+      "name": "vendor_name",
+      "outcome": "value_wrong",
+      "predicted": "MART SUNSET BASANGK",
+      "predicted_status": "extracted",
+      "similarity": 0.6229508196721312
+    },
+    {
+      "error_class": "string_mismatch",
+      "expected": "ALFA TOWER LT.12, ALAM SUTERA, TANGERANG; JALAN SUNSET ROAD KUTA",
+      "how": null,
+      "name": "vendor_address",
+      "outcome": "value_wrong",
+      "predicted": "SUNSET BASANGKASA [SUNK], ALAM TOWER LT.12, ALAM SUTERA, TANGERANG, JALAN SUNSET ROAD KUTA",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "01.336.238.9-054.000",
+      "how": "exact",
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": "01.336.238.9-054.000",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": "string_mismatch",
+      "expected": "Q650-107-2108UHD8",
+      "how": null,
+      "name": "document_number",
+      "outcome": "value_wrong",
+      "predicted": "0650-107-2108UHD8",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "2025-08-21",
+      "how": "date",
+      "name": "document_date",
+      "outcome": "correct",
+      "predicted": "2025-08-21",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "QRIS",
+      "how": "exact",
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": "QRIS",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "51171",
+      "how": "numeric",
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": "51171",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "5628",
+      "how": "numeric",
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": "5628",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": "abstained_on_absent",
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "abstained",
+      "predicted": null,
+      "predicted_status": "abstained",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "56800",
+      "how": "numeric",
+      "name": "total",
+      "outcome": "correct",
+      "predicted": "56800",
+      "predicted_status": "extracted",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 1,
+    "abstention_rate": 0.07692307692307693,
+    "accuracy": 0.6923076923076923,
+    "answered": 12,
+    "correct": 9,
+    "coverage": 0.9230769230769231,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 0.75,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 3
+  },
+  "owner": "doc_023",
+  "rows": {
+    "cell_accuracy": 0.9166666666666666,
+    "cells_compared": 12,
+    "cells_correct": 11,
+    "errors": [
+      "name_near_miss"
+    ],
+    "labeled": true,
+    "matched": 3,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 2,
+    "row_accuracy": 0.6666666666666666,
+    "row_f1": 1.0,
+    "row_precision": 1.0,
+    "row_recall": 1.0,
+    "spurious": 0
+  },
+  "status": "ok"
+}

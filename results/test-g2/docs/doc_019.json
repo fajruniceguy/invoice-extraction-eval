@@ -1,0 +1,537 @@
+{
+  "doc_id": "doc_019",
+  "status": "ok",
+  "error": null,
+  "pages": [
+    {
+      "file": "p1.png",
+      "sha256": "2765cbee0954b7d5306c64af0017fd7ee9ec85d20d2ff31444dc6363bce5eaa4"
+    },
+    {
+      "file": "p2.png",
+      "sha256": "733d8a3fbb178fd8f0809dd0c7a7a78e72aaf7341d1fe1dc351151cc3db37b0a"
+    }
+  ],
+  "raw_text": "{\"vendor_name\": {\"value\": \"Onix Fragrance Indonesia\", \"confidence\": 0.62, \"status\": \"extracted\", \"evidence\": \"Penjual : Onix Fragrance Indonesia\", \"page\": 1, \"reasons\": [\"Document is a Tokopedia marketplace order receipt; the field labelled 'Penjual' (seller) is Onix Fragrance Indonesia.\", \"The footer lists TOKOPEDIA with its NPWP/address, which is the platform issuer rather than the goods seller.\"]}, \"vendor_address\": {\"value\": null, \"confidence\": 0.6, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No address is printed for the seller (Penjual) Onix Fragrance Indonesia; the address in the footer belongs to the Tokopedia platform.\"]}, \"vendor_tax_id\": {\"value\": null, \"confidence\": 0.55, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No NPWP is printed for the seller Onix Fragrance Indonesia; the printed NPWPs belong to the platform TOKOPEDIA (0210893970095000) and to the courier SEMANGAT LOGISTIK ANDALAN (0947795134063000).\"]}, \"buyer_name\": {\"value\": null, \"confidence\": 0.65, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"The 'Pembeli' field is printed with no name after the colon (blank/redacted).\"]}, \"document_number\": {\"value\": \"585195354237077331\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"585195354237077331\", \"page\": 1, \"reasons\": []}, \"document_date\": {\"value\": \"2026-07-25\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"Tanggal Pembelian : 25 Juli 2026\", \"page\": 1, \"reasons\": []}, \"due_date\": {\"value\": null, \"confidence\": 0.9, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No due/payment-due date is printed on either page.\"]}, \"currency\": {\"value\": \"IDR\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"Rp259.000\", \"page\": 1, \"reasons\": []}, \"payment_method\": {\"value\": \"Saldo Tokopedia\", \"confidence\": 0.9, \"status\": \"extracted\", \"evidence\": \"Metode Pembayaran: Saldo Tokopedia\", \"page\": 1, \"reasons\": []}, \"subtotal\": {\"value\": 518000, \"confidence\": 0.92, \"status\": \"extracted\", \"evidence\": \"SUBTOTAL HARGA PRODUK Rp518.000\", \"page\": 1, \"reasons\": []}, \"tax\": {\"value\": null, \"confidence\": 0.75, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No separate PPN/tax amount is printed; a note states the charges already include PPN at the applicable rate.\"]}, \"discount\": {\"value\": null, \"confidence\": 0.6, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"Discounts/vouchers are printed as several separate rows (Diskon produk dari penjual, Voucher dari platform, Voucher dari penjual, Voucher ongkir platform, Diskon Ongkos Kirim), not as one total discount amount.\"]}, \"total\": {\"value\": 357091, \"confidence\": 0.92, \"status\": \"extracted\", \"evidence\": \"TOTAL TAGIHAN Rp357.091\", \"page\": 1, \"reasons\": []}, \"line_items\": [{\"description\": \"[LIMITED CREATOR PICK] ONIX Fragrance FWB Extrait De Parfum 50ml - 50ML\", \"quantity\": 1, \"unit_price\": 259000, \"amount\": 259000, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"[LIMITED CREATOR PICK] ONIX Fragrance FWB Extrait De Parfum 50ml - 50ML  1  Rp259.000  Rp259.000\", \"page\": 1, \"reasons\": []}, {\"description\": \"ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML | Fruity Floral Oriental Perfume Unisex - 50ml\", \"quantity\": 1, \"unit_price\": 259000, \"amount\": 259000, \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML | Fruity Floral Oriental Perfume Unisex - 50ml  1  Rp259.000  Rp259.000\", \"page\": 1, \"reasons\": []}, {\"description\": \"Diskon produk dari penjual\", \"quantity\": null, \"unit_price\": null, \"amount\": -98700, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"Diskon produk dari penjual  -Rp98.700\", \"page\": 1, \"reasons\": []}, {\"description\": \"Voucher dari platform\", \"quantity\": null, \"unit_price\": null, \"amount\": -53209, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"Voucher dari platform  -Rp53.209\", \"page\": 1, \"reasons\": []}, {\"description\": \"Voucher dari penjual\", \"quantity\": null, \"unit_price\": null, \"amount\": -10000, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"Voucher dari penjual  -Rp10.000\", \"page\": 1, \"reasons\": []}, {\"description\": \"Total ongkos kirim\", \"quantity\": null, \"unit_price\": null, \"amount\": 22000, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"Total ongkos kirim  Rp22.000\", \"page\": 1, \"reasons\": []}, {\"description\": \"Voucher ongkir platform\", \"quantity\": null, \"unit_price\": null, \"amount\": -22000, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"Voucher ongkir platform  -Rp22.000\", \"page\": 1, \"reasons\": []}, {\"description\": \"Biaya jasa aplikasi\", \"quantity\": null, \"unit_price\": null, \"amount\": 1000, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"Biaya jasa aplikasi  Rp1.000\", \"page\": 1, \"reasons\": []}, {\"description\": \"Ongkos Kirim\", \"quantity\": null, \"unit_price\": null, \"amount\": 22000, \"status\": \"extracted\", \"confidence\": 0.85, \"evidence\": \"Ongkos Kirim  Rp22.000\", \"page\": 2, \"reasons\": [\"Shipping-fee row on the shipping receipt page.\"]}, {\"description\": \"Diskon Ongkos Kirim\", \"quantity\": null, \"unit_price\": null, \"amount\": -22000, \"status\": \"extracted\", \"confidence\": 0.85, \"evidence\": \"Diskon Ongkos Kirim  -Rp22.000\", \"page\": 2, \"reasons\": [\"Shipping-discount row on the shipping receipt page.\"]}]}",
+  "parsed": {
+    "vendor_name": {
+      "value": "Onix Fragrance Indonesia",
+      "confidence": 0.62,
+      "status": "extracted",
+      "evidence": "Penjual : Onix Fragrance Indonesia",
+      "page": 1,
+      "reasons": [
+        "Document is a Tokopedia marketplace order receipt; the field labelled 'Penjual' (seller) is Onix Fragrance Indonesia.",
+        "The footer lists TOKOPEDIA with its NPWP/address, which is the platform issuer rather than the goods seller."
+      ]
+    },
+    "vendor_address": {
+      "value": null,
+      "confidence": 0.6,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No address is printed for the seller (Penjual) Onix Fragrance Indonesia; the address in the footer belongs to the Tokopedia platform."
+      ]
+    },
+    "vendor_tax_id": {
+      "value": null,
+      "confidence": 0.55,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No NPWP is printed for the seller Onix Fragrance Indonesia; the printed NPWPs belong to the platform TOKOPEDIA (0210893970095000) and to the courier SEMANGAT LOGISTIK ANDALAN (0947795134063000)."
+      ]
+    },
+    "buyer_name": {
+      "value": null,
+      "confidence": 0.65,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "The 'Pembeli' field is printed with no name after the colon (blank/redacted)."
+      ]
+    },
+    "document_number": {
+      "value": "585195354237077331",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "585195354237077331",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": "2026-07-25",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Tanggal Pembelian : 25 Juli 2026",
+      "page": 1,
+      "reasons": []
+    },
+    "due_date": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No due/payment-due date is printed on either page."
+      ]
+    },
+    "currency": {
+      "value": "IDR",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Rp259.000",
+      "page": 1,
+      "reasons": []
+    },
+    "payment_method": {
+      "value": "Saldo Tokopedia",
+      "confidence": 0.9,
+      "status": "extracted",
+      "evidence": "Metode Pembayaran: Saldo Tokopedia",
+      "page": 1,
+      "reasons": []
+    },
+    "line_items": [
+      {
+        "description": "[LIMITED CREATOR PICK] ONIX Fragrance FWB Extrait De Parfum 50ml - 50ML",
+        "quantity": "1",
+        "unit_price": "259000",
+        "amount": "259000",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "[LIMITED CREATOR PICK] ONIX Fragrance FWB Extrait De Parfum 50ml - 50ML  1  Rp259.000  Rp259.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML | Fruity Floral Oriental Perfume Unisex - 50ml",
+        "quantity": "1",
+        "unit_price": "259000",
+        "amount": "259000",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML | Fruity Floral Oriental Perfume Unisex - 50ml  1  Rp259.000  Rp259.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Diskon produk dari penjual",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-98700",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Diskon produk dari penjual  -Rp98.700",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher dari platform",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-53209",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Voucher dari platform  -Rp53.209",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher dari penjual",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-10000",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Voucher dari penjual  -Rp10.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Total ongkos kirim",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "22000",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Total ongkos kirim  Rp22.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher ongkir platform",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-22000",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Voucher ongkir platform  -Rp22.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Biaya jasa aplikasi",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "1000",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Biaya jasa aplikasi  Rp1.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Ongkos Kirim",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "22000",
+        "status": "extracted",
+        "confidence": 0.85,
+        "evidence": "Ongkos Kirim  Rp22.000",
+        "page": 2,
+        "reasons": [
+          "Shipping-fee row on the shipping receipt page."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Diskon Ongkos Kirim",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-22000",
+        "status": "extracted",
+        "confidence": 0.85,
+        "evidence": "Diskon Ongkos Kirim  -Rp22.000",
+        "page": 2,
+        "reasons": [
+          "Shipping-discount row on the shipping receipt page."
+        ],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": "518000",
+      "confidence": 0.92,
+      "status": "extracted",
+      "evidence": "SUBTOTAL HARGA PRODUK Rp518.000",
+      "page": 1,
+      "reasons": []
+    },
+    "tax": {
+      "value": null,
+      "confidence": 0.75,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No separate PPN/tax amount is printed; a note states the charges already include PPN at the applicable rate."
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.6,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Discounts/vouchers are printed as several separate rows (Diskon produk dari penjual, Voucher dari platform, Voucher dari penjual, Voucher ongkir platform, Diskon Ongkos Kirim), not as one total discount amount."
+      ]
+    },
+    "total": {
+      "value": "357091",
+      "confidence": 0.92,
+      "status": "extracted",
+      "evidence": "TOTAL TAGIHAN Rp357.091",
+      "page": 1,
+      "reasons": []
+    }
+  },
+  "validated": {
+    "vendor_name": {
+      "value": "Onix Fragrance Indonesia",
+      "confidence": 0.62,
+      "status": "extracted",
+      "evidence": "Penjual : Onix Fragrance Indonesia",
+      "page": 1,
+      "reasons": [
+        "Document is a Tokopedia marketplace order receipt; the field labelled 'Penjual' (seller) is Onix Fragrance Indonesia.",
+        "The footer lists TOKOPEDIA with its NPWP/address, which is the platform issuer rather than the goods seller."
+      ]
+    },
+    "vendor_address": {
+      "value": null,
+      "confidence": 0.6,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No address is printed for the seller (Penjual) Onix Fragrance Indonesia; the address in the footer belongs to the Tokopedia platform."
+      ]
+    },
+    "vendor_tax_id": {
+      "value": null,
+      "confidence": 0.55,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No NPWP is printed for the seller Onix Fragrance Indonesia; the printed NPWPs belong to the platform TOKOPEDIA (0210893970095000) and to the courier SEMANGAT LOGISTIK ANDALAN (0947795134063000)."
+      ]
+    },
+    "buyer_name": {
+      "value": null,
+      "confidence": 0.65,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "The 'Pembeli' field is printed with no name after the colon (blank/redacted)."
+      ]
+    },
+    "document_number": {
+      "value": "585195354237077331",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "585195354237077331",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": "2026-07-25",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Tanggal Pembelian : 25 Juli 2026",
+      "page": 1,
+      "reasons": []
+    },
+    "due_date": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No due/payment-due date is printed on either page."
+      ]
+    },
+    "currency": {
+      "value": "IDR",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Rp259.000",
+      "page": 1,
+      "reasons": []
+    },
+    "payment_method": {
+      "value": "Saldo Tokopedia",
+      "confidence": 0.9,
+      "status": "extracted",
+      "evidence": "Metode Pembayaran: Saldo Tokopedia",
+      "page": 1,
+      "reasons": []
+    },
+    "line_items": [
+      {
+        "description": "[LIMITED CREATOR PICK] ONIX Fragrance FWB Extrait De Parfum 50ml - 50ML",
+        "quantity": "1",
+        "unit_price": "259000",
+        "amount": "259000",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "[LIMITED CREATOR PICK] ONIX Fragrance FWB Extrait De Parfum 50ml - 50ML  1  Rp259.000  Rp259.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML | Fruity Floral Oriental Perfume Unisex - 50ml",
+        "quantity": "1",
+        "unit_price": "259000",
+        "amount": "259000",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML | Fruity Floral Oriental Perfume Unisex - 50ml  1  Rp259.000  Rp259.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Diskon produk dari penjual",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-98700",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Diskon produk dari penjual  -Rp98.700",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher dari platform",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-53209",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Voucher dari platform  -Rp53.209",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher dari penjual",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-10000",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Voucher dari penjual  -Rp10.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Total ongkos kirim",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "22000",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Total ongkos kirim  Rp22.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher ongkir platform",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-22000",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Voucher ongkir platform  -Rp22.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Biaya jasa aplikasi",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "1000",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Biaya jasa aplikasi  Rp1.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Ongkos Kirim",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "22000",
+        "status": "extracted",
+        "confidence": 0.85,
+        "evidence": "Ongkos Kirim  Rp22.000",
+        "page": 2,
+        "reasons": [
+          "Shipping-fee row on the shipping receipt page."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Diskon Ongkos Kirim",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-22000",
+        "status": "extracted",
+        "confidence": 0.85,
+        "evidence": "Diskon Ongkos Kirim  -Rp22.000",
+        "page": 2,
+        "reasons": [
+          "Shipping-discount row on the shipping receipt page."
+        ],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": "518000",
+      "confidence": 0.5,
+      "status": "extracted",
+      "evidence": "SUBTOTAL HARGA PRODUK Rp518.000",
+      "page": 1,
+      "reasons": [
+        "lines_ne_subtotal",
+        "components_ne_total"
+      ]
+    },
+    "tax": {
+      "value": null,
+      "confidence": 0.75,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No separate PPN/tax amount is printed; a note states the charges already include PPN at the applicable rate."
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.6,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Discounts/vouchers are printed as several separate rows (Diskon produk dari penjual, Voucher dari platform, Voucher dari penjual, Voucher ongkir platform, Diskon Ongkos Kirim), not as one total discount amount."
+      ]
+    },
+    "total": {
+      "value": "357091",
+      "confidence": 0.5,
+      "status": "extracted",
+      "evidence": "TOTAL TAGIHAN Rp357.091",
+      "page": 1,
+      "reasons": [
+        "components_ne_total"
+      ]
+    }
+  },
+  "repairs": 0,
+  "repair_history": [],
+  "normalizations": [],
+  "usage": {
+    "input_tokens": 5561,
+    "output_tokens": 12039,
+    "reasoning_tokens": 10304,
+    "reasoning_outside_output": 0,
+    "total_tokens": 17600,
+    "reasoning_inferred": false,
+    "output_includes_reasoning": true,
+    "reported": true,
+    "billable_output_tokens": 12039
+  },
+  "cost_usd": "0",
+  "avoided_cost_usd": "0.0161151",
+  "cached_calls": 1,
+  "cache_hit": true,
+  "latency_ms": 20.717000000001207,
+  "attempts": 0,
+  "structured_mode_used": "json_object",
+  "finish_reason": "stop"
+}

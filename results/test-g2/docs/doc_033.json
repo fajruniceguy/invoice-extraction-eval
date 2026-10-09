@@ -1,0 +1,358 @@
+{
+  "doc_id": "doc_033",
+  "status": "ok",
+  "error": null,
+  "pages": [
+    {
+      "file": "p1.jpg",
+      "sha256": "4cc9766571eb1c01e3109ff0f72c1e0c48270bbd612ae5fdf0224db8f4894b01"
+    }
+  ],
+  "raw_text": "{\"vendor_name\": {\"value\": \"NAKOA\", \"confidence\": 0.88, \"status\": \"extracted\", \"evidence\": \"NA\\nKOA コーヒー\", \"page\": 1, \"reasons\": [\"Brand logo printed in stylized split letters; normalized to NAKOA\"]}, \"vendor_address\": {\"value\": \"Jl. Mayjend Panjaitan No.75, Malang\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"J1. Mayjend Panjaitan No.75, Malang\", \"page\": 1, \"reasons\": []}, \"vendor_tax_id\": {\"value\": null, \"confidence\": 0.9, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No NPWP printed on the receipt\"]}, \"buyer_name\": {\"value\": \"Justin\", \"confidence\": 0.9, \"status\": \"extracted\", \"evidence\": \"Customer                                    Justin\", \"page\": 1, \"reasons\": []}, \"document_number\": {\"value\": \"POS-MLG-4-20261006-103301\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"POS-MLG-4-20261006-103301\", \"page\": 1, \"reasons\": []}, \"document_date\": {\"value\": \"2026-10-06\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"06-10-2026, 10:33\", \"page\": 1, \"reasons\": [\"dd-mm-yyyy format\"]}, \"due_date\": {\"value\": null, \"confidence\": 0.95, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"Receipt paid at transaction time; no due date printed\"]}, \"currency\": {\"value\": \"IDR\", \"confidence\": 0.98, \"status\": \"extracted\", \"evidence\": \"1 x IDR 28.182\", \"page\": 1, \"reasons\": []}, \"payment_method\": {\"value\": \"QRIS\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"QRIS                                              IDR 36.000\", \"page\": 1, \"reasons\": []}, \"subtotal\": {\"value\": \"33182\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"Subtotal                                          IDR 33.182\", \"page\": 1, \"reasons\": []}, \"tax\": {\"value\": \"3273\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"Pajak Daerah PB 1 (10%)                         IDR 3.273\", \"page\": 1, \"reasons\": []}, \"discount\": {\"value\": null, \"confidence\": 0.9, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No discount total printed; the only negative row is a rounding adjustment (Pembulatan)\"]}, \"total\": {\"value\": \"36000\", \"confidence\": 0.97, \"status\": \"extracted\", \"evidence\": \"TOTAL                                             IDR 36.000\", \"page\": 1, \"reasons\": []}, \"line_items\": [{\"description\": \"Caffe Latte - Ice Regular\", \"quantity\": \"1\", \"unit_price\": \"28182\", \"amount\": \"28182\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"Caffe Latte - Ice Regular\\n 1 x IDR 28.182                                    IDR 28.182\", \"page\": 1, \"reasons\": []}, {\"description\": \"(+) Extra Espresso 1 Shot\", \"quantity\": \"1\", \"unit_price\": \"5000\", \"amount\": \"5000\", \"status\": \"extracted\", \"confidence\": 0.95, \"evidence\": \"(+) Extra Espresso 1 Shot\\n   1 x IDR 5.000                                     IDR 5.000\", \"page\": 1, \"reasons\": []}, {\"description\": \"Pembulatan\", \"quantity\": null, \"unit_price\": null, \"amount\": \"-455\", \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"Pembulatan                                        -IDR 455\", \"page\": 1, \"reasons\": [\"Rounding adjustment row printed as a line\"]}]}",
+  "parsed": {
+    "vendor_name": {
+      "value": "NAKOA",
+      "confidence": 0.88,
+      "status": "extracted",
+      "evidence": "NA\nKOA コーヒー",
+      "page": 1,
+      "reasons": [
+        "Brand logo printed in stylized split letters; normalized to NAKOA"
+      ]
+    },
+    "vendor_address": {
+      "value": "Jl. Mayjend Panjaitan No.75, Malang",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "J1. Mayjend Panjaitan No.75, Malang",
+      "page": 1,
+      "reasons": []
+    },
+    "vendor_tax_id": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No NPWP printed on the receipt"
+      ]
+    },
+    "buyer_name": {
+      "value": "Justin",
+      "confidence": 0.9,
+      "status": "extracted",
+      "evidence": "Customer                                    Justin",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": "POS-MLG-4-20261006-103301",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "POS-MLG-4-20261006-103301",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": "2026-10-06",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "06-10-2026, 10:33",
+      "page": 1,
+      "reasons": [
+        "dd-mm-yyyy format"
+      ]
+    },
+    "due_date": {
+      "value": null,
+      "confidence": 0.95,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Receipt paid at transaction time; no due date printed"
+      ]
+    },
+    "currency": {
+      "value": "IDR",
+      "confidence": 0.98,
+      "status": "extracted",
+      "evidence": "1 x IDR 28.182",
+      "page": 1,
+      "reasons": []
+    },
+    "payment_method": {
+      "value": "QRIS",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "QRIS                                              IDR 36.000",
+      "page": 1,
+      "reasons": []
+    },
+    "line_items": [
+      {
+        "description": "Caffe Latte - Ice Regular",
+        "quantity": "1",
+        "unit_price": "28182",
+        "amount": "28182",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "Caffe Latte - Ice Regular\n 1 x IDR 28.182                                    IDR 28.182",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "(+) Extra Espresso 1 Shot",
+        "quantity": "1",
+        "unit_price": "5000",
+        "amount": "5000",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "(+) Extra Espresso 1 Shot\n   1 x IDR 5.000                                     IDR 5.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Pembulatan",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-455",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Pembulatan                                        -IDR 455",
+        "page": 1,
+        "reasons": [
+          "Rounding adjustment row printed as a line"
+        ],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": "33182",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Subtotal                                          IDR 33.182",
+      "page": 1,
+      "reasons": []
+    },
+    "tax": {
+      "value": "3273",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Pajak Daerah PB 1 (10%)                         IDR 3.273",
+      "page": 1,
+      "reasons": []
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No discount total printed; the only negative row is a rounding adjustment (Pembulatan)"
+      ]
+    },
+    "total": {
+      "value": "36000",
+      "confidence": 0.97,
+      "status": "extracted",
+      "evidence": "TOTAL                                             IDR 36.000",
+      "page": 1,
+      "reasons": []
+    }
+  },
+  "validated": {
+    "vendor_name": {
+      "value": "NAKOA",
+      "confidence": 0.88,
+      "status": "extracted",
+      "evidence": "NA\nKOA コーヒー",
+      "page": 1,
+      "reasons": [
+        "Brand logo printed in stylized split letters; normalized to NAKOA"
+      ]
+    },
+    "vendor_address": {
+      "value": null,
+      "confidence": 0.5,
+      "status": "abstained",
+      "evidence": "J1. Mayjend Panjaitan No.75, Malang",
+      "page": 1,
+      "reasons": [
+        "evidence_not_grounded"
+      ]
+    },
+    "vendor_tax_id": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No NPWP printed on the receipt"
+      ]
+    },
+    "buyer_name": {
+      "value": "Justin",
+      "confidence": 0.9,
+      "status": "extracted",
+      "evidence": "Customer                                    Justin",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": "POS-MLG-4-20261006-103301",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "POS-MLG-4-20261006-103301",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": "2026-10-06",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "06-10-2026, 10:33",
+      "page": 1,
+      "reasons": [
+        "dd-mm-yyyy format"
+      ]
+    },
+    "due_date": {
+      "value": null,
+      "confidence": 0.95,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Receipt paid at transaction time; no due date printed"
+      ]
+    },
+    "currency": {
+      "value": "IDR",
+      "confidence": 0.98,
+      "status": "extracted",
+      "evidence": "1 x IDR 28.182",
+      "page": 1,
+      "reasons": []
+    },
+    "payment_method": {
+      "value": "QRIS",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "QRIS                                              IDR 36.000",
+      "page": 1,
+      "reasons": []
+    },
+    "line_items": [
+      {
+        "description": "Caffe Latte - Ice Regular",
+        "quantity": "1",
+        "unit_price": "28182",
+        "amount": "28182",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "Caffe Latte - Ice Regular\n 1 x IDR 28.182                                    IDR 28.182",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "(+) Extra Espresso 1 Shot",
+        "quantity": "1",
+        "unit_price": "5000",
+        "amount": "5000",
+        "status": "extracted",
+        "confidence": 0.95,
+        "evidence": "(+) Extra Espresso 1 Shot\n   1 x IDR 5.000                                     IDR 5.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": null,
+        "quantity": null,
+        "unit_price": null,
+        "amount": null,
+        "status": "abstained",
+        "confidence": 0.5,
+        "evidence": "Pembulatan                                        -IDR 455",
+        "page": 1,
+        "reasons": [
+          "Rounding adjustment row printed as a line",
+          "evidence_not_grounded"
+        ],
+        "flagged_cells": [
+          "amount"
+        ]
+      }
+    ],
+    "subtotal": {
+      "value": "33182",
+      "confidence": 0.5,
+      "status": "extracted",
+      "evidence": "Subtotal                                          IDR 33.182",
+      "page": 1,
+      "reasons": [
+        "lines_ne_subtotal",
+        "components_ne_total"
+      ]
+    },
+    "tax": {
+      "value": "3273",
+      "confidence": 0.5,
+      "status": "extracted",
+      "evidence": "Pajak Daerah PB 1 (10%)                         IDR 3.273",
+      "page": 1,
+      "reasons": [
+        "components_ne_total"
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No discount total printed; the only negative row is a rounding adjustment (Pembulatan)"
+      ]
+    },
+    "total": {
+      "value": "36000",
+      "confidence": 0.5,
+      "status": "extracted",
+      "evidence": "TOTAL                                             IDR 36.000",
+      "page": 1,
+      "reasons": [
+        "components_ne_total"
+      ]
+    }
+  },
+  "repairs": 0,
+  "repair_history": [],
+  "normalizations": [],
+  "usage": {
+    "input_tokens": 4036,
+    "output_tokens": 1717,
+    "reasoning_tokens": 718,
+    "reasoning_outside_output": 0,
+    "total_tokens": 5753,
+    "reasoning_inferred": false,
+    "output_includes_reasoning": true,
+    "reported": true,
+    "billable_output_tokens": 1717
+  },
+  "cost_usd": "0",
+  "avoided_cost_usd": "0.0032712",
+  "cached_calls": 1,
+  "cache_hit": true,
+  "latency_ms": 26.430500000000023,
+  "attempts": 0,
+  "structured_mode_used": "json_object",
+  "finish_reason": "stop"
+}

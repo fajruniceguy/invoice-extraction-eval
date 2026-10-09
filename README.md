@@ -6,14 +6,15 @@ versions and gates a regression. The extraction is one call per document; **the 
 
 ## The result in one screen
 
-Test split: 25 documents, 323 labeled scalar fields, 184 labeled line items, 10 of the 25 labeled **blind** (before any model output
-existed). Model `deepseek/deepseek-v4-flash-vision-exp` through an OpenAI-compatible endpoint, reasoning effort `medium`.
+Test split: 25 documents, 323 labeled scalar fields, 187 labeled line items, 10 of the 25 labeled **blind** (before any model output
+existed). Model `deepseek/deepseek-v4-flash-vision-exp` through an OpenAI-compatible endpoint, reasoning effort `medium`. Both columns are
+scored on the **corrected labels** (see the third point below) and come from the same raw model answers.
 
-| | first real run (`results/test-final`) | after one validator fix (`results/test-g1`) |
+| | without the grounding fix (`results/superseded/test-final`, re-scored) | **after the fix (`results/test-g2`)** |
 | --- | --- | --- |
-| field accuracy (an abstention counts as an error) | 0.793 | **0.845** |
-| accuracy over the fields it answered / share answered | 0.859 / 0.923 | 0.867 / 0.975 |
-| line items: F1 / cell accuracy | 0.777 / 0.944 | 0.817 / 0.945 |
+| field accuracy (an abstention counts as an error) | 0.845 | **0.898** |
+| accuracy over the fields it answered / share answered | 0.916 / 0.923 | 0.921 / 0.975 |
+| line items: F1 / cell accuracy | 0.801 / 0.943 | 0.841 / 0.944 |
 | cost per document at list price | $0.0080 | same answers, replayed from the cache |
 | latency, one live run of 25 | p50 12.5 s, p95 58.5 s | n/a (cached) |
 
@@ -22,14 +23,18 @@ What to read before trusting those numbers:
 - **They are one sample of a noisy model.** Four identical-setting runs on the dev split ranged 0.795 to 0.828 and 2 to 12 of 122 fields
   flipped between any two ([docs/eval/noise.md](docs/eval/noise.md)). A gap smaller than about 3 points between two runs is not a finding.
 - **The fix was chosen on dev, before the test split was ever extracted**, and predicted for test before the replay: 17 fields restored,
-  0 regressed, exactly as predicted ([docs/eval/grounding_fix.md](docs/eval/grounding_fix.md)). The two columns have the same raw model
-  answers (all 25 calls were cache hits), so the difference is the validators alone.
-- **Three test documents may carry the wrong label.** doc_032, doc_033 and doc_034 are scored against the blind label of doc_016 (an
-  electricity-token bill), but the model reads them as three different shop receipts. A tool flags them and a person has to look at the
-  pages; if they are different documents, accuracy on the other 22 is 0.905 and the scalar hallucination rate falls from 10.3% to 2.2%
-  ([docs/eval/hallucinations.md](docs/eval/hallucinations.md)). **This is open at the time of writing; the committed numbers use the labels as they are.**
-- **Weak spots are real:** phone photos 0.768, the `bill` document type 0.519, `vendor_name` 0.640, `subtotal` 0.625
-  (per-slice tables in [results/test-g1/score/scorecard.md](results/test-g1/score/scorecard.md)).
+  0 regressed ([docs/eval/grounding_fix.md](docs/eval/grounding_fix.md)). The two columns have the same raw model answers (all 25 calls
+  were cache hits), so the difference is the validators alone.
+- **Three test labels were wrong, and were corrected.** The first test run scored doc_032, doc_033 and doc_034 against the blind label of doc_016
+  (an electricity-token bill) because the manifest called them photos of it. A lineage audit flagged them (the run read three different shop receipts
+  in "copies" of one page); looking at the pages showed doc_032 and doc_034 are photos of doc_019's order and doc_033 is a cafe receipt. They were relabeled
+  (a draft by a different model, verified by hand; **not blind**, the extractor's output had been seen) and the change is logged in
+  [ground_truth/CHANGELOG.md](ground_truth/CHANGELOG.md). That alone moved the unfixed run from 0.793 to 0.845, and cut the scalar hallucination rate from
+  10.3% to 1.8% ([docs/eval/hallucinations.md](docs/eval/hallucinations.md)). The scorecards made on the old labels are kept, unedited, in
+  [results/superseded/](results/superseded/).
+- **Weak spots are real:** `vendor_name` 0.680, `subtotal` 0.750, 46 spurious line items (fees, vouchers and discounts returned as rows: a labeling
+  question), and the `bill` and `hotel_reservation` slices rest on one document each
+  (per-slice tables in [results/test-g2/score/scorecard.md](results/test-g2/score/scorecard.md)).
 - **Hallucination probe:** 0 of 19 erased fields were answered with a value (95% interval 0 to 17.6%), but on clean synthetic pages only; it
   says nothing about smudged or blurred text ([docs/eval/hallucination_probe.md](docs/eval/hallucination_probe.md)).
 
@@ -64,8 +69,8 @@ curl -F files=@a.pdf -F files=@b.pdf localhost:8000/extract/batch      # one fil
 uv sync
 uv run pytest -q                                   # fast suite; add  -m "slow or not slow"  for everything (~3,000 tests)
 uv run python scripts/check_results.py             # re-scores the committed runs; must reproduce them byte for byte
-uv run python scripts/compare.py results/test-final results/test-g1     # the regression gate, on the two committed runs
-uv run python scripts/analyze_failures.py results/test-g1               # how it fails, by kind
+uv run python scripts/compare.py results/superseded/test-final results/test-g2   # the regression gate, on two committed runs
+uv run python scripts/analyze_failures.py results/test-g2               # how it fails, by kind
 ```
 
 `uv` is not on PATH on every machine; `python -m uv ...` is the same command. On Windows keep the checkout path short (a few dozen characters):
@@ -130,17 +135,17 @@ repair loop (re-ask once when the output is not valid) is the only iteration.
 
 35 documents, 45 pages: **20 are my own documents or scans, 12 were downloaded from the internet (the manifest does not record their
 source URLs: a gap), 3 are synthetic** (constructed multi-page rupiah invoices with 30 to 60 rows, generated by
-[src/evalkit/construct.py](src/evalkit/construct.py)). By capture: 15 phone photos, 14 born-digital, 3 screen captures, 3 constructed. By type: 12
-receipts, 11 fakturs, 4 bills, 4 invoices, 2 e-commerce, 2 hotel reservations. Split by content group, never straddling:
-**10 dev (used to build and tune) and 25 test.** Three test documents share another document's label through `gt_from` (see above).
+[src/evalkit/construct.py](src/evalkit/construct.py)). By capture: 15 phone photos, 14 born-digital, 3 screen captures, 3 constructed. By type: 13
+receipts, 11 fakturs, 4 invoices, 4 e-commerce, 2 hotel reservations, 1 bill. Split by content group, never straddling:
+**10 dev (used to build and tune) and 25 test.** One test document (doc_034) shares the label of another photo of the same document (doc_032) through `gt_from`.
 
 Privacy by location: originals live in `data/private/` (gitignored, never committed); only normalized, **redacted** pages are committed
 (`data/pages/`, boxes in `data/redactions.yaml`). Redaction is a hard gate in ingestion: an undecided or inconsistent document is refused.
 
 **Ground truth** ([ground_truth/](ground_truth/), protocol in [LABELING.md](ground_truth/LABELING.md), every change logged in
-[CHANGELOG.md](ground_truth/CHANGELOG.md)): 19 labels started from a draft by a different model (Claude Haiku, never the extractor) and a person verified **every field** in a labeling app that refuses to save
+[CHANGELOG.md](ground_truth/CHANGELOG.md)): 21 labels started from a draft by a different model (Claude Haiku, never the extractor) and a person verified **every field** in a labeling app that refuses to save
 while anything is undecided; **10 test documents were labeled blind**, from the page alone, before any model output existed for them; the 3 constructed
-documents have generated labels (and 3 copies borrow a label). Each label records how it was made (`label_mode`, `labeled_at`); the scorecard records a hash of the
+documents have generated labels (and 1 copy borrows a label). Each label records how it was made (`label_mode`, `labeled_at`); the scorecard records a hash of the
 labels and of the dataset, so two scorecards are comparable only if those match.
 
 ## Evaluation
@@ -215,18 +220,60 @@ run-to-run noise (withdrawn); a spec that predicted a degraded prompt would pass
 the code assumed; scripts with backslashes silently corrupted by shell heredocs (a recurring Windows trap, now a rule in CLAUDE.md); and a claim that uploaded pages are
 byte-identical to ingested ones, true for PNG and false for JPEG, found only when the eval client uploaded stored pages.
 
+## Milestones: what was reached and what was not
+
+Checked against the "definition of done" of each line of [docs/ROADMAP.md](docs/ROADMAP.md) (the plan file; there is no `RUNBOOK.md`). Each milestone has its spec
+in [docs/milestones/](docs/milestones/) and its outcome in [docs/DEVLOG.md](docs/DEVLOG.md).
+
+**Must have**
+
+| | status | what the definition asked, and what is true |
+| --- | --- | --- |
+| M1 scaffolding | reached | tests pass; a live smoke call returned JSON from the provider. |
+| M2 dataset and ground truth | **partly** | Asked for **40 documents, all labeled blind**. There are **35** (32 real, 3 synthetic), all labeled, with a label hash recorded. Why 35: three candidate documents were dropped after the labeling rules were written (two invoices on one page, a 20-page bundle of many companies, a copy), and no more were collected in the three days. Why not all blind: only the **10** real test documents were labeled blind; 21 labels started from a model draft that a person verified field by field, and doc_032 and doc_033 were relabeled after the extractor had already seen them (logged in [ground_truth/CHANGELOG.md](ground_truth/CHANGELOG.md)). Blind labeling costs a person's time per document, so it was spent on the test split. |
+| M3 extraction v1 | reached | ran on every dev document with no crash; malformed output is repaired by a bounded re-ask. |
+| M4 validators, confidence, abstention | reached as specified, **weak in effect** | every field carries value, confidence, evidence, status and reasons, and the validators run. The confidence caps and the abstention threshold are placeholders: calibration found them worse than the model's own confidence, and the threshold never fires (see Evaluation). |
+| M5 eval harness | reached | scorecard (markdown + JSON), per-document results, and a run manifest with git SHA, prompt hash, model, settings, label hash and dataset hash. |
+| M6 regression comparison | reached | demonstrated on a deliberately degraded prompt, caught (exit 1) and documented. |
+| M7 API, batching, cost/latency | reached | the scorecard shows cost per document and latency p50/p95, overall and by slice (latency is n/a for a run answered from the cache, so the live-run figures are in `test-final`). |
+| M8 one optimization, measured | reached, with a **deviation** | a before/after table is in the scorecard. "Token budget" is the reasoning effort, not an output-token cap (a cap breaks a reasoning model's JSON). The selection rule picked `effort=low` and I kept `medium`; the reason is recorded, and the difference is inside the noise. |
+| M9 Docker | reached, one **caveat** | `docker compose up` serves the API, `docker compose run --rm eval` goes through it, and the real run's artifacts are committed. The image was built and run from the committed tree, not rebuilt from a fresh clone on another machine. |
+| M10 agentic note and README | reached | this file. |
+
+**Should have**
+
+| | status | why |
+| --- | --- | --- |
+| S1 calibration | **partly** | reliability diagram and risk-coverage curve: done, on dev. The threshold was chosen on dev but **not reported on test**: the test labels arrived after the analysis and it was not rerun on them. |
+| S2 self-consistency | **not done** | not attempted: time went to the grounding fix, the Docker eval and the probe, which had a larger measured effect. |
+| S3 model cascade | **not done** | same: not attempted. |
+| S4 hallucination probe | reached, with a limit | 9 probes + 3 controls, 0 of 19 erased fields answered; clean synthetic pages only, so it says nothing about smudged text. |
+| S5 local model run | **not done** | the available GPU (4 GB) cannot serve a useful vision model; no local run was made. |
+| S6 CI | **partly** | the workflow is written and includes the offline re-score of committed predictions, but it has not yet run on GitHub. |
+| S7 robustness slice | **not done** | the degradation tooling exists and is tested ([src/docextract/ingest/degrade.py](src/docextract/ingest/degrade.py)), but no degraded variant is in the dataset and no robustness run was made: time. |
+
+**Nice to have**
+
+| | status | why |
+| --- | --- | --- |
+| N1 OCR + LLM ablation | not done | not attempted. |
+| N2 review UI | not done | the labeling app exists, but there is no page that lists abstained fields for review. |
+| N3 cache and idempotent batch jobs | **partly** | the content-hash response cache is done; batch jobs are synchronous, not idempotent jobs. |
+| N4 metrics endpoint | not done | there is a per-request JSON call log, no Prometheus endpoint. |
+| N5 second annotator | not done | one annotator; the 10 blind labels reduce the anchoring risk but give no agreement figure. |
+| N6 field-level re-ask on a crop | not done | not attempted. |
+
 ## What I would do with more time
 
-1. **Settle the three labels** (doc_032 to doc_034) by looking at the pages; relabel what is a different document (a model draft plus verification, since it cannot be blind again), and rerun.
-2. **A smudge probe**: the probe above paints a value out; the real misses are text that is *there but unreadable*. Blur or lower the contrast of a value and measure again, then probe real
+1. **A smudge probe**: the probe above paints a value out; the real misses are text that is *there but unreadable*. Blur or lower the contrast of a value and measure again, then probe real
    documents with boxes measured in the labeling app.
-3. **Make confidence mean something**: the capped confidence is worse calibrated than the model's own; try a second sample at temperature > 0 (disagreement lowers confidence) and a
+2. **Make confidence mean something**: the capped confidence is worse calibrated than the model's own; try a second sample at temperature > 0 (disagreement lowers confidence) and a
    cheap-model-first cascade, and report cost against accuracy.
-4. **More data and a second annotator**: 25 test documents cannot show a 2-point change; a second pass on 10 documents would give inter-annotator agreement for the labels.
-5. **A decision on row definitions**: fees, vouchers, discounts and zero-amount items are returned as line items; whether they are line items is a labeling policy, and the 15 row-cell cases among the 27
+3. **More data and a second annotator**: 25 test documents cannot show a 2-point change; a second pass on 10 documents would give inter-annotator agreement for the labels.
+4. **A decision on row definitions**: fees, vouchers, discounts and zero-amount items are returned as line items; whether they are line items is a labeling policy, and the 15 row-cell cases among the 17
    `hallucinated_value` errors are mostly that question.
-6. **Other models**: a local run (the author's 4 GB GPU cannot serve a useful vision model) and an OCR + LLM ablation, compared head to head with the same gate.
-7. **Operations**: CI exists ([.github/workflows/ci.yml](.github/workflows/ci.yml): secret scan, lint, the suite, the offline re-score) but has not run on GitHub yet and has no Docker job (the runner is
+5. **Other models**: a local run (the author's 4 GB GPU cannot serve a useful vision model) and an OCR + LLM ablation, compared head to head with the same gate.
+6. **Operations**: CI exists ([.github/workflows/ci.yml](.github/workflows/ci.yml): secret scan, lint, the suite, the offline re-score) but has not run on GitHub yet and has no Docker job (the runner is
    Windows); async batch jobs and a metrics endpoint.
 
 ## Where to start reading

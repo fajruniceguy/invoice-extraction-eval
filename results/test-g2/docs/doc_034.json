@@ -1,0 +1,488 @@
+{
+  "doc_id": "doc_034",
+  "status": "ok",
+  "error": null,
+  "pages": [
+    {
+      "file": "p1.jpg",
+      "sha256": "909a76c028dc29ab214479d8517fd748ca13351365dd059e3014c832272b554f"
+    }
+  ],
+  "raw_text": "{\"vendor_name\": {\"value\": \"Dita Fragrance Indonesia\", \"confidence\": 0.7, \"status\": \"extracted\", \"evidence\": \"Dita Fragrance Indonesia\", \"page\": 1, \"reasons\": [\"Shop/seller name printed next to \\\"toko\\\" label; Tokopedia is the platform, the seller is Dita Fragrance Indonesia.\"]}, \"vendor_address\": {\"value\": null, \"confidence\": 0.9, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No seller address is printed on the order receipt.\"]}, \"vendor_tax_id\": {\"value\": null, \"confidence\": 0.95, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No NPWP/tax id is printed.\"]}, \"buyer_name\": {\"value\": \"Fajru Rahman\", \"confidence\": 0.85, \"status\": \"extracted\", \"evidence\": \"Pembeli : Fajru Rahman\", \"page\": 1, \"reasons\": []}, \"document_number\": {\"value\": null, \"confidence\": 0.7, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No invoice/order number is visible on the receipt; only item and summary tables are shown.\"]}, \"document_date\": {\"value\": \"2028-07-25\", \"confidence\": 0.7, \"status\": \"extracted\", \"evidence\": \"Tanggal Pembelian : 25 Juli 2028\", \"page\": 1, \"reasons\": [\"Year digits are slightly blurry; 2028 is what is legible.\"]}, \"due_date\": {\"value\": null, \"confidence\": 0.9, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No due date printed on this receipt.\"]}, \"currency\": {\"value\": \"IDR\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"Rp259.000\", \"page\": 1, \"reasons\": []}, \"payment_method\": {\"value\": null, \"confidence\": 0.75, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No payment method is printed in the visible portion of the receipt.\"]}, \"subtotal\": {\"value\": \"518000\", \"confidence\": 0.85, \"status\": \"extracted\", \"evidence\": \"SUBTOTAL HARGA PRODUK Rp518.000\", \"page\": 1, \"reasons\": []}, \"tax\": {\"value\": null, \"confidence\": 0.9, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No tax/PPN line is printed on this order receipt.\"]}, \"discount\": {\"value\": null, \"confidence\": 0.65, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"Discounts are printed as several separate rows (Diskon produk dari penjual, Voucher dari platform, Voucher ongkir platform), not as one total discount amount.\"]}, \"total\": {\"value\": \"357091\", \"confidence\": 0.8, \"status\": \"extracted\", \"evidence\": \"TOTAL TAGIHAN Rp357.091\", \"page\": 1, \"reasons\": []}, \"line_items\": [{\"description\": \"LIMITED CREATION PACK - [DEW] Fragrance PWB - Extrait De Parfum 50ml - 50ML\", \"quantity\": \"1\", \"unit_price\": \"259000\", \"amount\": \"259000\", \"status\": \"extracted\", \"confidence\": 0.8, \"evidence\": \"LIMITED CREATION PACK - [DEW] Fragrance PWB ... 1 Rp259.000 Rp259.000\", \"page\": 1, \"reasons\": []}, {\"description\": \"DEW Fragrance Ecliptic De Parfum - MEXICOLA 50ML - Extrait De Parfum 50ml\", \"quantity\": \"1\", \"unit_price\": \"259000\", \"amount\": \"259000\", \"status\": \"extracted\", \"confidence\": 0.8, \"evidence\": \"DEW Fragrance Ecliptic De Parfum - MEXICOLA 50ML ... 1 Rp259.000 Rp259.000\", \"page\": 1, \"reasons\": []}, {\"description\": \"Diskon produk dari penjual\", \"quantity\": null, \"unit_price\": null, \"amount\": \"-98700\", \"status\": \"extracted\", \"confidence\": 0.7, \"evidence\": \"Diskon produk dari penjual -Rp98.700\", \"page\": 1, \"reasons\": [\"Discount printed as its own row.\"]}, {\"description\": \"Voucher dari platform\", \"quantity\": null, \"unit_price\": null, \"amount\": \"-53209\", \"status\": \"extracted\", \"confidence\": 0.6, \"evidence\": \"Voucher dari platform -Rp53.209\", \"page\": 1, \"reasons\": [\"Amount digits slightly blurry.\"]}, {\"description\": \"Total ongkos kirim\", \"quantity\": null, \"unit_price\": null, \"amount\": \"10000\", \"status\": \"extracted\", \"confidence\": 0.75, \"evidence\": \"Total ongkos kirim Rp10.000\", \"page\": 1, \"reasons\": [\"Delivery fee row.\"]}, {\"description\": \"Voucher ongkir platform\", \"quantity\": null, \"unit_price\": null, \"amount\": \"-22000\", \"status\": \"extracted\", \"confidence\": 0.7, \"evidence\": \"Voucher ongkir platform -Rp22.000\", \"page\": 1, \"reasons\": [\"Shipping voucher printed as its own row.\"]}, {\"description\": \"Biaya jasa aplikasi\", \"quantity\": null, \"unit_price\": null, \"amount\": \"1000\", \"status\": \"extracted\", \"confidence\": 0.75, \"evidence\": \"Biaya jasa aplikasi Rp1.000\", \"page\": 1, \"reasons\": [\"Admin/application fee row.\"]}]}",
+  "parsed": {
+    "vendor_name": {
+      "value": "Dita Fragrance Indonesia",
+      "confidence": 0.7,
+      "status": "extracted",
+      "evidence": "Dita Fragrance Indonesia",
+      "page": 1,
+      "reasons": [
+        "Shop/seller name printed next to \"toko\" label; Tokopedia is the platform, the seller is Dita Fragrance Indonesia."
+      ]
+    },
+    "vendor_address": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No seller address is printed on the order receipt."
+      ]
+    },
+    "vendor_tax_id": {
+      "value": null,
+      "confidence": 0.95,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No NPWP/tax id is printed."
+      ]
+    },
+    "buyer_name": {
+      "value": "Fajru Rahman",
+      "confidence": 0.85,
+      "status": "extracted",
+      "evidence": "Pembeli : Fajru Rahman",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": null,
+      "confidence": 0.7,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No invoice/order number is visible on the receipt; only item and summary tables are shown."
+      ]
+    },
+    "document_date": {
+      "value": "2028-07-25",
+      "confidence": 0.7,
+      "status": "extracted",
+      "evidence": "Tanggal Pembelian : 25 Juli 2028",
+      "page": 1,
+      "reasons": [
+        "Year digits are slightly blurry; 2028 is what is legible."
+      ]
+    },
+    "due_date": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No due date printed on this receipt."
+      ]
+    },
+    "currency": {
+      "value": "IDR",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Rp259.000",
+      "page": 1,
+      "reasons": []
+    },
+    "payment_method": {
+      "value": null,
+      "confidence": 0.75,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No payment method is printed in the visible portion of the receipt."
+      ]
+    },
+    "line_items": [
+      {
+        "description": "LIMITED CREATION PACK - [DEW] Fragrance PWB - Extrait De Parfum 50ml - 50ML",
+        "quantity": "1",
+        "unit_price": "259000",
+        "amount": "259000",
+        "status": "extracted",
+        "confidence": 0.8,
+        "evidence": "LIMITED CREATION PACK - [DEW] Fragrance PWB ... 1 Rp259.000 Rp259.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "DEW Fragrance Ecliptic De Parfum - MEXICOLA 50ML - Extrait De Parfum 50ml",
+        "quantity": "1",
+        "unit_price": "259000",
+        "amount": "259000",
+        "status": "extracted",
+        "confidence": 0.8,
+        "evidence": "DEW Fragrance Ecliptic De Parfum - MEXICOLA 50ML ... 1 Rp259.000 Rp259.000",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Diskon produk dari penjual",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-98700",
+        "status": "extracted",
+        "confidence": 0.7,
+        "evidence": "Diskon produk dari penjual -Rp98.700",
+        "page": 1,
+        "reasons": [
+          "Discount printed as its own row."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher dari platform",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-53209",
+        "status": "extracted",
+        "confidence": 0.6,
+        "evidence": "Voucher dari platform -Rp53.209",
+        "page": 1,
+        "reasons": [
+          "Amount digits slightly blurry."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Total ongkos kirim",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "10000",
+        "status": "extracted",
+        "confidence": 0.75,
+        "evidence": "Total ongkos kirim Rp10.000",
+        "page": 1,
+        "reasons": [
+          "Delivery fee row."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher ongkir platform",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-22000",
+        "status": "extracted",
+        "confidence": 0.7,
+        "evidence": "Voucher ongkir platform -Rp22.000",
+        "page": 1,
+        "reasons": [
+          "Shipping voucher printed as its own row."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Biaya jasa aplikasi",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "1000",
+        "status": "extracted",
+        "confidence": 0.75,
+        "evidence": "Biaya jasa aplikasi Rp1.000",
+        "page": 1,
+        "reasons": [
+          "Admin/application fee row."
+        ],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": "518000",
+      "confidence": 0.85,
+      "status": "extracted",
+      "evidence": "SUBTOTAL HARGA PRODUK Rp518.000",
+      "page": 1,
+      "reasons": []
+    },
+    "tax": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No tax/PPN line is printed on this order receipt."
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.65,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Discounts are printed as several separate rows (Diskon produk dari penjual, Voucher dari platform, Voucher ongkir platform), not as one total discount amount."
+      ]
+    },
+    "total": {
+      "value": "357091",
+      "confidence": 0.8,
+      "status": "extracted",
+      "evidence": "TOTAL TAGIHAN Rp357.091",
+      "page": 1,
+      "reasons": []
+    }
+  },
+  "validated": {
+    "vendor_name": {
+      "value": "Dita Fragrance Indonesia",
+      "confidence": 0.7,
+      "status": "extracted",
+      "evidence": "Dita Fragrance Indonesia",
+      "page": 1,
+      "reasons": [
+        "Shop/seller name printed next to \"toko\" label; Tokopedia is the platform, the seller is Dita Fragrance Indonesia."
+      ]
+    },
+    "vendor_address": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No seller address is printed on the order receipt."
+      ]
+    },
+    "vendor_tax_id": {
+      "value": null,
+      "confidence": 0.95,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No NPWP/tax id is printed."
+      ]
+    },
+    "buyer_name": {
+      "value": "Fajru Rahman",
+      "confidence": 0.85,
+      "status": "extracted",
+      "evidence": "Pembeli : Fajru Rahman",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": null,
+      "confidence": 0.7,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No invoice/order number is visible on the receipt; only item and summary tables are shown."
+      ]
+    },
+    "document_date": {
+      "value": "2028-07-25",
+      "confidence": 0.7,
+      "status": "extracted",
+      "evidence": "Tanggal Pembelian : 25 Juli 2028",
+      "page": 1,
+      "reasons": [
+        "Year digits are slightly blurry; 2028 is what is legible.",
+        "document_date_in_future"
+      ]
+    },
+    "due_date": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No due date printed on this receipt."
+      ]
+    },
+    "currency": {
+      "value": "IDR",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Rp259.000",
+      "page": 1,
+      "reasons": []
+    },
+    "payment_method": {
+      "value": null,
+      "confidence": 0.75,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No payment method is printed in the visible portion of the receipt."
+      ]
+    },
+    "line_items": [
+      {
+        "description": "LIMITED CREATION PACK - [DEW] Fragrance PWB - Extrait De Parfum 50ml - 50ML",
+        "quantity": "1",
+        "unit_price": "259000",
+        "amount": "259000",
+        "status": "extracted",
+        "confidence": 0.7,
+        "evidence": "LIMITED CREATION PACK - [DEW] Fragrance PWB ... 1 Rp259.000 Rp259.000",
+        "page": 1,
+        "reasons": [
+          "description_not_verbatim"
+        ],
+        "flagged_cells": [
+          "description"
+        ]
+      },
+      {
+        "description": "DEW Fragrance Ecliptic De Parfum - MEXICOLA 50ML - Extrait De Parfum 50ml",
+        "quantity": "1",
+        "unit_price": "259000",
+        "amount": "259000",
+        "status": "extracted",
+        "confidence": 0.7,
+        "evidence": "DEW Fragrance Ecliptic De Parfum - MEXICOLA 50ML ... 1 Rp259.000 Rp259.000",
+        "page": 1,
+        "reasons": [
+          "description_not_verbatim"
+        ],
+        "flagged_cells": [
+          "description"
+        ]
+      },
+      {
+        "description": "Diskon produk dari penjual",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-98700",
+        "status": "extracted",
+        "confidence": 0.7,
+        "evidence": "Diskon produk dari penjual -Rp98.700",
+        "page": 1,
+        "reasons": [
+          "Discount printed as its own row."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher dari platform",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-53209",
+        "status": "extracted",
+        "confidence": 0.6,
+        "evidence": "Voucher dari platform -Rp53.209",
+        "page": 1,
+        "reasons": [
+          "Amount digits slightly blurry."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Total ongkos kirim",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "10000",
+        "status": "extracted",
+        "confidence": 0.75,
+        "evidence": "Total ongkos kirim Rp10.000",
+        "page": 1,
+        "reasons": [
+          "Delivery fee row."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Voucher ongkir platform",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "-22000",
+        "status": "extracted",
+        "confidence": 0.7,
+        "evidence": "Voucher ongkir platform -Rp22.000",
+        "page": 1,
+        "reasons": [
+          "Shipping voucher printed as its own row."
+        ],
+        "flagged_cells": []
+      },
+      {
+        "description": "Biaya jasa aplikasi",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "1000",
+        "status": "extracted",
+        "confidence": 0.75,
+        "evidence": "Biaya jasa aplikasi Rp1.000",
+        "page": 1,
+        "reasons": [
+          "Admin/application fee row."
+        ],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": "518000",
+      "confidence": 0.5,
+      "status": "extracted",
+      "evidence": "SUBTOTAL HARGA PRODUK Rp518.000",
+      "page": 1,
+      "reasons": [
+        "lines_ne_subtotal",
+        "components_ne_total"
+      ]
+    },
+    "tax": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No tax/PPN line is printed on this order receipt."
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.65,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Discounts are printed as several separate rows (Diskon produk dari penjual, Voucher dari platform, Voucher ongkir platform), not as one total discount amount."
+      ]
+    },
+    "total": {
+      "value": "357091",
+      "confidence": 0.5,
+      "status": "extracted",
+      "evidence": "TOTAL TAGIHAN Rp357.091",
+      "page": 1,
+      "reasons": [
+        "components_ne_total"
+      ]
+    }
+  },
+  "repairs": 0,
+  "repair_history": [],
+  "normalizations": [],
+  "usage": {
+    "input_tokens": 4036,
+    "output_tokens": 3210,
+    "reasoning_tokens": 1831,
+    "reasoning_outside_output": 0,
+    "total_tokens": 7246,
+    "reasoning_inferred": false,
+    "output_includes_reasoning": true,
+    "reported": true,
+    "billable_output_tokens": 3210
+  },
+  "cost_usd": "0",
+  "avoided_cost_usd": "0.0050628",
+  "cached_calls": 1,
+  "cache_hit": true,
+  "latency_ms": 19.860899999997628,
+  "attempts": 0,
+  "structured_mode_used": "json_object",
+  "finish_reason": "stop"
+}

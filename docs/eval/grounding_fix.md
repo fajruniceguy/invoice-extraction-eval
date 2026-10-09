@@ -1,5 +1,11 @@
 # G1: the grounding fix, before and after
 
+> **Scored on the labels as they were on 2026-10-09 morning.** Three test labels (doc_032 to doc_034) were corrected afterwards
+> ([ground_truth/CHANGELOG.md](../../ground_truth/CHANGELOG.md)). The tables below are the original ones and the runs they describe are in
+> `results/superseded/`. On the corrected labels the same comparison (`compare.py results/superseded/test-final results/test-g2`) gives accuracy
+> **0.845 -> 0.898** (273 -> 290 of 323), selective 0.916 -> 0.921, coverage 0.923 -> 0.975, rows F1 0.801 -> 0.841, and the same 17 fields improved with
+> 0 regressed (McNemar p_better < 0.0001; bootstrap +5.3 points, 95% interval [+1.9, +9.4]). The fix's effect did not depend on the labels it was measured on.
+
 Spec: `docs/milestones/G1.md`. Baseline `results/test-final`, candidate `results/test-g1`, both on the 25-document test split.
 
 ## What changed

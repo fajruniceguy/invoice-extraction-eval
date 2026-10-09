@@ -15,11 +15,16 @@ the scoring code that moves a committed number makes it fail, and the right answ
 
 | run | what it is |
 | --- | --- |
-| `test-final` | the test split, first real run through the Docker API, grounding unfixed (the baseline) |
-| `test-g1` | the same raw model answers replayed from the cache with the G1 grounding fix: accuracy 0.793 -> 0.845, 17 fields improved, 0 regressed (`docs/eval/grounding_fix.md`) |
+| `test-g2` | **the current result**: the test split with the grounding fix (G1), scored on the corrected labels (doc_032 to doc_034 relabeled): the same raw model answers as `test-final`, replayed from the cache. Accuracy 0.898 (re-scored unfixed run: 0.845) |
 | `probes/probe-s4` | the hallucination probe (S4): 12 documents of `data/probes`, not the dataset: 0 of 19 erased fields answered with a value. Its own manifest, so `check_results.py` does not cover it; re-score it with `score.py results/probes/probe-s4 --manifest data/probes/manifest.csv --pages-dir data/probes/pages --gt-dir data/probes/labels --out <dir>` |
+| `superseded/test-final` | the test split, first real run through the Docker API, grounding unfixed. **Scored on the labels before the relabel of doc_032 to doc_034** (accuracy 0.793 there; 0.845 on the corrected labels) |
+| `superseded/test-g1` | the same answers with the grounding fix, on the old labels (0.845 there; 0.898 on the corrected labels = `test-g2`) |
 
-## test-final: the test split through the Docker API
+`superseded/` is kept unedited as evidence of what was measured and when. Its scorecards were made on labels that were later corrected, so they do **not**
+reproduce against the labels as they are now and `check_results.py` (which covers `results/*/`, not `results/superseded/`) skips them. To re-score one
+on the current labels: `uv run python scripts/score.py results/superseded/test-final --out <dir>`; `compare.py` already scores both runs on the current labels.
+
+## test-final (now `superseded/test-final`): the test split through the Docker API
 
 | | |
 | --- | --- |
@@ -37,7 +42,7 @@ How to read it:
 - **One sample of a noisy model.** Identical runs on the dev split differed by up to 3.3 accuracy points
   and 2-12 of 122 fields flipped between two of them (`docs/eval/noise.md`). A difference smaller
   than that between two runs is not a finding.
-- **The known grounding flaw is NOT fixed in this run (it is in `test-g1`)** (`docs/eval/failure_analysis.md`): the validators
+- **The known grounding flaw is NOT fixed in this run (it is in `test-g2`)** (`docs/eval/failure_analysis.md`): the validators
   withhold a correct value when its evidence quote prints an ambiguous number. 23 of the 67 field errors
   are `abstained_on_value` (a value the model returned and the guard withheld); `total` is 0.52
   accurate but 0.81 when only answered fields count. This run is the baseline that a fix is compared

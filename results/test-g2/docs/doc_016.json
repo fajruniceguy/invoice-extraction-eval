@@ -1,0 +1,409 @@
+{
+  "doc_id": "doc_016",
+  "status": "ok",
+  "error": null,
+  "pages": [
+    {
+      "file": "p1.png",
+      "sha256": "6549d1dc5ad53004c70152ba42ed5b137548a71ac90332bf85c7d324819ecce7"
+    }
+  ],
+  "raw_text": "{\"vendor_name\": {\"value\": \"Tokopedia\", \"confidence\": 0.8, \"status\": \"extracted\", \"evidence\": \"Terima kasih sudah mempercayakan Tokopedia untuk memenuhi kebutuhanmu.\", \"page\": 1, \"reasons\": [\"Tokopedia is named as the party the customer trusted for the purchase; no explicit seller header is printed.\"]}, \"vendor_address\": {\"value\": null, \"confidence\": 0.9, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No seller address is printed on the receipt.\"]}, \"vendor_tax_id\": {\"value\": null, \"confidence\": 0.9, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No NPWP/tax id is printed.\"]}, \"buyer_name\": {\"value\": \"MASJID AS SALAM\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"MASJID AS SALAM\", \"page\": 1, \"reasons\": []}, \"document_number\": {\"value\": \"IVR/20250926/XXVI/IX/2765416827\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"IVR/20250926/XXVI/IX/2765416827\", \"page\": 1, \"reasons\": []}, \"document_date\": {\"value\": null, \"confidence\": 0.7, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No date field is printed; the invoice number contains a date-like segment (20250926) but it is part of the number, not a printed transaction/issue date.\"]}, \"due_date\": {\"value\": null, \"confidence\": 0.95, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No due date is printed; the transaction is paid immediately.\"]}, \"currency\": {\"value\": \"IDR\", \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"Rp 500.000,00\", \"page\": 1, \"reasons\": []}, \"payment_method\": {\"value\": null, \"confidence\": 0.85, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"Only the amount paid (\\\"Rp Bayar\\\") is printed; no payment method is stated.\"]}, \"subtotal\": {\"value\": null, \"confidence\": 0.6, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No subtotal/amount-before-tax line is labeled or printed; the printed amounts (token 500.000,00 and PPJ 45.455,00) do not reconcile to the printed total of 503.100.\"]}, \"tax\": {\"value\": 45455.00, \"confidence\": 0.6, \"status\": \"extracted\", \"evidence\": \"PPJ Rp 45.455,00\", \"page\": 1, \"reasons\": [\"PPJ (street lighting tax) is the tax actually charged; a separate PPN line of Rp 0,00 is also printed.\"]}, \"discount\": {\"value\": null, \"confidence\": 0.95, \"status\": \"absent\", \"evidence\": null, \"page\": null, \"reasons\": [\"No discount line is printed.\"]}, \"total\": {\"value\": 503100, \"confidence\": 0.95, \"status\": \"extracted\", \"evidence\": \"Total Bayar Rp503.100\", \"page\": 1, \"reasons\": []}, \"line_items\": [{\"description\": \"Material\", \"quantity\": null, \"unit_price\": null, \"amount\": 0.00, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"Material Rp 0,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"PPN\", \"quantity\": null, \"unit_price\": null, \"amount\": 0.00, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"PPN Rp 0,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"PPJ\", \"quantity\": null, \"unit_price\": null, \"amount\": 45455.00, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"PPJ Rp 45.455,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"Angsuran\", \"quantity\": null, \"unit_price\": null, \"amount\": 0.00, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"Angsuran Rp 0,00\", \"page\": 1, \"reasons\": []}, {\"description\": \"RP STROOM/TOKEN\", \"quantity\": null, \"unit_price\": null, \"amount\": 500000.00, \"status\": \"extracted\", \"confidence\": 0.9, \"evidence\": \"RP STROOM/TOKEN Rp 500.000,00\", \"page\": 1, \"reasons\": []}]}",
+  "parsed": {
+    "vendor_name": {
+      "value": "Tokopedia",
+      "confidence": 0.8,
+      "status": "extracted",
+      "evidence": "Terima kasih sudah mempercayakan Tokopedia untuk memenuhi kebutuhanmu.",
+      "page": 1,
+      "reasons": [
+        "Tokopedia is named as the party the customer trusted for the purchase; no explicit seller header is printed."
+      ]
+    },
+    "vendor_address": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No seller address is printed on the receipt."
+      ]
+    },
+    "vendor_tax_id": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No NPWP/tax id is printed."
+      ]
+    },
+    "buyer_name": {
+      "value": "MASJID AS SALAM",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "MASJID AS SALAM",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": "IVR/20250926/XXVI/IX/2765416827",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "IVR/20250926/XXVI/IX/2765416827",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": null,
+      "confidence": 0.7,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No date field is printed; the invoice number contains a date-like segment (20250926) but it is part of the number, not a printed transaction/issue date."
+      ]
+    },
+    "due_date": {
+      "value": null,
+      "confidence": 0.95,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No due date is printed; the transaction is paid immediately."
+      ]
+    },
+    "currency": {
+      "value": "IDR",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Rp 500.000,00",
+      "page": 1,
+      "reasons": []
+    },
+    "payment_method": {
+      "value": null,
+      "confidence": 0.85,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only the amount paid (\"Rp Bayar\") is printed; no payment method is stated."
+      ]
+    },
+    "line_items": [
+      {
+        "description": "Material",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "0.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Material Rp 0,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "PPN",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "0.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "PPN Rp 0,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "PPJ",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "45455.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "PPJ Rp 45.455,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Angsuran",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "0.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Angsuran Rp 0,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "RP STROOM/TOKEN",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "500000.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "RP STROOM/TOKEN Rp 500.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": null,
+      "confidence": 0.6,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No subtotal/amount-before-tax line is labeled or printed; the printed amounts (token 500.000,00 and PPJ 45.455,00) do not reconcile to the printed total of 503.100."
+      ]
+    },
+    "tax": {
+      "value": "45455.00",
+      "confidence": 0.6,
+      "status": "extracted",
+      "evidence": "PPJ Rp 45.455,00",
+      "page": 1,
+      "reasons": [
+        "PPJ (street lighting tax) is the tax actually charged; a separate PPN line of Rp 0,00 is also printed."
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.95,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No discount line is printed."
+      ]
+    },
+    "total": {
+      "value": "503100",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Total Bayar Rp503.100",
+      "page": 1,
+      "reasons": []
+    }
+  },
+  "validated": {
+    "vendor_name": {
+      "value": "Tokopedia",
+      "confidence": 0.8,
+      "status": "extracted",
+      "evidence": "Terima kasih sudah mempercayakan Tokopedia untuk memenuhi kebutuhanmu.",
+      "page": 1,
+      "reasons": [
+        "Tokopedia is named as the party the customer trusted for the purchase; no explicit seller header is printed."
+      ]
+    },
+    "vendor_address": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No seller address is printed on the receipt."
+      ]
+    },
+    "vendor_tax_id": {
+      "value": null,
+      "confidence": 0.9,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No NPWP/tax id is printed."
+      ]
+    },
+    "buyer_name": {
+      "value": "MASJID AS SALAM",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "MASJID AS SALAM",
+      "page": 1,
+      "reasons": []
+    },
+    "document_number": {
+      "value": "IVR/20250926/XXVI/IX/2765416827",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "IVR/20250926/XXVI/IX/2765416827",
+      "page": 1,
+      "reasons": []
+    },
+    "document_date": {
+      "value": null,
+      "confidence": 0.7,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No date field is printed; the invoice number contains a date-like segment (20250926) but it is part of the number, not a printed transaction/issue date."
+      ]
+    },
+    "due_date": {
+      "value": null,
+      "confidence": 0.95,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No due date is printed; the transaction is paid immediately."
+      ]
+    },
+    "currency": {
+      "value": "IDR",
+      "confidence": 0.95,
+      "status": "extracted",
+      "evidence": "Rp 500.000,00",
+      "page": 1,
+      "reasons": []
+    },
+    "payment_method": {
+      "value": null,
+      "confidence": 0.85,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "Only the amount paid (\"Rp Bayar\") is printed; no payment method is stated."
+      ]
+    },
+    "line_items": [
+      {
+        "description": "Material",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "0.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Material Rp 0,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "PPN",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "0.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "PPN Rp 0,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "PPJ",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "45455.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "PPJ Rp 45.455,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "Angsuran",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "0.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "Angsuran Rp 0,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      },
+      {
+        "description": "RP STROOM/TOKEN",
+        "quantity": null,
+        "unit_price": null,
+        "amount": "500000.00",
+        "status": "extracted",
+        "confidence": 0.9,
+        "evidence": "RP STROOM/TOKEN Rp 500.000,00",
+        "page": 1,
+        "reasons": [],
+        "flagged_cells": []
+      }
+    ],
+    "subtotal": {
+      "value": null,
+      "confidence": 0.6,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No subtotal/amount-before-tax line is labeled or printed; the printed amounts (token 500.000,00 and PPJ 45.455,00) do not reconcile to the printed total of 503.100."
+      ]
+    },
+    "tax": {
+      "value": "45455.00",
+      "confidence": 0.5,
+      "status": "extracted",
+      "evidence": "PPJ Rp 45.455,00",
+      "page": 1,
+      "reasons": [
+        "PPJ (street lighting tax) is the tax actually charged; a separate PPN line of Rp 0,00 is also printed.",
+        "components_ne_total"
+      ]
+    },
+    "discount": {
+      "value": null,
+      "confidence": 0.95,
+      "status": "absent",
+      "evidence": null,
+      "page": null,
+      "reasons": [
+        "No discount line is printed."
+      ]
+    },
+    "total": {
+      "value": "503100",
+      "confidence": 0.5,
+      "status": "extracted",
+      "evidence": "Total Bayar Rp503.100",
+      "page": 1,
+      "reasons": [
+        "components_ne_total"
+      ]
+    }
+  },
+  "repairs": 0,
+  "repair_history": [],
+  "normalizations": [],
+  "usage": {
+    "input_tokens": 3830,
+    "output_tokens": 5147,
+    "reasoning_tokens": 3990,
+    "reasoning_outside_output": 0,
+    "total_tokens": 8977,
+    "reasoning_inferred": false,
+    "output_includes_reasoning": true,
+    "reported": true,
+    "billable_output_tokens": 5147
+  },
+  "cost_usd": "0",
+  "avoided_cost_usd": "0.0073254",
+  "cached_calls": 1,
+  "cache_hit": true,
+  "latency_ms": 15.827693000002085,
+  "attempts": 0,
+  "structured_mode_used": "json_object",
+  "finish_reason": "stop"
+}

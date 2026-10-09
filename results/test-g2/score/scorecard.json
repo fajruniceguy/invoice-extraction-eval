@@ -1,0 +1,1334 @@
+{
+  "docs": {
+    "cons_001": {
+      "errors": {},
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 1.0,
+        "answered": 13,
+        "correct": 13,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "cons_002": {
+      "errors": {},
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 1.0,
+        "answered": 13,
+        "correct": 13,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_002": {
+      "errors": {
+        "abstained_on_value": 4
+      },
+      "metrics": {
+        "abstained": 4,
+        "abstention_rate": 0.3076923076923077,
+        "accuracy": 0.6923076923076923,
+        "answered": 9,
+        "correct": 9,
+        "coverage": 0.6923076923076923,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_003": {
+      "errors": {
+        "numeric_mismatch": 1
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.9230769230769231,
+        "answered": 13,
+        "correct": 12,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9230769230769231,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 1
+      },
+      "status": "ok"
+    },
+    "doc_005": {
+      "errors": {
+        "name_near_miss": 5,
+        "numeric_mismatch": 1,
+        "row_missed": 1
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.8461538461538461,
+        "answered": 13,
+        "correct": 11,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.8461538461538461,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 2
+      },
+      "status": "ok"
+    },
+    "doc_006": {
+      "errors": {
+        "numeric_mismatch": 1,
+        "row_missed": 1
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.9230769230769231,
+        "answered": 13,
+        "correct": 12,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9230769230769231,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 1
+      },
+      "status": "ok"
+    },
+    "doc_007": {
+      "errors": {
+        "numeric_mismatch": 1,
+        "row_missed": 1
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.9230769230769231,
+        "answered": 13,
+        "correct": 12,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9230769230769231,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 1
+      },
+      "status": "ok"
+    },
+    "doc_009": {
+      "errors": {},
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 1.0,
+        "answered": 12,
+        "correct": 12,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 12,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_012": {
+      "errors": {
+        "missing_value": 1,
+        "row_missed": 1,
+        "string_mismatch": 1
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.8461538461538461,
+        "answered": 13,
+        "correct": 11,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.8461538461538461,
+        "should_be_absent": 0,
+        "should_be_value": 1,
+        "value_wrong": 1
+      },
+      "status": "ok"
+    },
+    "doc_014": {
+      "errors": {
+        "hallucinated_value": 3,
+        "name_near_miss": 1,
+        "row_missed": 1
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.9230769230769231,
+        "answered": 13,
+        "correct": 12,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9230769230769231,
+        "should_be_absent": 1,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_016": {
+      "errors": {
+        "hallucinated_value": 1,
+        "row_spurious": 4,
+        "string_mismatch": 1
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.8461538461538461,
+        "answered": 13,
+        "correct": 11,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.8461538461538461,
+        "should_be_absent": 1,
+        "should_be_value": 0,
+        "value_wrong": 1
+      },
+      "status": "ok"
+    },
+    "doc_018": {
+      "errors": {
+        "abstained_on_value": 1,
+        "missing_value": 1,
+        "name_near_miss": 1,
+        "row_missed": 4
+      },
+      "metrics": {
+        "abstained": 1,
+        "abstention_rate": 0.07692307692307693,
+        "accuracy": 0.8461538461538461,
+        "answered": 12,
+        "correct": 11,
+        "coverage": 0.9230769230769231,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9166666666666666,
+        "should_be_absent": 0,
+        "should_be_value": 1,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_019": {
+      "errors": {
+        "hallucinated_value": 8,
+        "missing_value": 1,
+        "row_spurious": 4
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.9230769230769231,
+        "answered": 13,
+        "correct": 12,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9230769230769231,
+        "should_be_absent": 0,
+        "should_be_value": 1,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_020": {
+      "errors": {
+        "row_missed": 2,
+        "row_spurious": 2
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 1.0,
+        "answered": 13,
+        "correct": 13,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_021": {
+      "errors": {},
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 1.0,
+        "answered": 13,
+        "correct": 13,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_023": {
+      "errors": {
+        "abstained_on_absent": 1,
+        "name_near_miss": 2,
+        "string_mismatch": 2
+      },
+      "metrics": {
+        "abstained": 1,
+        "abstention_rate": 0.07692307692307693,
+        "accuracy": 0.6923076923076923,
+        "answered": 12,
+        "correct": 9,
+        "coverage": 0.9230769230769231,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.75,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 3
+      },
+      "status": "ok"
+    },
+    "doc_024": {
+      "errors": {
+        "missing_value": 4
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 1.0,
+        "answered": 13,
+        "correct": 13,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_026": {
+      "errors": {
+        "missing_value": 1,
+        "name_near_miss": 1,
+        "row_spurious": 2
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.8461538461538461,
+        "answered": 13,
+        "correct": 11,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.8461538461538461,
+        "should_be_absent": 0,
+        "should_be_value": 1,
+        "value_wrong": 1
+      },
+      "status": "ok"
+    },
+    "doc_027": {
+      "errors": {
+        "row_missed": 7,
+        "row_spurious": 7
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 1.0,
+        "answered": 13,
+        "correct": 13,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_029": {
+      "errors": {
+        "hallucinated_value": 3,
+        "name_near_miss": 2,
+        "row_spurious": 14,
+        "string_mismatch": 3
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.9166666666666666,
+        "answered": 12,
+        "correct": 11,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 12,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9166666666666666,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 1
+      },
+      "status": "ok"
+    },
+    "doc_031": {
+      "errors": {},
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 1.0,
+        "answered": 13,
+        "correct": 13,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "status": "ok"
+    },
+    "doc_032": {
+      "errors": {
+        "abstained_on_value": 1,
+        "date_mismatch": 1,
+        "row_spurious": 6
+      },
+      "metrics": {
+        "abstained": 1,
+        "abstention_rate": 0.07692307692307693,
+        "accuracy": 0.8461538461538461,
+        "answered": 12,
+        "correct": 11,
+        "coverage": 0.9230769230769231,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9166666666666666,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 1
+      },
+      "status": "ok"
+    },
+    "doc_033": {
+      "errors": {
+        "abstained_on_value": 1,
+        "name_near_miss": 1,
+        "row_spurious": 1
+      },
+      "metrics": {
+        "abstained": 1,
+        "abstention_rate": 0.07692307692307693,
+        "accuracy": 0.8461538461538461,
+        "answered": 12,
+        "correct": 11,
+        "coverage": 0.9230769230769231,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9166666666666666,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 1
+      },
+      "status": "ok"
+    },
+    "doc_034": {
+      "errors": {
+        "date_mismatch": 1,
+        "name_near_miss": 3,
+        "row_spurious": 5
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.8461538461538461,
+        "answered": 13,
+        "correct": 11,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.8461538461538461,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 2
+      },
+      "status": "ok"
+    },
+    "doc_035": {
+      "errors": {
+        "date_mismatch": 1,
+        "hallucinated_value": 2,
+        "numeric_mismatch": 3,
+        "row_spurious": 1,
+        "string_mismatch": 2
+      },
+      "metrics": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.7692307692307693,
+        "answered": 13,
+        "correct": 10,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.7692307692307693,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 3
+      },
+      "status": "ok"
+    }
+  },
+  "errors": {
+    "abstained_on_absent": 1,
+    "abstained_on_value": 7,
+    "date_mismatch": 3,
+    "hallucinated_value": 17,
+    "missing_value": 8,
+    "name_near_miss": 16,
+    "numeric_mismatch": 7,
+    "row_missed": 18,
+    "row_spurious": 46,
+    "string_mismatch": 9
+  },
+  "fields": {
+    "buyer_name": {
+      "abstained": 0,
+      "abstention_rate": 0.0,
+      "accuracy": 1.0,
+      "answered": 25,
+      "correct": 25,
+      "coverage": 1.0,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 1.0,
+      "should_be_absent": 0,
+      "should_be_value": 0,
+      "value_wrong": 0
+    },
+    "currency": {
+      "abstained": 0,
+      "abstention_rate": 0.0,
+      "accuracy": 0.96,
+      "answered": 25,
+      "correct": 24,
+      "coverage": 1.0,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 0.96,
+      "should_be_absent": 0,
+      "should_be_value": 1,
+      "value_wrong": 0
+    },
+    "discount": {
+      "abstained": 2,
+      "abstention_rate": 0.08,
+      "accuracy": 0.88,
+      "answered": 23,
+      "correct": 22,
+      "coverage": 0.92,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 0.9565217391304348,
+      "should_be_absent": 0,
+      "should_be_value": 1,
+      "value_wrong": 0
+    },
+    "document_date": {
+      "abstained": 0,
+      "abstention_rate": 0.0,
+      "accuracy": 0.875,
+      "answered": 24,
+      "correct": 21,
+      "coverage": 1.0,
+      "failure_rate": 0.0,
+      "labeled": 24,
+      "no_prediction": 0,
+      "selective_accuracy": 0.875,
+      "should_be_absent": 0,
+      "should_be_value": 0,
+      "value_wrong": 3
+    },
+    "document_number": {
+      "abstained": 0,
+      "abstention_rate": 0.0,
+      "accuracy": 0.88,
+      "answered": 25,
+      "correct": 22,
+      "coverage": 1.0,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 0.88,
+      "should_be_absent": 0,
+      "should_be_value": 0,
+      "value_wrong": 3
+    },
+    "due_date": {
+      "abstained": 0,
+      "abstention_rate": 0.0,
+      "accuracy": 1.0,
+      "answered": 25,
+      "correct": 25,
+      "coverage": 1.0,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 1.0,
+      "should_be_absent": 0,
+      "should_be_value": 0,
+      "value_wrong": 0
+    },
+    "payment_method": {
+      "abstained": 0,
+      "abstention_rate": 0.0,
+      "accuracy": 0.96,
+      "answered": 25,
+      "correct": 24,
+      "coverage": 1.0,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 0.96,
+      "should_be_absent": 0,
+      "should_be_value": 1,
+      "value_wrong": 0
+    },
+    "subtotal": {
+      "abstained": 1,
+      "abstention_rate": 0.041666666666666664,
+      "accuracy": 0.75,
+      "answered": 23,
+      "correct": 18,
+      "coverage": 0.9583333333333334,
+      "failure_rate": 0.0,
+      "labeled": 24,
+      "no_prediction": 0,
+      "selective_accuracy": 0.782608695652174,
+      "should_be_absent": 1,
+      "should_be_value": 0,
+      "value_wrong": 4
+    },
+    "tax": {
+      "abstained": 1,
+      "abstention_rate": 0.04,
+      "accuracy": 0.96,
+      "answered": 24,
+      "correct": 24,
+      "coverage": 0.96,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 1.0,
+      "should_be_absent": 0,
+      "should_be_value": 0,
+      "value_wrong": 0
+    },
+    "total": {
+      "abstained": 2,
+      "abstention_rate": 0.08,
+      "accuracy": 0.88,
+      "answered": 23,
+      "correct": 22,
+      "coverage": 0.92,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 0.9565217391304348,
+      "should_be_absent": 0,
+      "should_be_value": 0,
+      "value_wrong": 1
+    },
+    "vendor_address": {
+      "abstained": 2,
+      "abstention_rate": 0.08,
+      "accuracy": 0.84,
+      "answered": 23,
+      "correct": 21,
+      "coverage": 0.92,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 0.9130434782608695,
+      "should_be_absent": 0,
+      "should_be_value": 1,
+      "value_wrong": 1
+    },
+    "vendor_name": {
+      "abstained": 0,
+      "abstention_rate": 0.0,
+      "accuracy": 0.68,
+      "answered": 25,
+      "correct": 17,
+      "coverage": 1.0,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 0.68,
+      "should_be_absent": 1,
+      "should_be_value": 0,
+      "value_wrong": 7
+    },
+    "vendor_tax_id": {
+      "abstained": 0,
+      "abstention_rate": 0.0,
+      "accuracy": 1.0,
+      "answered": 25,
+      "correct": 25,
+      "coverage": 1.0,
+      "failure_rate": 0.0,
+      "labeled": 25,
+      "no_prediction": 0,
+      "selective_accuracy": 1.0,
+      "should_be_absent": 0,
+      "should_be_value": 0,
+      "value_wrong": 0
+    }
+  },
+  "manifest": {
+    "comparators": {
+      "fuzzy_name_min": "0.9",
+      "numeric_abs_tol": "0.01",
+      "numeric_rel_tol": "0.005"
+    },
+    "dataset_hash": "6dce9225448f84b731aab2a8523345c594b2f3a28389efcf3d7e2569e5dab643",
+    "endpoint": "https://api.commandcode.ai/provider/v1",
+    "git_dirty": false,
+    "git_sha": "unknown",
+    "gt_hash": "e3a08b555dc4b98c01083688e4fd51de5d739ce65cc4d327f0f546a351ed2c76",
+    "model": "deepseek/deepseek-v4-flash-vision-exp",
+    "prompt_sha256": "7ec75dbb29063cbb5146cb5ee5ce6fcbedda0140ec39971c8f018f404126390d",
+    "run_id": "test-g2",
+    "schema_sha256": "ac240f4c138965b5",
+    "scored_at": "2026-10-09T00:10:13+00:00",
+    "selection": {
+      "split": "test"
+    },
+    "settings": {
+      "cache": "on",
+      "image_max_long_edge": null,
+      "max_pages": 15,
+      "max_repairs": 1,
+      "max_run_cost_usd": "0.50",
+      "reasoning_effort": "medium",
+      "structured_mode": "json_object",
+      "temperature": 0.0
+    },
+    "target": "validated"
+  },
+  "overall": {
+    "abstained": 8,
+    "abstention_rate": 0.02476780185758514,
+    "accuracy": 0.8978328173374613,
+    "answered": 315,
+    "correct": 290,
+    "coverage": 0.9752321981424149,
+    "failure_rate": 0.0,
+    "labeled": 323,
+    "no_prediction": 0,
+    "selective_accuracy": 0.9206349206349206,
+    "should_be_absent": 2,
+    "should_be_value": 4,
+    "value_wrong": 19
+  },
+  "perf": {
+    "cached_documents": 25,
+    "cost_per_doc": "0.000000",
+    "cost_usd": "0",
+    "documents": 25,
+    "failed": 0,
+    "input_tokens": 115489,
+    "latency_ms": {
+      "mean": null,
+      "p50": null,
+      "p95": null
+    },
+    "list_cost_per_doc": "0.007967",
+    "list_cost_usd": "0.1991763",
+    "live_calls": 0,
+    "ok": 25,
+    "output_tokens": 137108,
+    "repairs": 0
+  },
+  "perf_slices": {
+    "capture": {
+      "born_digital": {
+        "cached_documents": 9,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 9,
+        "failed": 0,
+        "input_tokens": 44985,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.005876",
+        "list_cost_usd": "0.0528819",
+        "live_calls": 0,
+        "ok": 9,
+        "output_tokens": 32822,
+        "repairs": 0
+      },
+      "constructed": {
+        "cached_documents": 2,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 2,
+        "failed": 0,
+        "input_tokens": 12124,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.010207",
+        "list_cost_usd": "0.0204144",
+        "live_calls": 0,
+        "ok": 2,
+        "output_tokens": 13981,
+        "repairs": 0
+      },
+      "phone_photo": {
+        "cached_documents": 11,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 11,
+        "failed": 0,
+        "input_tokens": 46951,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.010092",
+        "list_cost_usd": "0.1110153",
+        "live_calls": 0,
+        "ok": 11,
+        "output_tokens": 80775,
+        "repairs": 0
+      },
+      "screen_capture": {
+        "cached_documents": 3,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 3,
+        "failed": 0,
+        "input_tokens": 11429,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.004955",
+        "list_cost_usd": "0.0148647",
+        "live_calls": 0,
+        "ok": 3,
+        "output_tokens": 9530,
+        "repairs": 0
+      }
+    },
+    "doc_type": {
+      "bill": {
+        "cached_documents": 1,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 1,
+        "failed": 0,
+        "input_tokens": 3830,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.007325",
+        "list_cost_usd": "0.0073254",
+        "live_calls": 0,
+        "ok": 1,
+        "output_tokens": 5147,
+        "repairs": 0
+      },
+      "ecommerce": {
+        "cached_documents": 3,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 3,
+        "failed": 0,
+        "input_tokens": 13633,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.012787",
+        "list_cost_usd": "0.0383619",
+        "live_calls": 0,
+        "ok": 3,
+        "output_tokens": 28560,
+        "repairs": 0
+      },
+      "faktur": {
+        "cached_documents": 8,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 8,
+        "failed": 0,
+        "input_tokens": 36957,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.004520",
+        "list_cost_usd": "0.0361623",
+        "live_calls": 0,
+        "ok": 8,
+        "output_tokens": 20896,
+        "repairs": 0
+      },
+      "hotel_reservation": {
+        "cached_documents": 1,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 1,
+        "failed": 0,
+        "input_tokens": 4559,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.004093",
+        "list_cost_usd": "0.0040929",
+        "live_calls": 0,
+        "ok": 1,
+        "output_tokens": 2271,
+        "repairs": 0
+      },
+      "invoice": {
+        "cached_documents": 3,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 3,
+        "failed": 0,
+        "input_tokens": 17631,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.008155",
+        "list_cost_usd": "0.0244653",
+        "live_calls": 0,
+        "ok": 3,
+        "output_tokens": 15980,
+        "repairs": 0
+      },
+      "receipt": {
+        "cached_documents": 9,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 9,
+        "failed": 0,
+        "input_tokens": 38879,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.009863",
+        "list_cost_usd": "0.0887685",
+        "live_calls": 0,
+        "ok": 9,
+        "output_tokens": 64254,
+        "repairs": 0
+      }
+    },
+    "split": {
+      "test": {
+        "cached_documents": 25,
+        "cost_per_doc": "0.000000",
+        "cost_usd": "0",
+        "documents": 25,
+        "failed": 0,
+        "input_tokens": 115489,
+        "latency_ms": {
+          "mean": null,
+          "p50": null,
+          "p95": null
+        },
+        "list_cost_per_doc": "0.007967",
+        "list_cost_usd": "0.1991763",
+        "live_calls": 0,
+        "ok": 25,
+        "output_tokens": 137108,
+        "repairs": 0
+      }
+    }
+  },
+  "rows": {
+    "cell_accuracy": 0.9442675159235668,
+    "cells_compared": 628,
+    "cells_correct": 593,
+    "errors": [
+      "row_missed",
+      "name_near_miss",
+      "name_near_miss",
+      "name_near_miss",
+      "name_near_miss",
+      "row_missed",
+      "row_missed",
+      "row_missed",
+      "row_missed",
+      "name_near_miss",
+      "hallucinated_value",
+      "hallucinated_value",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_missed",
+      "row_missed",
+      "row_missed",
+      "row_missed",
+      "name_near_miss",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "hallucinated_value",
+      "hallucinated_value",
+      "hallucinated_value",
+      "hallucinated_value",
+      "hallucinated_value",
+      "hallucinated_value",
+      "hallucinated_value",
+      "hallucinated_value",
+      "row_missed",
+      "row_missed",
+      "row_spurious",
+      "row_spurious",
+      "name_near_miss",
+      "missing_value",
+      "missing_value",
+      "missing_value",
+      "missing_value",
+      "row_spurious",
+      "row_spurious",
+      "row_missed",
+      "row_missed",
+      "row_missed",
+      "row_missed",
+      "row_missed",
+      "row_missed",
+      "row_missed",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "string_mismatch",
+      "string_mismatch",
+      "name_near_miss",
+      "name_near_miss",
+      "hallucinated_value",
+      "hallucinated_value",
+      "hallucinated_value",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "name_near_miss",
+      "name_near_miss",
+      "row_spurious",
+      "string_mismatch",
+      "numeric_mismatch",
+      "numeric_mismatch",
+      "hallucinated_value",
+      "hallucinated_value"
+    ],
+    "labeled": true,
+    "matched": 169,
+    "missed": 18,
+    "no_itemization": false,
+    "perfect": 144,
+    "row_accuracy": 0.8520710059171598,
+    "row_f1": 0.8407960199004975,
+    "row_precision": 0.786046511627907,
+    "row_recall": 0.9037433155080213,
+    "spurious": 46
+  },
+  "slices": {
+    "capture": {
+      "born_digital": {
+        "abstained": 5,
+        "abstention_rate": 0.04310344827586207,
+        "accuracy": 0.8793103448275862,
+        "answered": 111,
+        "correct": 102,
+        "coverage": 0.9568965517241379,
+        "failure_rate": 0.0,
+        "labeled": 116,
+        "no_prediction": 0,
+        "selective_accuracy": 0.918918918918919,
+        "should_be_absent": 0,
+        "should_be_value": 3,
+        "value_wrong": 6
+      },
+      "constructed": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 1.0,
+        "answered": 26,
+        "correct": 26,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 26,
+        "no_prediction": 0,
+        "selective_accuracy": 1.0,
+        "should_be_absent": 0,
+        "should_be_value": 0,
+        "value_wrong": 0
+      },
+      "phone_photo": {
+        "abstained": 3,
+        "abstention_rate": 0.02112676056338028,
+        "accuracy": 0.8873239436619719,
+        "answered": 139,
+        "correct": 126,
+        "coverage": 0.9788732394366197,
+        "failure_rate": 0.0,
+        "labeled": 142,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9064748201438849,
+        "should_be_absent": 0,
+        "should_be_value": 1,
+        "value_wrong": 12
+      },
+      "screen_capture": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.9230769230769231,
+        "answered": 39,
+        "correct": 36,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 39,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9230769230769231,
+        "should_be_absent": 2,
+        "should_be_value": 0,
+        "value_wrong": 1
+      }
+    },
+    "doc_type": {
+      "bill": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.8461538461538461,
+        "answered": 13,
+        "correct": 11,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.8461538461538461,
+        "should_be_absent": 1,
+        "should_be_value": 0,
+        "value_wrong": 1
+      },
+      "ecommerce": {
+        "abstained": 1,
+        "abstention_rate": 0.02564102564102564,
+        "accuracy": 0.8717948717948718,
+        "answered": 38,
+        "correct": 34,
+        "coverage": 0.9743589743589743,
+        "failure_rate": 0.0,
+        "labeled": 39,
+        "no_prediction": 0,
+        "selective_accuracy": 0.8947368421052632,
+        "should_be_absent": 0,
+        "should_be_value": 1,
+        "value_wrong": 3
+      },
+      "faktur": {
+        "abstained": 4,
+        "abstention_rate": 0.038834951456310676,
+        "accuracy": 0.9029126213592233,
+        "answered": 99,
+        "correct": 93,
+        "coverage": 0.9611650485436893,
+        "failure_rate": 0.0,
+        "labeled": 103,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9393939393939394,
+        "should_be_absent": 1,
+        "should_be_value": 0,
+        "value_wrong": 5
+      },
+      "hotel_reservation": {
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "accuracy": 0.8461538461538461,
+        "answered": 13,
+        "correct": 11,
+        "coverage": 1.0,
+        "failure_rate": 0.0,
+        "labeled": 13,
+        "no_prediction": 0,
+        "selective_accuracy": 0.8461538461538461,
+        "should_be_absent": 0,
+        "should_be_value": 1,
+        "value_wrong": 1
+      },
+      "invoice": {
+        "abstained": 1,
+        "abstention_rate": 0.02564102564102564,
+        "accuracy": 0.9487179487179487,
+        "answered": 38,
+        "correct": 37,
+        "coverage": 0.9743589743589743,
+        "failure_rate": 0.0,
+        "labeled": 39,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9736842105263158,
+        "should_be_absent": 0,
+        "should_be_value": 1,
+        "value_wrong": 0
+      },
+      "receipt": {
+        "abstained": 2,
+        "abstention_rate": 0.017241379310344827,
+        "accuracy": 0.896551724137931,
+        "answered": 114,
+        "correct": 104,
+        "coverage": 0.9827586206896551,
+        "failure_rate": 0.0,
+        "labeled": 116,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9122807017543859,
+        "should_be_absent": 0,
+        "should_be_value": 1,
+        "value_wrong": 9
+      }
+    },
+    "split": {
+      "test": {
+        "abstained": 8,
+        "abstention_rate": 0.02476780185758514,
+        "accuracy": 0.8978328173374613,
+        "answered": 315,
+        "correct": 290,
+        "coverage": 0.9752321981424149,
+        "failure_rate": 0.0,
+        "labeled": 323,
+        "no_prediction": 0,
+        "selective_accuracy": 0.9206349206349206,
+        "should_be_absent": 2,
+        "should_be_value": 4,
+        "value_wrong": 19
+      }
+    }
+  },
+  "unscored": []
+}
