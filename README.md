@@ -276,7 +276,7 @@ in [docs/milestones/](docs/milestones/) and its outcome in [docs/DEVLOG.md](docs
 | S3 model cascade | **not done** | same: not attempted. |
 | S4 hallucination probe | reached, with a limit | 9 probes + 3 controls, 0 of 19 erased fields answered; clean synthetic pages only, so it says nothing about smudged text. |
 | S5 local model run | **not done** | the available GPU (4 GB) cannot serve a useful vision model; no local run was made. |
-| S6 CI | **partly** | the workflow is written and includes the offline re-score of committed predictions, but it has not yet run on GitHub. |
+| S6 CI | reached | GitHub Actions runs the secret scan over the whole history, `ruff`, the full test suite and the offline re-score of the committed predictions (no API key needed); it passed on the first push. It has no Docker job (the runner is Windows). |
 | S7 robustness slice | **not done** | the degradation tooling exists and is tested ([src/docextract/ingest/degrade.py](src/docextract/ingest/degrade.py)), but no degraded variant is in the dataset and no robustness run was made: time. |
 
 **Nice to have**
@@ -300,7 +300,7 @@ in [docs/milestones/](docs/milestones/) and its outcome in [docs/DEVLOG.md](docs
 4. **A decision on row definitions**: fees, vouchers, discounts and zero-amount items are returned as line items; whether they are line items is a labeling policy, and the 15 row-cell cases among the 17
    `hallucinated_value` errors are mostly that question.
 5. **Other models**: a local run (the author's 4 GB GPU cannot serve a useful vision model) and an OCR + LLM ablation, compared head to head with the same gate.
-6. **Operations**: CI exists ([.github/workflows/ci.yml](.github/workflows/ci.yml): secret scan, lint, the suite, the offline re-score) but has not run on GitHub yet and has no Docker job (the runner is
+6. **Operations**: CI exists ([.github/workflows/ci.yml](.github/workflows/ci.yml): secret scan, lint, the suite, the offline re-score) and passes on GitHub, but has no Docker job (the runner is
    Windows); async batch jobs and a metrics endpoint.
 
 ## Where to start reading

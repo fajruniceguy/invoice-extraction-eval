@@ -354,3 +354,6 @@ retries burn a daily request quota: use `LLM_MAX_RETRIES=0-1` on a limited key.
 **Results folder.** `test-final` and `test-g1` moved to `results/superseded/` unedited (their scorecards are on the old labels, so they cannot reproduce against the current ones and `check_results.py` skips that folder); `test-g2` is promoted and reproduces.
 **README.** New section "Milestones: what was reached and what was not", checked against `docs/ROADMAP.md` (there is no RUNBOOK.md): M2 partly (35 documents, not 40; 10 blind), S1 partly, S2/S3/S5/S7 and N1/N2/N4/N5/N6 not done, S6 and N3 partly, the rest reached, each with its reason.
 **Next.** Push (the repo has no remote yet), watch the first CI run.
+
+## First push and CI (2026-10-09)
+The repository was pushed to a private GitHub repo and the CI workflow (secret scan over the history, `ruff check`, the full suite, `check_results.py`) **passed on the first run**, and again after the owner's one-line README edit on the website (pulled with a rebase before the next push). README (S6) and CLAUDE.md updated: CI is no longer listed as never run. No Docker job (the runner is Windows).
