@@ -222,7 +222,7 @@ byte-identical to ingested ones, true for PNG and false for JPEG, found only whe
 
 ## Milestones: what was reached and what was not
 
-Checked against the "definition of done" of each line of [docs/ROADMAP.md](docs/ROADMAP.md) (the plan file; there is no `RUNBOOK.md`). Each milestone has its spec
+Checked against the "definition of done" of each line of [docs/ROADMAP.md](docs/ROADMAP.md). Each milestone has its spec
 in [docs/milestones/](docs/milestones/) and its outcome in [docs/DEVLOG.md](docs/DEVLOG.md).
 
 **Must have**
