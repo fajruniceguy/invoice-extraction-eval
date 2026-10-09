@@ -183,6 +183,33 @@ missing value, abstained on a value, abstained on an absent field, row missed, r
   2.5x faster for -2.5 points, outside the 2-point tolerance. The rule picked `low`; I kept `medium` anyway (recorded in the same file). Two larger gains were not a sweep
   point: moving the extractor to a faster model (p50 122 s to 16.6 s at the same dev accuracy) and the cache.
 
+## Which model, and what happened to Gemini and GLM
+
+The provider is configuration (`LLM_BASE_URL`, `LLM_MODEL`, prices), so changing it never touched the code; it did change what could be compared. Three models were the
+extractor in turn, and **every number in this README comes from the last one**.
+
+| order | model and endpoint | what happened | why it was left |
+| --- | --- | --- | --- |
+| 1 | **Gemini** (2.5, then 3.5 / 3.6 Flash) on the Google AI Studio free tier, the brief's suggestion | used for the first live checks and the degraded-prompt demo. When it answered it did well: strict `json_schema` accepted, and on the three constructed invoices every row and total matched the labels (45, 57 and 33 rows) | `gemini-2.5-flash` answered 404 ("no longer available to new users"); 3.6 to 3.8 answered 503 "high demand" through several retries; 3.5 needed about 14 attempts and then hit HTTP 429, because the free tier allows about **20 requests a day per model and counts every 503 and retry**. The dev baseline run on it (`gemini-3.7-flash`) ended with **9 of 10 documents failed** (503 and 429), nothing usable |
+| 2 | **GLM 5.3 Flash** through Command Code (an OpenAI-compatible provider), $0.15 / $0.50 per million tokens | the first complete dev baseline: 10 of 10 documents, accuracy 0.820 | **too slow for a synchronous API**: median 122.5 s and p95 586.4 s per document |
+| 3 | **DeepSeek V4 Flash Vision (exp)** through Command Code | the same 10 documents: accuracy 0.811 (the same within noise), median **16.6 s**, p95 81.4 s, $0.0047 per document in that sweep | **kept**: every result in this repository is from it, with `json_object` output and reasoning effort `medium` |
+
+Source for rows 2 and 3: [docs/demo/m8_sweep.md](docs/demo/m8_sweep.md) ("Model context"); the provider history is in [docs/DEVLOG.md](docs/DEVLOG.md) (M1, M3, M6, M8).
+
+What follows from it, stated plainly:
+
+- **There is no Gemini accuracy on this dataset.** It never completed a dev run, so no claim here compares Gemini with DeepSeek on quality. The dev comparison of GLM and DeepSeek is one run of 10
+  documents each, so "the same accuracy" means "not distinguishable at this sample size".
+- **The switch was forced by availability and latency, not chosen on accuracy.** A free tier with a daily request cap cannot carry an evaluation (a 10-document run with retries can exhaust it),
+  and a 2-minute median cannot sit behind an API.
+- **Changing the model silently would have corrupted a comparison, and once nearly did.** The first regression-gate comparison used a baseline made before `.env` moved to another Gemini model and
+  lost its cost cap; `compare.py` prints what differs between the two runs (model, prompt hash, settings), which exposed it, and the baseline was re-run
+  ([docs/DEVLOG.md](docs/DEVLOG.md), M6). The sweep baseline is a fresh DeepSeek run for the same reason.
+- **Prices are the weak number.** The sweep was costed at a third-party tracker's $0.22 / $0.66 per million tokens; the provider's own page lists $0.15 / $0.60 off-peak and $0.30 / $1.20 at peak.
+  Reported costs here use the **peak** list prices, so they are upper bounds.
+- The pre-labeler is a separate model on purpose (Claude Haiku, through Anthropic's OpenAI-compatible endpoint, with the schema in the prompt because that endpoint rejects `json_object`),
+  and the code refuses to use the extractor's own model to draft labels.
+
 ## Key trade-offs
 
 | decision | for | against |
