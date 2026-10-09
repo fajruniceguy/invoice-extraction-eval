@@ -1,0 +1,32 @@
+{
+  "doc_id": "doc_032",
+  "label_mode": "prelabel",
+  "vendor_name": "Onix Fragrance Indonesia",
+  "vendor_address": null,
+  "vendor_tax_id": null,
+  "buyer_name": "Fajru Rahman",
+  "document_number": null,
+  "document_date": "2025-07-25",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": null,
+  "subtotal": "518000",
+  "tax": null,
+  "discount": null,
+  "total": null,
+  "line_items": [
+    {
+      "description": "[LIMITED CREATOR PICK] ONIX Fragrance FWB Extrait De Parfum 50ml - 50ML (Berat: 100 gr)",
+      "quantity": "1",
+      "unit_price": "259000",
+      "amount": "259000"
+    },
+    {
+      "description": "ONIX Fragrance Extrait De Parfum - MEXICOLA 50ML | Fruity Floral Oriental Perfume Unisex - 50ml (Berat: 250 gr)",
+      "quantity": "1",
+      "unit_price": "259000",
+      "amount": "259000"
+    }
+  ],
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Photo of a laptop screen showing a Tokopedia 'Order Receipt', heavily blurred and at an angle. Order number, purchase date year, address details, and the discount, shipping, voucher and fee rows are unreadable, so their values are null. The subtotal 'Rp518.000' and the item amounts are low-confidence readings. 'TOTAL BELANJA' and 'TOTAL TAGIHAN' appear to have values, but they are illegible and not transcribed. No tax line is visible. Date reads as '25 Jul 202?' and may be 2025. Buyer address line shows only 'Fajru ()'."
+}

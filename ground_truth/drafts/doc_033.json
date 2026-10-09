@@ -1,0 +1,32 @@
+{
+  "doc_id": "doc_033",
+  "label_mode": "prelabel",
+  "vendor_name": "NAKOA Kopi",
+  "vendor_address": "Jl. Mayjend Panjaitan No.75, Malang",
+  "vendor_tax_id": null,
+  "buyer_name": "Justin",
+  "document_number": "POS-MLG-4-20261006-103301",
+  "document_date": "2026-10-06",
+  "due_date": null,
+  "currency": "IDR",
+  "payment_method": "QRIS",
+  "subtotal": "33182",
+  "tax": "3273",
+  "discount": null,
+  "total": "36000",
+  "line_items": [
+    {
+      "description": "Caffe Latte - Ice Regular",
+      "quantity": "1",
+      "unit_price": "28182",
+      "amount": "28182"
+    },
+    {
+      "description": "(+) Extra Espresso 1 Shot",
+      "quantity": "1",
+      "unit_price": "5000",
+      "amount": "5000"
+    }
+  ],
+  "notes": "pre-label draft by claude-haiku-5-5; unverified. Header logo reads 'NAKOA' with 'コーヒー' (kopi) below; vendor name taken from logo. Rounding row 'Pembulatan' printed as -IDR 455; it is not a line item in the item table, so it is recorded here only in notes. Cashier printed as 'Burhanuddin'. Printed header 'MLG-4' is a store code. Tax row is 'Pajak Daerah PB 1 (10%)'. The receipt shows 'No' label with the POS number and 'Dine in' order type."
+}
