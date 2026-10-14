@@ -81,3 +81,27 @@ Format: `YYYY-MM-DD | file | field | old -> new | reason`
 2026-10-09 | doc_032.json | (new file) | - -> label_mode=prelabel | labeled by hand
 
 2026-10-09 | doc_033.json | (new file) | - -> label_mode=prelabel | labeled by hand
+
+2026-10-14 | doc_001.json | (file removed) | label_mode=prelabel -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_002.json | (file removed) | label_mode=prelabel -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_003.json | (file removed) | label_mode=prelabel -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_005.json | (file removed) | label_mode=blind -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_006.json | (file removed) | label_mode=blind -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_007.json | (file removed) | label_mode=blind -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_008.json | (file removed) | label_mode=prelabel -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_009.json | (file removed) | label_mode=prelabel -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_014.json | (file removed) | label_mode=prelabel -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_015.json | (file removed) | label_mode=prelabel -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_018.json | (file removed) | label_mode=blind -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
+
+2026-10-14 | doc_031.json | (file removed) | label_mode=prelabel -> removed | removed from the public repository (P1): downloaded from the internet, origin and licence not recorded; also removed from git history
