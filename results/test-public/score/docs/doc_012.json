@@ -1,0 +1,173 @@
+{
+  "doc_id": "doc_012",
+  "errors": {
+    "row_missed": 1
+  },
+  "fields": [
+    {
+      "error_class": null,
+      "expected": "Ady Homestay",
+      "how": "exact",
+      "name": "vendor_name",
+      "outcome": "correct",
+      "predicted": "Ady Homestay",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "Jalan Pantai Pandawa, Jimbaran, Uluwatu, Bali, Indonesia, 80364",
+      "how": "exact",
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": "Jalan Pantai Pandawa, Jimbaran, Uluwatu, Bali, Indonesia, 80364",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "1114978509",
+      "how": "exact",
+      "name": "document_number",
+      "outcome": "correct",
+      "predicted": "1114978509",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "document_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "IDR",
+      "how": "exact",
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": "IDR",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "33843",
+      "how": "numeric",
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": "33843",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "195000",
+      "how": "numeric",
+      "name": "total",
+      "outcome": "correct",
+      "predicted": "195000",
+      "predicted_status": "extracted",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 0,
+    "abstention_rate": 0.0,
+    "accuracy": 1.0,
+    "answered": 13,
+    "correct": 13,
+    "coverage": 1.0,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 1.0,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 0
+  },
+  "owner": "doc_012",
+  "rows": {
+    "cell_accuracy": 1.0,
+    "cells_compared": 0,
+    "cells_correct": 0,
+    "errors": [
+      "row_missed"
+    ],
+    "labeled": true,
+    "matched": 0,
+    "missed": 1,
+    "no_itemization": false,
+    "perfect": 0,
+    "row_accuracy": 1.0,
+    "row_f1": 0.0,
+    "row_precision": 1.0,
+    "row_recall": 0.0,
+    "spurious": 0
+  },
+  "status": "ok"
+}

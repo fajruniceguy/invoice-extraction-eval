@@ -1,0 +1,169 @@
+{
+  "doc_id": "cons_001",
+  "errors": {},
+  "fields": [
+    {
+      "error_class": null,
+      "expected": "CV Karya Mandiri Jaya",
+      "how": "exact",
+      "name": "vendor_name",
+      "outcome": "correct",
+      "predicted": "CV Karya Mandiri Jaya",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "how": "exact",
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": "Jl. Sudirman Kav. 45, Jakarta Selatan 12190",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "32.723.399.8-880.000",
+      "how": "exact",
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": "32.723.399.8-880.000",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "Koperasi Karyawan Harapan",
+      "how": "exact",
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": "Koperasi Karyawan Harapan",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "INV/2024/2360",
+      "how": "exact",
+      "name": "document_number",
+      "outcome": "correct",
+      "predicted": "INV/2024/2360",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "2024-03-23",
+      "how": "date",
+      "name": "document_date",
+      "outcome": "correct",
+      "predicted": "2024-03-23",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "2024-04-22",
+      "how": "date",
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": "2024-04-22",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "IDR",
+      "how": "exact",
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": "IDR",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "Transfer Bank BCA",
+      "how": "exact",
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": "Transfer Bank BCA",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "989476500.00",
+      "how": "numeric",
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": "989476500.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "103400294.00",
+      "how": "numeric",
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": "103400294.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "49473825.00",
+      "how": "numeric",
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": "49473825.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "1043402969.00",
+      "how": "numeric",
+      "name": "total",
+      "outcome": "correct",
+      "predicted": "1043402969.00",
+      "predicted_status": "extracted",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 0,
+    "abstention_rate": 0.0,
+    "accuracy": 1.0,
+    "answered": 13,
+    "correct": 13,
+    "coverage": 1.0,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 1.0,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 0
+  },
+  "owner": "cons_001",
+  "rows": {
+    "cell_accuracy": 1.0,
+    "cells_compared": 180,
+    "cells_correct": 180,
+    "errors": [],
+    "labeled": true,
+    "matched": 45,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 45,
+    "row_accuracy": 1.0,
+    "row_f1": 1.0,
+    "row_precision": 1.0,
+    "row_recall": 1.0,
+    "spurious": 0
+  },
+  "status": "ok"
+}

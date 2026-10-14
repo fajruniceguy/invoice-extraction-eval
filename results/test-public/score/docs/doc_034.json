@@ -1,0 +1,181 @@
+{
+  "doc_id": "doc_034",
+  "errors": {
+    "date_mismatch": 1,
+    "name_near_miss": 3,
+    "row_spurious": 5
+  },
+  "fields": [
+    {
+      "error_class": "name_near_miss",
+      "expected": "Onix Fragrance Indonesia",
+      "how": null,
+      "name": "vendor_name",
+      "outcome": "value_wrong",
+      "predicted": "Dita Fragrance Indonesia",
+      "predicted_status": "extracted",
+      "similarity": 0.875
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_address",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "Fajru Rahman",
+      "how": "exact",
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": "Fajru Rahman",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "document_number",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": "date_mismatch",
+      "expected": "2025-07-25",
+      "how": null,
+      "name": "document_date",
+      "outcome": "value_wrong",
+      "predicted": "2028-07-25",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "IDR",
+      "how": "exact",
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": "IDR",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "518000",
+      "how": "numeric",
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": "518000",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "357091",
+      "how": "numeric",
+      "name": "total",
+      "outcome": "correct",
+      "predicted": "357091",
+      "predicted_status": "extracted",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 0,
+    "abstention_rate": 0.0,
+    "accuracy": 0.8461538461538461,
+    "answered": 13,
+    "correct": 11,
+    "coverage": 1.0,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 0.8461538461538461,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 2
+  },
+  "owner": "doc_032",
+  "rows": {
+    "cell_accuracy": 0.75,
+    "cells_compared": 8,
+    "cells_correct": 6,
+    "errors": [
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "row_spurious",
+      "name_near_miss",
+      "name_near_miss"
+    ],
+    "labeled": true,
+    "matched": 2,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 0,
+    "row_accuracy": 0.0,
+    "row_f1": 0.4444444444444445,
+    "row_precision": 0.2857142857142857,
+    "row_recall": 1.0,
+    "spurious": 5
+  },
+  "status": "ok"
+}
