@@ -14,27 +14,30 @@ versions and gates a regression. The extraction is one call per document; **the 
 ## The result in one screen
 
 Test split: 16 documents (14 real, 2 constructed), 207 labeled scalar fields, 145 labeled line items, 6 of the 16 labeled **blind** (before any
-model output existed). Model `deepseek/deepseek-v4-flash-vision-exp` through an OpenAI-compatible endpoint, reasoning effort `medium`. One run,
-[results/test-public](results/test-public/), made on 2026-10-14 through the API: 2 documents were answered live and 14 from the response cache
-(13 from earlier runs of the same model, prompt and settings, 1 from an attempt earlier the same day), so the sample is a mix of days.
+model output existed). Model `deepseek/deepseek-v4-flash-vision-exp` through an OpenAI-compatible endpoint, reasoning effort `medium`. Two runs of the same 16 raw
+answers: [results/test-public](results/test-public/) (2026-10-14, through the API: 2 documents answered live and 14 from the response cache, 13 of them from earlier runs of the same model,
+prompt and settings, so the sample is a mix of days) and [results/test-g3](results/test-g3/), the same answers replayed from the cache after the quantity-sign fix (all 16 cache hits, $0.0000
+paid). They differ only in the validators.
 
-| | all 16 | 14 real | 2 constructed |
-| --- | --- | --- | --- |
-| field accuracy (an abstention counts as an error) | **0.899** (186/207) | 0.884 (160/181) | 1.000 (26/26) |
-| accuracy over the fields it answered / share answered | 0.916 / 0.981 | n/a | n/a |
-| line items matched / missed / spurious | 135 / 10 / 48 | 33 / 10 / 48 | 102 / 0 / 0 |
-| line items: F1 | 0.823 | **0.532** | 1.000 |
-| cost per document at list price | $0.0100 ($0.0238 paid for the whole run) | | |
+| | `test-public` (before the fix) | **`test-g3` (after)** |
+| --- | --- | --- |
+| field accuracy (an abstention counts as an error) | 0.899 (186/207) | **0.899** (186/207) |
+| accuracy over the fields it answered / share answered | 0.916 / 0.981 | 0.916 / 0.981 |
+| line items matched / missed / spurious | 135 / 10 / 48 | **144 / 1 / 39** |
+| line items: F1, all 16 documents | 0.823 | 0.878 |
+| line items: F1, the 14 real documents | 0.532 | **0.677** |
+| line items: F1, the 2 constructed documents | 1.000 | 1.000 |
+| cost per document at list price | $0.0100 ($0.0238 paid for the run) | same answers, $0.0000 paid |
 
 What to read before trusting those numbers:
 
-- **The line-item headline is carried by the two constructed invoices.** They supply 102 of the 135 matched rows and every one is right, so the
-  overall F1 of 0.823 says little about real documents: on the 14 real ones it is **0.532** (33 matched, 10 missed, 48 spurious). Nine of the 10 missed and 9 of the 48 spurious rows are in doc_027 and doc_020, the
-  documents of the next point. For the rest, the analysis on the original test split found fees, vouchers and discounts returned as rows, a labeling question; I have not re-checked that on
-  this subset. Quote the real column.
-- **Number grounding has a known gap, not fixed in this run.** It reads whitespace-separated tokens ([grounding.py](src/docextract/validate/grounding.py)),
-  so a quantity printed `x1` or `2x` never parses, the row's evidence is `evidence_not_grounded`, and the whole row is withheld even though the model had it right.
-  In this run that is **9 rows: all 7 of doc_027 (so 0 of its 7 rows count) and 2 of doc_020**.
+- **The line-item headline is carried by the two constructed invoices.** They supply 102 of the 144 matched rows and every one is right, so the
+  overall F1 of 0.878 says little about real documents: on the 14 real ones it is **0.677** (42 matched, 1 missed, 39 spurious, precision 0.519). For those 39, the analysis on the original
+  test split found fees, vouchers and discounts returned as rows, a labeling question; I have not re-checked that on this subset. Quote the real column.
+- **A number-grounding gap was found after the first version and fixed (G3).** The check read whitespace-separated tokens, so a quantity printed `x1` or `2x` never parsed and the whole row was
+  withheld although the model had it right: **9 rows in `test-public`, all 7 of doc_027 and 2 of doc_020**. Now a number with a multiplication sign glued on is read as that number, for a quantity only
+  ([docs/eval/quantity_marks.md](docs/eval/quantity_marks.md)). The prediction written before the run was exact (144 / 1 / 39); exactly those 9 rows changed and no field moved, so the gain is
+  those two documents and nothing else. Three rows are still withheld for other reasons (see Known limitations).
 - **It is one sample of a noisy model.** Four identical-setting runs on the original dev split ranged 0.795 to 0.828 and 2 to 12 of 122 fields
   flipped between any two ([docs/eval/noise.md](docs/eval/noise.md)). A gap smaller than about 3 points between two runs is not a finding, and the latency of this
   run (p50 56 s) is two live calls: the original live run of 25 documents had p50 12.5 s, p95 58.5 s ([results/original-dataset/test-final](results/original-dataset/test-final/score/scorecard.md)).
@@ -44,13 +47,14 @@ What to read before trusting those numbers:
   lineage audit flagged them, looking at the pages showed they were other documents, and they were relabeled (a draft by a different model, verified by hand; **not blind**) and logged in
   [ground_truth/CHANGELOG.md](ground_truth/CHANGELOG.md) ([docs/eval/hallucinations.md](docs/eval/hallucinations.md)).
 - **Weak spots are real:** `vendor_name` 0.625, `document_number` 0.750, `document_date` 0.800, and the `bill` and `hotel_reservation` slices rest on one document each
-  (per-slice tables in [results/test-public/score/scorecard.md](results/test-public/score/scorecard.md)).
+  (per-slice tables in [results/test-g3/score/scorecard.md](results/test-g3/score/scorecard.md)).
 - **Hallucination probe:** 0 of 19 erased fields were answered with a value (95% interval 0 to 17.6%), but on clean synthetic pages only; it
   says nothing about smudged or blurred text ([docs/eval/hallucination_probe.md](docs/eval/hallucination_probe.md)).
 
 ## Known limitations
 
-- **The grounding gap above** is the next thing to fix (`x1`, `2x`, and any quantity glued to a letter). The result will then be re-run and compared with `test-public` by `scripts/compare.py`.
+- **Grounding still withholds 3 rows** in `test-g3`: two in doc_021 whose quote does not contain the amount the model returned, and one in doc_033 (`-IDR 455`) where the minus sign sits on the
+  currency marker, apart from the digits. A quantity glued to a unit (`2pcs`, `250ml`) is deliberately not read: `250ml` would ground a quantity of 250.
 - **There is no *faktur pajak* document in the public dataset.** The extraction handles them (a *faktur* DPP is the subtotal, PPN the tax) and the measurements in `docs/eval/` include 11 of them, but nothing here lets you check that.
 - **14 real test documents** cannot show a 2-point change, and 6 of the 16 labels are blind. Intervals are wide.
 - **No redaction was applied.** `needs_redaction` is `n` for every document in [data/manifest.csv](data/manifest.csv) and [data/redactions.yaml](data/redactions.yaml) holds no box, so the 20 real documents are
@@ -87,12 +91,13 @@ curl -F files=@a.pdf -F files=@b.pdf localhost:8000/extract/batch      # one fil
 ```bash
 uv sync
 uv run pytest -q                                   # fast suite; add  -m "slow or not slow"  for everything (~3,000 tests)
-uv run python scripts/check_results.py             # re-scores the committed run; must reproduce it byte for byte
-uv run python scripts/analyze_failures.py results/test-public           # how it fails, by kind
+uv run python scripts/check_results.py             # re-scores the committed runs; must reproduce them byte for byte
+uv run python scripts/compare.py results/test-public results/test-g3   # the regression gate, on two committed runs (exit 0 = no regression)
+uv run python scripts/analyze_failures.py results/test-g3               # how it fails, by kind
 ```
 
-`scripts/compare.py` (the regression gate) needs two runs that both have per-document records. The original pair was only kept as scorecards, so there is none to compare yet;
-the first pair will be `test-public` and the run after the grounding fix.
+`scripts/compare.py` needs two runs that both have per-document records, which is why the pair is `test-public` and `test-g3`: the three runs of the original 25-document split were only
+kept as scorecards.
 
 `uv` is not on PATH on every machine; `python -m uv ...` is the same command. On Windows keep the checkout path short (a few dozen characters):
 Numba writes cache files deep inside `.venv`, and the image-degradation tests fail once a path passes 260 characters. Text files are LF in every checkout

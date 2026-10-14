@@ -15,7 +15,8 @@ the scoring code that moves a committed number makes it fail, and the right answ
 
 | run | what it is |
 | --- | --- |
-| `test-public` | **the current result**: the 16-document test split of the published dataset (14 real, 2 constructed), grounding as it was before the `x1`/`2x` fix. Accuracy 0.899 (186/207), selective 0.916, coverage 0.981; rows F1 0.823 overall but **0.532 on the 14 real documents** (the two constructed invoices supply 102 of the 135 matched rows). Reproduces with `check_results.py` |
+| `test-g3` | **the current result**: the same 16 raw answers as `test-public`, replayed from the response cache with the quantity-sign fix (`x1`, `2x`; `docs/eval/quantity_marks.md`). Fields unchanged (186/207); rows matched 144 / missed 1 / spurious 39, F1 0.878 overall and **0.677 on the 14 real documents**. All 16 calls were cache hits, $0.0000 paid. Reproduces with `check_results.py` |
+| `test-public` | the baseline of `test-g3`: the 16-document test split of the published dataset (14 real, 2 constructed), grounding as it was before the fix. Accuracy 0.899 (186/207), selective 0.916, coverage 0.981; rows F1 0.823 overall but **0.532 on the 14 real documents** (the two constructed invoices supply 102 of the 135 matched rows). Reproduces with `check_results.py`. `compare.py test-public test-g3` gives `VERDICT: OK` |
 | `probes/probe-s4` | the hallucination probe (S4): 12 documents of `data/probes`, not the dataset: 0 of 19 erased fields answered with a value. Its own manifest, so `check_results.py` does not cover it; re-score it with `score.py results/probes/probe-s4 --manifest data/probes/manifest.csv --pages-dir data/probes/pages --gt-dir data/probes/labels --out <dir>` |
 | `original-dataset/test-final` | the 25-document test split of the ORIGINAL 35-document dataset, first real run through the Docker API, grounding unfixed, on the labels before the relabel of doc_032 to doc_034 (accuracy 0.793; 0.845 on the corrected labels) |
 | `original-dataset/test-g1` | the same answers with the grounding fix, on the old labels (0.845 there; 0.898 on the corrected labels) |
@@ -37,9 +38,16 @@ How to read it:
 
 - **The row F1 does not separate real from constructed documents.** Split by the document's capture: constructed 102 matched / 0 missed / 0 spurious (F1 1.000); the 14 real documents 33 / 10 / 48 (F1 **0.532**).
   Compute it per document from `score/docs/*.json` (`rows.matched|missed|spurious`).
-- **Nine rows are withheld by a known grounding gap** (a quantity printed `x1` or `2x` is never found in its own quote, so the row is `evidence_not_grounded`): all 7 rows of doc_027 and 2 of doc_020. See the README, "Known limitations".
+- **Nine rows are withheld by a grounding gap that `test-g3` fixes** (a quantity printed `x1` or `2x` is never found in its own quote, so the row is `evidence_not_grounded`): all 7 rows of doc_027 and 2 of doc_020. This run keeps the flaw on purpose: it is the baseline the fix is measured against.
 - **A mix of days.** Because most answers are cache hits from earlier runs, this is one sample of a noisy model assembled from several: do not read a difference smaller than the noise (`docs/eval/noise.md`) between it and a later run as a finding.
 - **The records echo page content** in `raw_text`, including vendor tax ids and addresses, because no redaction box was applied to any published document. They were read for key-shaped content by `promote_run.py` and the secret scan, not line by line.
+
+## test-g3: how it was made
+
+The same command as `test-public` (a local API with `MAX_RUN_COST_USD=0.0001` and concurrency 1, then `scripts/eval_api.py --split test --run-id test-g3`) after commit `7349d51`, on 2026-10-14. The
+validators are not part of the response-cache key, so all 16 answers were cache hits ($0.0000 paid, $0.1606 answered from the cache) and every document's `parsed` is byte-identical to
+`test-public`: the difference between the two runs is the validators alone, with no sampling noise in it. Exactly nine rows changed (doc_027: 7, doc_020: 2, all `abstained` -> `extracted`), none
+the other way, and no scalar field moved. There is no latency figure (no live call). Row by row and what is still withheld: [docs/eval/quantity_marks.md](../docs/eval/quantity_marks.md).
 
 ## original-dataset: scorecards only
 
