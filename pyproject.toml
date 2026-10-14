@@ -2,6 +2,8 @@
 name = "docextract"
 version = "0.1.0"
 description = "Invoice/receipt extraction system with a rigorous evaluation harness"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7",
