@@ -15,16 +15,40 @@ the scoring code that moves a committed number makes it fail, and the right answ
 
 | run | what it is |
 | --- | --- |
-| `test-g2` | **the current result**: the test split with the grounding fix (G1), scored on the corrected labels (doc_032 to doc_034 relabeled): the same raw model answers as `test-final`, replayed from the cache. Accuracy 0.898 (re-scored unfixed run: 0.845) |
+| `test-public` | **the current result**: the 16-document test split of the published dataset (14 real, 2 constructed), grounding as it was before the `x1`/`2x` fix. Accuracy 0.899 (186/207), selective 0.916, coverage 0.981; rows F1 0.823 overall but **0.532 on the 14 real documents** (the two constructed invoices supply 102 of the 135 matched rows). Reproduces with `check_results.py` |
 | `probes/probe-s4` | the hallucination probe (S4): 12 documents of `data/probes`, not the dataset: 0 of 19 erased fields answered with a value. Its own manifest, so `check_results.py` does not cover it; re-score it with `score.py results/probes/probe-s4 --manifest data/probes/manifest.csv --pages-dir data/probes/pages --gt-dir data/probes/labels --out <dir>` |
-| `superseded/test-final` | the test split, first real run through the Docker API, grounding unfixed. **Scored on the labels before the relabel of doc_032 to doc_034** (accuracy 0.793 there; 0.845 on the corrected labels) |
-| `superseded/test-g1` | the same answers with the grounding fix, on the old labels (0.845 there; 0.898 on the corrected labels = `test-g2`) |
+| `original-dataset/test-final` | the 25-document test split of the ORIGINAL 35-document dataset, first real run through the Docker API, grounding unfixed, on the labels before the relabel of doc_032 to doc_034 (accuracy 0.793; 0.845 on the corrected labels) |
+| `original-dataset/test-g1` | the same answers with the grounding fix, on the old labels (0.845 there; 0.898 on the corrected labels) |
+| `original-dataset/test-g2` | the same answers with the grounding fix on the corrected labels: accuracy 0.898 (290/323), rows F1 0.841 |
 
-`superseded/` is kept unedited as evidence of what was measured and when. Its scorecards were made on labels that were later corrected, so they do **not**
-reproduce against the labels as they are now and `check_results.py` (which covers `results/*/`, not `results/superseded/`) skips them. To re-score one
-on the current labels: `uv run python scripts/score.py results/superseded/test-final --out <dir>`; `compare.py` already scores both runs on the current labels.
+## test-public: how it was made
 
-## test-final (now `superseded/test-final`): the test split through the Docker API
+| | |
+| --- | --- |
+| command | a local API (`uvicorn --factory docextract.api.app:create_app`, cost cap `MAX_RUN_COST_USD=0.30`), then `scripts/eval_api.py --split test --run-id test-public`. Not the Docker route: Docker was not available on the machine |
+| split | test: 16 documents (11 phone photos, 2 born-digital PDFs, 1 screen capture, 2 constructed; 6 labeled blind, all of them real) |
+| model | `deepseek/deepseek-v4-flash-vision-exp` via Command Code, `json_object`, reasoning effort `medium`; prompt `7ec75dbb29063cbb5146cb5ee5ce6fcbedda0140ec39971c8f018f404126390d` (unchanged since the original runs) |
+| run on | 2026-10-14. **14 of the 16 answers came from the response cache**: 13 made by earlier runs with the same model, prompt and settings, and doc_012 by an aborted attempt earlier the same day; doc_016 and doc_019 were live |
+| cost | $0.0238 paid, $0.1606 at list price ($0.0100 per document at the peak prices in `.env.example`); the aborted attempt added $0.0055 outside this run |
+| latency | p50 56.3 s, p95 66.9 s over **2 live calls**: not a latency measurement (the original run of 25 live calls had p50 12.5 s, p95 58.5 s) |
+| result | 16 ok, 0 failed, 0 refused, 0 repairs; 207 labeled fields, 186 correct; rows matched 135, missed 10, spurious 48 |
+
+How to read it:
+
+- **The row F1 does not separate real from constructed documents.** Split by the document's capture: constructed 102 matched / 0 missed / 0 spurious (F1 1.000); the 14 real documents 33 / 10 / 48 (F1 **0.532**).
+  Compute it per document from `score/docs/*.json` (`rows.matched|missed|spurious`).
+- **Nine rows are withheld by a known grounding gap** (a quantity printed `x1` or `2x` is never found in its own quote, so the row is `evidence_not_grounded`): all 7 rows of doc_027 and 2 of doc_020. See the README, "Known limitations".
+- **A mix of days.** Because most answers are cache hits from earlier runs, this is one sample of a noisy model assembled from several: do not read a difference smaller than the noise (`docs/eval/noise.md`) between it and a later run as a finding.
+- **The records echo page content** in `raw_text`, including vendor tax ids and addresses, because no redaction box was applied to any published document. They were read for key-shaped content by `promote_run.py` and the secret scan, not line by line.
+
+## original-dataset: scorecards only
+
+`original-dataset/` holds `run.json`, `score/scorecard.md`, `score/scorecard.json` and `score/manifest.json` of three runs on the 25-document test split of the original 35-document dataset. The per-document
+records (`docs/`, `score/docs/`) were **removed** because 9 of those 25 documents (and 12 of the 35) are not published: they were downloaded from the internet and their source and licence were never recorded.
+So these three do **not** reproduce and `check_results.py` does not look at them (it covers `results/*/run.json`); they stay as the aggregate evidence behind the numbers the README and `docs/eval/` quote
+(0.793 -> 0.845 from the label correction, 0.845 -> 0.898 from the grounding fix, the same raw answers). Where their `git` field is set it names a commit of the history as it was before it was rewritten to remove the 12 documents.
+
+### test-final: the test split through the Docker API
 
 | | |
 | --- | --- |
@@ -51,7 +75,9 @@ How to read it:
   to the API, which decodes and re-encodes a JPEG at the same quality (a PNG comes back byte for byte).
   11 of the 25 test documents are phone photos, so their pixels differ slightly from the stored pages
   that `extract.py` sends; the pages hashed in each record are the server's.
+  **Found later: the PNG half of that was not true in the Docker run.** The server hashed doc_012's page as `70181c46...`, while the stored page (and the same upload through a server on the
+  machine that ingested it) is `c0a073b6...`. The cache keys follow those bytes, so a replay outside Docker missed the cache for the PNG documents that had been answered in Docker
+  (doc_012, doc_016, doc_019, the three real PNG documents of the split): that is why doc_016 and doc_019 were live in `test-public`, and doc_012 in the attempt before it. The
+  JPEG documents hit the cache. Why the container's bytes differ was not investigated.
 - **`git: unknown` in the scorecard** is correct: the container has no `.git`. The scorecard still records
   the prompt hash, the ground-truth hash and the dataset hash.
-- **The records echo (redacted) page content** in `raw_text`. They were read for key-shaped content
-  by `promote_run.py` and the secret scan; nobody has read them line by line.
