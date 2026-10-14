@@ -2,7 +2,10 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
+import pytest
+
 from docextract.extract.schema import DocumentExtraction, Field, LineItem
+from docextract.validate import validate_document
 from docextract.validate.codes import (
     DESCRIPTION_NOT_VERBATIM,
     EVIDENCE_AMBIGUOUS,
@@ -344,6 +347,212 @@ class TestRows:
         flagged = flagged.model_copy(update={"flagged_cells": ["quantity", "unit_price", "amount"]})
         result = validate_grounding(make_doc(rows=[flagged]))
         assert result.line_items[0].flagged_cells == ["quantity", "unit_price", "amount"]
+
+
+class TestMultiplicationSigns:
+    """A quantity printed with a multiplication sign glued on (`x1`, `2x`) is in its own quote.
+
+    Only a quantity is read that way, and only a sign + a number: `250ml` or `MAX1` must not
+    ground a quantity (G3, docs/milestones/G3.md)."""
+
+    @pytest.mark.parametrize(
+        ("quantity", "unit_price", "amount", "evidence"),
+        [
+            ("1", "5000", "5000", "AIR MINERAL 5.000 x1 5.000"),
+            ("2", "169000", "338000", "Matcha 2x 169.000 338.000"),
+            ("3", "5000", "15000", "Kopi X3 5.000 15.000"),
+            ("3", "5000", "15000", "Kopi ×3 5.000 15.000"),
+            ("3", "5000", "15000", "Kopi 3× 5.000 15.000"),
+            ("2", "5000", "10000", "Kopi (2x) 5.000 10.000"),
+            ("1", "5000", "5000", "Kopi x1, 5.000 5.000"),
+            ("10", "5000", "50000", "Kopi 10X 5.000 50.000"),
+        ],
+    )
+    def test_a_quantity_with_a_sign_glued_on_is_grounded(
+        self, quantity: str, unit_price: str, amount: str, evidence: str
+    ) -> None:
+        result = validate_grounding(
+            make_doc(
+                rows=[
+                    row(
+                        description=None,
+                        quantity=quantity,
+                        unit_price=unit_price,
+                        amount=amount,
+                        evidence=evidence,
+                    )
+                ]
+            )
+        )
+        assert result.line_items[0].reasons == []
+        assert result.line_items[0].flagged_cells == []
+
+    def test_a_different_quantity_is_still_not_grounded(self) -> None:
+        result = validate_grounding(
+            make_doc(
+                rows=[
+                    row(
+                        description="Kopi",
+                        quantity="2",
+                        unit_price="5000",
+                        amount="5000",
+                        evidence="Kopi x1 5.000 5.000",
+                    )
+                ]
+            )
+        )
+        assert result.line_items[0].reasons == [EVIDENCE_NOT_GROUNDED]
+        assert result.line_items[0].flagged_cells == ["quantity"]
+
+    @pytest.mark.parametrize(
+        ("quantity", "evidence"),
+        [
+            ("1", "MAX1 Widget"),  # a letter run that ends in a digit
+            ("1", "x1x Widget"),  # a sign on both sides
+            ("2", "2xl Widget"),  # more letters than the sign
+            ("1", "Widget x"),  # a sign with no number
+            ("250", "Widget 250ml"),  # a unit is not a sign: it must not ground a quantity
+        ],
+    )
+    def test_what_is_not_a_sign_and_a_number_grounds_nothing(
+        self, quantity: str, evidence: str
+    ) -> None:
+        result = validate_grounding(
+            make_doc(
+                rows=[
+                    row(
+                        description="Widget",
+                        quantity=quantity,
+                        unit_price=None,
+                        amount=None,
+                        evidence=evidence,
+                    )
+                ]
+            )
+        )
+        assert result.line_items[0].reasons == [EVIDENCE_NOT_GROUNDED]
+        assert result.line_items[0].flagged_cells == ["quantity"]
+
+    def test_the_sign_is_read_for_a_quantity_only(self) -> None:
+        """`x4.50` is not a unit price: a looser rule widens what a wrong price can hide behind."""
+        result = validate_grounding(
+            make_doc(
+                rows=[
+                    row(
+                        description="Widget",
+                        quantity="2",
+                        unit_price="4.50",
+                        amount="9.00",
+                        evidence="Widget 2 x4.50 9.00",
+                    )
+                ]
+            )
+        )
+        assert result.line_items[0].reasons == [EVIDENCE_NOT_GROUNDED]
+        assert result.line_items[0].flagged_cells == ["unit_price"]
+
+    def test_a_scalar_is_not_read_through_a_sign(self) -> None:
+        result = validate_grounding(make_doc(subtotal=scalar(D("9.00"), "x9.00")))
+        assert result.subtotal.reasons == [EVIDENCE_NOT_GROUNDED]
+
+    def test_an_ambiguous_number_behind_a_sign_stays_ambiguous(self) -> None:
+        """The normalizer still never picks a reading: `1.250` with no currency is 1250 or 1.25."""
+        ambiguous = validate_grounding(
+            make_doc(
+                currency=Field.absent(0.9),
+                rows=[
+                    row(
+                        description="Kopi",
+                        quantity="1250",
+                        unit_price=None,
+                        amount=None,
+                        evidence="Kopi x1.250",
+                    )
+                ],
+            )
+        )
+        assert ambiguous.line_items[0].reasons == [EVIDENCE_AMBIGUOUS]
+        assert ambiguous.line_items[0].flagged_cells == ["quantity"]
+
+        neither = validate_grounding(
+            make_doc(
+                currency=Field.absent(0.9),
+                rows=[
+                    row(
+                        description="Kopi",
+                        quantity="7",
+                        unit_price=None,
+                        amount=None,
+                        evidence="Kopi x1.250",
+                    )
+                ],
+            )
+        )
+        assert neither.line_items[0].reasons == [EVIDENCE_NOT_GROUNDED]
+
+
+# The nine rows of `results/test-public` withheld only because the quote prints the quantity as
+# `x1` / `2x`, exactly as the model answered: (description, quantity, unit_price, amount, evidence).
+# Embedded, not read from results/: the mutation tool works on a copy of the repo without it.
+DOC_027_ROWS = [
+    ("AIR MINERAL", "1", "5000", "5000", "AIR MINERAL 5.000 x1 5.000"),
+    ("ADEM SARI", "1", "7000", "7000", "ADEM SARI 7.000 x1 7.000"),
+    ("MADU LEMON (ICE/HOT)", "1", "15000", "15000", "MADU LEMON (ICE/HOT) 15.000 x1 15.000"),
+    ("Indomie Kuah Kari Biasa", "1", "15000", "15000", "Indomie Kuah Kari Biasa 15.000 x1 15.000"),
+    (
+        "INDOMIE BANGLADESH JUMBO + PUDING TELUR AYAM KAMPUNG",
+        "1",
+        "38000",
+        "38000",
+        "INDOMIE BANGLADESH JUMBO + PUDIN G TELUR AYAM KAMPUNG 38.000 x1 38.000",
+    ),
+    ("INDOMIE PAKISTAN JUMBO", "1", "23000", "23000", "INDOMIE PAKISTAN JUMBO 23.000 x1 23.000"),
+    (
+        "INDOMIE GORENG ALOK BIASA",
+        "1",
+        "15000",
+        "15000",
+        "INDOMIE GORENG ALOK BIASA 15.000 x1 15.000",
+    ),
+]
+DOC_020_ROWS = [  # this document printed no currency, so its `169.000` is ambiguous
+    (
+        "Extra Dark 70% (Pisah Bubuk)",
+        "2",
+        "169000",
+        "338000",
+        "Extra Dark 70% (Pisah Bubuk)\n2x 169.000 338.000",
+    ),
+    ("Matcha", "2", "169000", "338000", "Matcha\n2x 169.000 338.000"),
+]
+
+
+def observed(rows: list[tuple[str, str, str, str, str]]) -> list[LineItem]:
+    return [
+        row(description=d, quantity=q, unit_price=u, amount=a, evidence=e) for d, q, u, a, e in rows
+    ]
+
+
+class TestRowsObservedInTestPublic:
+    """The two real documents that print `x1` / `2x`, through the whole validator chain."""
+
+    def test_doc_027_keeps_all_seven_rows(self) -> None:
+        result = validate_document(make_doc(rows=observed(DOC_027_ROWS)), abstain_below=0.3)
+        assert len(result.line_items) == 7
+        for item in result.line_items:
+            assert EVIDENCE_NOT_GROUNDED not in item.reasons
+            assert item.status == "extracted"
+            assert item.quantity == D("1")
+
+    def test_doc_020_keeps_its_rows_with_the_soft_code_for_the_ambiguous_price(self) -> None:
+        document = make_doc(currency=Field.absent(0.9), rows=observed(DOC_020_ROWS))
+        result = validate_document(document, abstain_below=0.3)
+        assert len(result.line_items) == 2
+        for item in result.line_items:
+            assert EVIDENCE_NOT_GROUNDED not in item.reasons
+            assert EVIDENCE_AMBIGUOUS in item.reasons  # 169.000 with no currency: 169000 or 169
+            assert item.status == "extracted"
+            assert item.quantity == D("2")
 
 
 class TestCurrencyField:

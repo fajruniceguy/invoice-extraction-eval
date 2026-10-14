@@ -8,7 +8,8 @@ This module checks the stronger claim that the quote actually supports the value
     the document's own currency / day-first context, to exactly the value. "Rp 1.250.000,00"
     grounds 1250000.00, "5 Maret 2024" grounds 2024-03-05. An ambiguous DATE is not grounding:
     a reading the normalizer refused to make cannot confirm a value. An ambiguous NUMBER is
-    in between (see below).
+    in between (see below). A QUANTITY may also be printed with a multiplication sign glued on
+    ("x1", "2x"): that sign and number ground it, and no other value is read through a sign.
   - strings (names, addresses, payment methods, document numbers, tax ids): the value must be
     contained in the quote once case, punctuation and whitespace are ignored (its letters and
     digits, in order), so a name printed in capitals or a number formatted differently still
@@ -49,6 +50,9 @@ from docextract.validate.reasons import with_document_reason, with_row, with_row
 _NUMERIC_CELLS: tuple[str, ...] = ("quantity", "unit_price", "amount")
 _ALNUM = re.compile(r"[^\W_]+")  # unicode letters and digits, no underscore
 _DATE_WINDOW = 4  # tokens: "5 Maret 2024", "05 Mar 2024 14:30"
+# A quantity printed with a multiplication sign glued on: "x1", "2x", "X3", "×3". Exactly a sign
+# and a number, nothing else: "MAX1", "2xl" and "250ml" are not quantities in a sign's clothes.
+_SIGNED_NUMBER = re.compile(r"^(?:[x×](\d[\d.,]*)|(\d[\d.,]*)[x×])$", re.IGNORECASE)
 
 Grounding = Literal["grounded", "ambiguous", "ungrounded"]
 
@@ -77,12 +81,27 @@ def _number_candidates(text: str) -> list[str]:
     return candidates
 
 
-def _number_grounding(quote: str, value: Decimal, currency: str | None) -> Grounding:
+def _quantity_candidates(text: str) -> list[str]:
+    """`_number_candidates`, plus the bare number of every token that is a number with a
+    multiplication sign glued on ("x1" -> "1", "(2x)" -> "2"). The number still goes through the
+    normalizer, so "x1.250" is as ambiguous as "1.250"."""
+    candidates = _number_candidates(text)
+    for token in list(candidates):
+        match = _SIGNED_NUMBER.match(token)
+        if match:
+            candidates.append(match.group(1) or match.group(2))
+    return candidates
+
+
+def _number_grounding(
+    quote: str, value: Decimal, currency: str | None, *, quantity: bool = False
+) -> Grounding:
     """`grounded`: some span of the quote parses to exactly `value`. `ambiguous`: none does, but
     some span is ambiguous and `value` is one of its candidates (the quote consists with the value
-    without confirming it). `ungrounded`: neither."""
+    without confirming it). `ungrounded`: neither. `quantity`: the value is a quantity, so a number
+    printed with a multiplication sign glued on counts as a span (a price or a total is not)."""
     ambiguous = False
-    for token in _number_candidates(quote):
+    for token in _quantity_candidates(quote) if quantity else _number_candidates(quote):
         if not any(character.isdigit() for character in token):
             continue
         result = parse_number(token, currency=currency)
@@ -169,7 +188,9 @@ def validate_grounding(document: DocumentExtraction) -> DocumentExtraction:
             continue
         quote = row.evidence or ""
         grounding = {
-            cell: _number_grounding(quote, getattr(row, cell), currency)
+            cell: _number_grounding(
+                quote, getattr(row, cell), currency, quantity=cell == "quantity"
+            )
             for cell in _NUMERIC_CELLS
             if getattr(row, cell) is not None
         }

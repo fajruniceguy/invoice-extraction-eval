@@ -1,4 +1,5 @@
-"""Mutants for G1: the ambiguous-but-consistent number is soft, anything else is not.
+"""Mutants for G1 (the ambiguous-but-consistent number is soft, anything else is not) and G3
+(a quantity printed with a multiplication sign glued on, "x1" / "2x", is grounded).
 
   python -m uv run python tools/mutation_check.py tests/mutants/grounding.py
 
@@ -10,6 +11,7 @@ G = "src/docextract/validate/grounding.py"
 C = "src/docextract/validate/codes.py"
 F = "src/docextract/confidence/formula.py"
 T = ["tests/test_validate_grounding.py", "tests/test_validate_document.py"]
+TG = ["tests/test_validate_grounding.py"]
 TC = ["tests/test_validate_grounding.py", "tests/test_confidence.py"]
 
 MUTANTS = [
@@ -123,5 +125,87 @@ MUTANTS = [
         "the new code has no cap value",
         "    EVIDENCE_AMBIGUOUS: SHAPE_CAP,",
         "    EVIDENCE_AMBIGUOUS: 1.0,",
+    ),
+    # G3: a quantity printed with a multiplication sign glued on ("x1", "2x")
+    (
+        G,
+        TG,
+        "the sign is read for every number, not only a quantity",
+        "    for token in _quantity_candidates(quote) if quantity else _number_candidates(quote):",
+        "    for token in _quantity_candidates(quote):",
+    ),
+    (
+        G,
+        TG,
+        "the sign is never read",
+        "            cell: _number_grounding(\n"
+        '                quote, getattr(row, cell), currency, quantity=cell == "quantity"\n'
+        "            )",
+        "            cell: _number_grounding(quote, getattr(row, cell), currency, quantity=False)",
+    ),
+    (
+        G,
+        TG,
+        "only a price is read through a sign",
+        'quantity=cell == "quantity"',
+        'quantity=cell != "quantity"',
+    ),
+    (
+        G,
+        TG,
+        "a leading sign is not read",
+        r'r"^(?:[x×](\d[\d.,]*)|(\d[\d.,]*)[x×])$"',
+        r'r"^(?:(\d[\d.,]*)[x×])$"',
+    ),
+    (
+        G,
+        TG,
+        "a trailing sign is not read",
+        r'r"^(?:[x×](\d[\d.,]*)|(\d[\d.,]*)[x×])$"',
+        r'r"^(?:[x×](\d[\d.,]*))$"',
+    ),
+    (
+        G,
+        TG,
+        "the sign is case-sensitive",
+        r'[x×])$", re.IGNORECASE)',
+        r'[x×])$")',
+    ),
+    (
+        G,
+        TG,
+        "the multiplication sign character is not read",
+        r'r"^(?:[x×](\d[\d.,]*)|(\d[\d.,]*)[x×])$"',
+        r'r"^(?:[x](\d[\d.,]*)|(\d[\d.,]*)[x])$"',
+    ),
+    (
+        G,
+        TG,
+        "any letters around a number are a sign",
+        r'r"^(?:[x×](\d[\d.,]*)|(\d[\d.,]*)[x×])$"',
+        r'r"^(?:[a-z×]+(\d[\d.,]*)|(\d[\d.,]*)[a-z×]+)$"',
+    ),
+    (
+        G,
+        TG,
+        "the token need not be only a sign and a number",
+        r'r"^(?:[x×](\d[\d.,]*)|(\d[\d.,]*)[x×])$"',
+        r'r"^(?:[x×](\d[\d.,]*)|(\d[\d.,]*)[x×])"',
+    ),
+    (
+        G,
+        TG,
+        "the number is not offered, the token is",
+        "            candidates.append(match.group(1) or match.group(2))",
+        "            candidates.append(token)",
+    ),
+    (
+        G,
+        TG,
+        "a signed number is taken as its digits and nothing else",
+        "            candidates.append(match.group(1) or match.group(2))",
+        "            candidates.append(\n"
+        '                (match.group(1) or match.group(2)).replace(".", "").replace(",", "")\n'
+        "            )",
     ),
 ]
