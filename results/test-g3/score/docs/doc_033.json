@@ -1,0 +1,175 @@
+{
+  "doc_id": "doc_033",
+  "errors": {
+    "abstained_on_value": 1,
+    "name_near_miss": 1,
+    "row_spurious": 1
+  },
+  "fields": [
+    {
+      "error_class": "name_near_miss",
+      "expected": "NAKOA Kopi",
+      "how": null,
+      "name": "vendor_name",
+      "outcome": "value_wrong",
+      "predicted": "NAKOA",
+      "predicted_status": "extracted",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "error_class": "abstained_on_value",
+      "expected": "Jl. Mayjend Panjaitan No.75, Malang",
+      "how": null,
+      "name": "vendor_address",
+      "outcome": "abstained",
+      "predicted": null,
+      "predicted_status": "abstained",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "vendor_tax_id",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "Justin",
+      "how": "exact",
+      "name": "buyer_name",
+      "outcome": "correct",
+      "predicted": "Justin",
+      "predicted_status": "extracted",
+      "similarity": 1.0
+    },
+    {
+      "error_class": null,
+      "expected": "POS-MLG-4-20261006-103301",
+      "how": "exact",
+      "name": "document_number",
+      "outcome": "correct",
+      "predicted": "POS-MLG-4-20261006-103301",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "2026-10-06",
+      "how": "date",
+      "name": "document_date",
+      "outcome": "correct",
+      "predicted": "2026-10-06",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "due_date",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "IDR",
+      "how": "exact",
+      "name": "currency",
+      "outcome": "correct",
+      "predicted": "IDR",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "QRIS",
+      "how": "exact",
+      "name": "payment_method",
+      "outcome": "correct",
+      "predicted": "QRIS",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "33182",
+      "how": "numeric",
+      "name": "subtotal",
+      "outcome": "correct",
+      "predicted": "33182",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "3273",
+      "how": "numeric",
+      "name": "tax",
+      "outcome": "correct",
+      "predicted": "3273",
+      "predicted_status": "extracted",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": null,
+      "how": null,
+      "name": "discount",
+      "outcome": "correct",
+      "predicted": null,
+      "predicted_status": "absent",
+      "similarity": null
+    },
+    {
+      "error_class": null,
+      "expected": "36000",
+      "how": "numeric",
+      "name": "total",
+      "outcome": "correct",
+      "predicted": "36000",
+      "predicted_status": "extracted",
+      "similarity": null
+    }
+  ],
+  "metrics": {
+    "abstained": 1,
+    "abstention_rate": 0.07692307692307693,
+    "accuracy": 0.8461538461538461,
+    "answered": 12,
+    "correct": 11,
+    "coverage": 0.9230769230769231,
+    "failure_rate": 0.0,
+    "labeled": 13,
+    "no_prediction": 0,
+    "selective_accuracy": 0.9166666666666666,
+    "should_be_absent": 0,
+    "should_be_value": 0,
+    "value_wrong": 1
+  },
+  "owner": "doc_033",
+  "rows": {
+    "cell_accuracy": 1.0,
+    "cells_compared": 8,
+    "cells_correct": 8,
+    "errors": [
+      "row_spurious"
+    ],
+    "labeled": true,
+    "matched": 2,
+    "missed": 0,
+    "no_itemization": false,
+    "perfect": 2,
+    "row_accuracy": 1.0,
+    "row_f1": 0.8,
+    "row_precision": 0.6666666666666666,
+    "row_recall": 1.0,
+    "spurious": 1
+  },
+  "status": "ok"
+}
